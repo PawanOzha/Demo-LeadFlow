@@ -48,9 +48,11 @@ async function main() {
   const pool = new Pool(pgConfigFromEnv());
 
   try {
-    const quick = await pool.query(`SELECT COUNT(*)::int AS c FROM "User"`);
-    if ((quick.rows[0] as { c: number }).c > 0) {
-      console.log("[LeadFlow] bootstrap: users already exist, skipping.");
+    const existing = await pool.query(
+      `SELECT id FROM "User" WHERE lower(email) = 'superadmin@demo.local' LIMIT 1`,
+    );
+    if (existing.rowCount && existing.rowCount > 0) {
+      console.log("[LeadFlow] bootstrap: superadmin already exists, skipping.");
       return;
     }
 
@@ -63,11 +65,13 @@ async function main() {
     try {
       await client.query("BEGIN");
       await client.query(`SELECT pg_advisory_xact_lock(41820319)`);
-      const n = await client.query(`SELECT COUNT(*)::int AS c FROM "User"`);
-      if ((n.rows[0] as { c: number }).c > 0) {
+      const n = await client.query(
+        `SELECT id FROM "User" WHERE lower(email) = 'superadmin@demo.local' LIMIT 1`,
+      );
+      if (n.rowCount && n.rowCount > 0) {
         await client.query("COMMIT");
         console.log(
-          "[LeadFlow] bootstrap: another replica created users first; skipping.",
+          "[LeadFlow] bootstrap: another replica created superadmin first; skipping.",
         );
         return;
       }
