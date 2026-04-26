@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/*
+ * LeadFlow — Zoho CRM–inspired: electric blue brand, white chrome, red CTAs.
+ * Canvas: light blue-gray · Surfaces: white · Brand: #0066FF · Primary actions: #E53935
+ */
+@theme {
+  --color-lf-bg: #f0f5ff;
+  --color-lf-header: #ffffff;
+  --color-lf-surface: #ffffff;
+  --color-lf-elevated: #f8fafc;
+  --color-lf-border: #1a1a1a14;
+  --color-lf-divide: #1a1a1a12;
+  /* Brand blue (links, focus, nav emphasis) */
+  --color-lf-brand: #0066ff;
+  --color-lf-brand-bright: #3385ff;
+  /* Primary CTA — red */
+  --color-lf-accent: #e53935;
+  --color-lf-accent-hover: #c62828;
+  --color-lf-accent-deep: #b71c1c;
+  --color-lf-on-accent: #ffffff;
+  --color-lf-link: #0066ff;
+  --color-lf-link-bright: #3385ff;
+  --color-lf-muted: #5c6370;
+  --color-lf-subtle: #7a8292;
+  --color-lf-text: #1a1a1a;
+  --color-lf-text-secondary: #2d3138;
+  --color-lf-success: #1d6b3a;
+  --color-lf-danger: #c62828;
+  --color-lf-warning: #9a5f0a;
+  --color-lf-control-off: #e2e6ef;
+}

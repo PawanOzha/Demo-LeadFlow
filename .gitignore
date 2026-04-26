@@ -1,0 +1,22 @@
+# Monorepo — see also web/.gitignore for Next.js-specific rules.
+
+# Dependencies
+node_modules/
+/migration-db/
+
+# Root-level env (if you add one)
+/.env
+/.env.*
+/migration-db/.env
+
+# OS & editors
+.DS_Store
+Thumbs.db
+.idea/
+
+# Local SQLite databases (commit schema/migrations instead)
+*.db
+*.db-journal
+
+# User uploads (profile photos)
+web/public/uploads/

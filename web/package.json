@@ -1,0 +1,61 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H localhost --webpack",
+    "build": "next build --webpack",
+    "postbuild": "node scripts/ensure-database.mjs",
+    "start": "node scripts/railway-db-guard.mjs && node scripts/run-migrations.mjs && node scripts/auto-bootstrap-railway.mjs && next start",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "validate:schema": "node -e \"const fs=require('fs'); const p='database/migrations/001_init_postgresql.sql'; if(!fs.existsSync(p)){console.error('Missing',p); process.exit(1);} console.log('OK:', p);\"",
+    "postinstall": "node scripts/ensure-xlsx-for-turbopack.mjs",
+    "db:seed": "tsx database/seed.ts",
+    "db:seed:bootstrap": "tsx database/seed-bootstrap.ts",
+    "db:generate": "node -e \"console.log('[LeadFlow] No ORM codegen — using pg + SQL in database/migrations/.'); process.exit(0);\"",
+    "db:push": "node -e \"console.error('[LeadFlow] db:push is not used. Apply database/migrations/*.sql via Supabase or psql.'); process.exit(1);\"",
+    "db:migrate": "node scripts/run-migrations.mjs",
+    "db:migrate:deploy": "node scripts/run-migrations.mjs"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.49.8",
+    "@tailwindcss/postcss": "4.2.2",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
+    "libphonenumber-js": "^1.12.40",
+    "next": "16.2.1",
+    "pg": "^8.13.1",
+    "rate-limiter-flexible": "^11.0.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-phone-number-input": "^3.4.16",
+    "tailwindcss": "4.2.2",
+    "xlsx": "^0.18.5",
+    "zod": "^4.3.6",
+    "tsx": "^4.21.0"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-linux-arm64-gnu": "4.2.2",
+    "@tailwindcss/oxide-linux-arm64-musl": "4.2.2",
+    "@tailwindcss/oxide-linux-x64-gnu": "4.2.2",
+    "@tailwindcss/oxide-linux-x64-musl": "4.2.2",
+    "lightningcss-linux-arm64-gnu": "1.32.0",
+    "lightningcss-linux-arm64-musl": "1.32.0",
+    "lightningcss-linux-x64-gnu": "1.32.0",
+    "lightningcss-linux-x64-musl": "1.32.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.1",
+    "typescript": "^5"
+  }
+}
