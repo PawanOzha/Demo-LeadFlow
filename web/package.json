@@ -6,7 +6,7 @@
     "dev": "next dev -H localhost --webpack",
     "build": "next build --webpack",
     "postbuild": "node scripts/ensure-database.mjs",
-    "start": "node scripts/railway-db-guard.mjs && node scripts/run-migrations.mjs && node scripts/auto-bootstrap-railway.mjs && next start",
+    "start": "node scripts/railway-db-guard.mjs && node scripts/auto-bootstrap-railway.mjs && next start",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "validate:schema": "node -e \"const fs=require('fs'); const p='database/migrations/001_init_postgresql.sql'; if(!fs.existsSync(p)){console.error('Missing',p); process.exit(1);} console.log('OK:', p);\"",

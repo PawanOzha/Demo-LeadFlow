@@ -5,7 +5,7 @@
 import { Pool } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { DEMO_PASSWORD, seedBootstrapSuperAdminOnly } from "./seed-demo-data";
-import { assertPostgresDatabaseUrl } from "./seed-env";
+import { assertPostgresDatabaseUrl, pgConfigFromEnv } from "./seed-env";
 
 async function getOrCreateAuthUser(email: string, password: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -45,7 +45,7 @@ async function getOrCreateAuthUser(email: string, password: string) {
 
 async function main() {
   assertPostgresDatabaseUrl();
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool(pgConfigFromEnv());
 
   try {
     const quick = await pool.query(`SELECT COUNT(*)::int AS c FROM "User"`);

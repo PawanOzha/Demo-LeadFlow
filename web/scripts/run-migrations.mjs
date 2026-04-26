@@ -43,6 +43,14 @@ function splitStatements(sql) {
     .filter((s) => s.length > 0 && !s.match(/^--/));
 }
 
+function poolConfigFromUrl(url) {
+  const config = { connectionString: url };
+  if (/supabase\.co|pooler\.supabase\.com/i.test(url)) {
+    config.ssl = { rejectUnauthorized: false };
+  }
+  return config;
+}
+
 async function main() {
   const dbUrl = (process.env.DATABASE_URL ?? "").trim();
 
@@ -72,7 +80,7 @@ async function main() {
     `[run-migrations] Applying ${statements.length} statement(s) from 001_init_postgresql.sql …`,
   );
 
-  const pool = new Pool({ connectionString: dbUrl });
+  const pool = new Pool(poolConfigFromUrl(dbUrl));
 
   let applied = 0;
   let skipped = 0;

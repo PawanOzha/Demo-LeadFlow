@@ -6,11 +6,11 @@
 import { Pool } from "pg";
 import { createClient } from "@supabase/supabase-js";
 import { DEMO_PASSWORD, seedDemoWithAuthIds } from "./seed-demo-data";
-import { assertPostgresDatabaseUrl } from "./seed-env";
+import { assertPostgresDatabaseUrl, pgConfigFromEnv } from "./seed-env";
 import type { DemoAuthIds } from "./seed-demo-data";
 
 assertPostgresDatabaseUrl();
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool(pgConfigFromEnv());
 
 async function createAuthUser(email: string, password: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
