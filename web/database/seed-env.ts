@@ -18,12 +18,19 @@ export function assertPostgresDatabaseUrl(): void {
 }
 
 export function pgConfigFromEnv(): PoolConfig {
-  const url = (process.env.DATABASE_URL ?? "").trim();
-  const config: PoolConfig = { connectionString: url };
+  const raw = (process.env.DATABASE_URL ?? "").trim();
+  const normalized = new URL(raw);
+  const config: PoolConfig = { connectionString: normalized.toString() };
 
   // Supabase requires TLS. Explicit ssl config avoids runtime differences where
   // URI sslmode is not honored consistently by node-postgres.
-  if (/supabase\.co|pooler\.supabase\.com/i.test(url)) {
+  if (/supabase\.co|pooler\.supabase\.com/i.test(raw)) {
+    normalized.searchParams.delete("sslmode");
+    normalized.searchParams.delete("sslrootcert");
+    normalized.searchParams.delete("sslcert");
+    normalized.searchParams.delete("sslkey");
+    normalized.searchParams.delete("sslcrl");
+    config.connectionString = normalized.toString();
     config.ssl = { rejectUnauthorized: false };
   }
 

@@ -44,8 +44,15 @@ function splitStatements(sql) {
 }
 
 function poolConfigFromUrl(url) {
-  const config = { connectionString: url };
+  const normalized = new URL(url);
+  const config = { connectionString: normalized.toString() };
   if (/supabase\.co|pooler\.supabase\.com/i.test(url)) {
+    normalized.searchParams.delete("sslmode");
+    normalized.searchParams.delete("sslrootcert");
+    normalized.searchParams.delete("sslcert");
+    normalized.searchParams.delete("sslkey");
+    normalized.searchParams.delete("sslcrl");
+    config.connectionString = normalized.toString();
     config.ssl = { rejectUnauthorized: false };
   }
   return config;

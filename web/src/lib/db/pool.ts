@@ -18,17 +18,22 @@ export function assertDatabaseUrlConfigured(connectionString: string): void {
 }
 
 function normalizeConnectionString(url: string): string {
-  let out = url.trim();
+  const u = new URL(url.trim());
+  let out = u.toString();
   const isPooler =
     /pooler\.supabase\.com/i.test(out) || /:6543(\/|\?|$)/.test(out);
   if (isPooler && !/[?&]pgbouncer=true/i.test(out)) {
     out += out.includes("?") ? "&pgbouncer=true" : "?pgbouncer=true";
   }
-  if (
-    /supabase\.co|pooler\.supabase\.com/i.test(out) &&
-    !/[?&]sslmode=/i.test(out)
-  ) {
-    out += out.includes("?") ? "&sslmode=require" : "?sslmode=require";
+  if (/supabase\.co|pooler\.supabase\.com/i.test(out)) {
+    // Keep TLS behavior under explicit `ssl` config below. Leaving sslmode in
+    // URL can be interpreted as verify-full by pg/pg-connection-string.
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("sslrootcert");
+    u.searchParams.delete("sslcert");
+    u.searchParams.delete("sslkey");
+    u.searchParams.delete("sslcrl");
+    out = u.toString();
   }
   return out;
 }
