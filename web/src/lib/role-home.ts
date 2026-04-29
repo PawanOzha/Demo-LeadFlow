@@ -4,7 +4,7 @@ export const ROLE_HOME: Record<string, string> = {
   ANALYST_TEAM_LEAD: "/analyst-team-lead",
   MAIN_TEAM_LEAD: "/team-lead",
   SALES_EXECUTIVE: "/executive",
-  SUPERADMIN: "/superadmin",
+  SUPERADMIN: "/superadmin/dashboard",
 };
 
 export function homePathForRole(role: string): string | undefined {
