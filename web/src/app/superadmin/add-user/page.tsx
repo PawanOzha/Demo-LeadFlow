@@ -108,7 +108,7 @@ export default async function SuperadminAddUserPage({
        LEFT JOIN "User" mgr ON mgr.id = u."managerId"
        LEFT JOIN "Team" tm ON tm.id = u."teamId"
        ORDER BY u.email ASC
-       LIMIT $1 OFFSET $2`,
+       LIMIT ($1)::int OFFSET ($2)::bigint`,
       [perPage, offset],
     ),
     dbQuery<{

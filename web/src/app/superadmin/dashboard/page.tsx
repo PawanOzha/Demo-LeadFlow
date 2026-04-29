@@ -114,7 +114,7 @@ export default async function SuperadminDashboardPage({
        LEFT JOIN "Lead" l ON l.id = h."leadId"
        LEFT JOIN "User" a ON a.id = h."actorId"
        ORDER BY h."createdAt" DESC
-       LIMIT $1 OFFSET $2`,
+       LIMIT ($1)::int OFFSET ($2)::bigint`,
     [perPage, offset],
   );
 
