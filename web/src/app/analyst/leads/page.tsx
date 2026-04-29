@@ -59,7 +59,7 @@ export default async function AnalystAllLeadsPage({
           salesStage: string;
           createdAt: Date;
         }>(
-          `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "createdAt" DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+          `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "createdAt" DESC LIMIT ($${params.length + 1})::int OFFSET ($${params.length + 2})::bigint`,
           [...params, perPage, offset],
         ),
         dbQuery<{

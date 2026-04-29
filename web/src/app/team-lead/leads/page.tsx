@@ -61,7 +61,7 @@ export default async function TeamLeadLeadsPage({
       se_name: string | null;
     }>(
       `${mtlSelect}
-       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+       LIMIT ($${params.length + 1})::int OFFSET ($${params.length + 2})::bigint`,
       [...params, perPage, offset],
     ),
     dbQuery<{

@@ -61,7 +61,7 @@ export default async function ExecutiveLeadsPage({
       cb_name: string;
     }>(
       `${execSelect}
-       LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+       LIMIT ($${params.length + 1})::int OFFSET ($${params.length + 2})::bigint`,
       [...params, perPage, offset],
     ),
     dbQuery<{

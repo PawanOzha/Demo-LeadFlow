@@ -2,9 +2,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const allowedDevOrigins = [
+  "10.80.80.220",
+  ...(process.env.NEXT_ALLOWED_DEV_ORIGINS
+    ? process.env.NEXT_ALLOWED_DEV_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
+    : []),
+];
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  allowedDevOrigins,
   async headers() {
     return [
       {
@@ -41,7 +48,6 @@ const nextConfig = {
       },
     ];
   },
-  serverExternalPackages: ["pg"],
   // This Next app lives in `web/`. Pin Turbopack root to this folder (not the
   // monorepo parent): otherwise Next picks `LeadFlow/` when multiple
   // lockfiles exist, which breaks `@/` imports AND `@import "tailwindcss"`.
