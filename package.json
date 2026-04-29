@@ -1,0 +1,19 @@
+{
+  "name": "leadflow",
+  "private": true,
+  "workspaces": ["web"],
+  "scripts": {
+    "dev": "npm run dev --prefix web",
+    "build": "npm run build --prefix web",
+    "start": "npm run start --prefix web",
+    "lint": "npm run lint --prefix web",
+    "typecheck": "npm run typecheck --prefix web",
+    "qa": "npm run lint && npm run typecheck && npm run validate:schema && SKIP_POSTBUILD_MIGRATE=true npm run build --prefix web",
+    "q": "npm run qa",
+    "deploy:check": "npm run qa",
+    "validate:schema": "npm run validate:schema --prefix web",
+    "db:push": "npm run db:push --prefix web",
+    "db:generate": "npm run db:generate --prefix web",
+    "db:migrate:deploy": "npm run db:migrate:deploy --prefix web"
+  }
+}
