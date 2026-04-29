@@ -1,5 +1,11 @@
 import type { JourneyLead } from "@/lib/superadmin-stats";
 import type { PortalSuperadminLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
+import { parseDbDate } from "@/lib/analyst-ui";
+
+function toIsoOrEmpty(value: unknown): string {
+  const d = parseDbDate(value);
+  return d ? d.toISOString() : "";
+}
 
 export function flattenSuperadminJourneyGroupsForExport(
   groups: { leads: JourneyLead[] }[],
@@ -13,7 +19,7 @@ export function flattenSuperadminJourneyGroupsForExport(
           ? ""
           : `${logs
               .slice(0, 12)
-              .map((h) => `${h.action} @ ${h.createdAt.toISOString()}`)
+              .map((h) => `${h.action} @ ${toIsoOrEmpty(h.createdAt)}`)
               .join(" · ")}${logs.length > 12 ? ` … (+${logs.length - 12} more)` : ""}`;
 
       rows.push({
@@ -28,7 +34,7 @@ export function flattenSuperadminJourneyGroupsForExport(
         qualificationStatus: lead.qualificationStatus,
         leadScore: lead.leadScore,
         salesStage: lead.salesStage,
-        createdAt: lead.createdAt.toISOString(),
+        createdAt: toIsoOrEmpty(lead.createdAt),
         createdByLabel: `${lead.createdBy.name} (${lead.createdBy.email})`,
         teamName: lead.team?.name ?? null,
         mtlLabel: lead.assignedMainTeamLead

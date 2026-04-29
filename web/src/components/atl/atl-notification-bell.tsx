@@ -20,6 +20,7 @@ export type AtlNotificationItem = {
 function formatWhen(iso: string) {
   try {
     const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
     return d.toLocaleString(undefined, {
       month: "short",
       day: "numeric",

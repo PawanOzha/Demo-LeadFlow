@@ -11,6 +11,35 @@ type QueryRunner = {
   ) => Promise<QueryResult<T>>;
 };
 
+const DATE_FIELD_KEY = /(?:At|_at)$/;
+
+function reviveDateIfNeeded(key: string, value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  if (!DATE_FIELD_KEY.test(key)) return value;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? value : d;
+}
+
+function reviveRowDates(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => reviveRowDates(item));
+  }
+  if (!value || typeof value !== "object") return value;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (Array.isArray(v) || (v && typeof v === "object")) {
+      out[k] = reviveRowDates(v);
+      continue;
+    }
+    out[k] = reviveDateIfNeeded(k, v);
+  }
+  return out;
+}
+
+function reviveRows<T>(rows: unknown[]): T[] {
+  return rows.map((row) => reviveRowDates(row) as T);
+}
+
 function sqlRpcName(): string {
   return process.env.SUPABASE_SQL_RPC_NAME?.trim() || "exec_sql";
 }
@@ -44,19 +73,19 @@ async function runSql<T = Record<string, unknown>>(
   if (typeof data === "string") {
     try {
       const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? (parsed as T[]) : [];
+      return Array.isArray(parsed) ? reviveRows<T>(parsed) : [];
     } catch {
       return [];
     }
   }
   if (data && typeof data === "object" && "rows" in data) {
     const rows = (data as { rows?: unknown }).rows;
-    return Array.isArray(rows) ? (rows as T[]) : [];
+    return Array.isArray(rows) ? reviveRows<T>(rows) : [];
   }
   if (!Array.isArray(data)) {
     return [];
   }
-  return data as T[];
+  return reviveRows<T>(data);
 }
 
 async function runSqlBatchTransaction(

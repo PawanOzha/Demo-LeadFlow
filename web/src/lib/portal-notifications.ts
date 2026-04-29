@@ -1,5 +1,6 @@
 import { dbQuery } from "@/lib/db/pool";
 import type { AtlNotificationItem } from "@/components/atl/atl-notification-bell";
+import { parseDbDate } from "@/lib/analyst-ui";
 
 export async function getPortalNotificationsForUser(userId: string): Promise<{
   notifications: AtlNotificationItem[];
@@ -31,14 +32,17 @@ export async function getPortalNotificationsForUser(userId: string): Promise<{
 
   const unreadCount = Number(notificationRows[0]?.unreadCount ?? 0);
 
-  const notifications: AtlNotificationItem[] = notificationRows.map((n) => ({
-    id: n.id,
-    title: n.title,
-    body: n.body,
-    read: n.read,
-    leadId: n.leadId,
-    createdAt: n.createdAt.toISOString(),
-  }));
+  const notifications: AtlNotificationItem[] = notificationRows.map((n) => {
+    const createdAt = parseDbDate(n.createdAt);
+    return {
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      read: n.read,
+      leadId: n.leadId,
+      createdAt: createdAt ? createdAt.toISOString() : "",
+    };
+  });
 
   return { notifications, unreadCount };
 }
