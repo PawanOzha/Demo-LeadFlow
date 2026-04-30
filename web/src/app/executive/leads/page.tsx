@@ -131,9 +131,7 @@ export default async function ExecutiveLeadsPage({
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <header>
-        <p className="text-[13px] font-normal text-lf-label">
-          Leads assigned to you · {rangeLabel}
-        </p>
+        
       </header>
 
       <AnalystDateRangeBar

@@ -93,7 +93,7 @@ export function PortalShellHeader({
 
   if (!showBrand) {
     return (
-      <header className="sticky top-0 z-20 flex h-14 min-h-14 w-full shrink-0 items-center border-b border-lf-border bg-lf-header/95 px-4 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
+      <header className="sticky top-0 z-20 flex h-14 min-h-14 w-full shrink-0 items-center border-b border-lf-border bg-lf-header/95 px-4 backdrop-blur-sm sm:px-6">
         <div className="flex min-w-0 w-full items-center justify-between gap-4">
           <h1 className="min-w-0 truncate text-base font-semibold leading-tight text-lf-text sm:text-lg">
             {pageTitle ?? ""}
@@ -105,7 +105,7 @@ export function PortalShellHeader({
   }
 
   return (
-    <header className="sticky top-0 z-20 w-full shrink-0 border-b border-lf-border bg-lf-header/95 shadow-sm shadow-black/[0.06] backdrop-blur-sm">
+    <header className="sticky top-0 z-20 w-full shrink-0 border-b border-lf-border bg-lf-header/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 min-h-14 max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6">
         {logoRight ? (
           <>
@@ -122,3 +122,4 @@ export function PortalShellHeader({
     </header>
   );
 }
+

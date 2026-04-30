@@ -128,22 +128,7 @@ export default async function AnalystAllLeadsPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[13px] font-normal text-lf-label">
-            Every lead you have added ·{" "}
-            <Link
-              href={hrefWithDateRange("/analyst", null, null, q)}
-              className="text-lf-link hover:underline"
-            >
-              Back to dashboard
-            </Link>
-            {" · "}
-            <Link
-              href="/analyst/leads/import"
-              className="text-lf-link hover:underline"
-            >
-              Import from Excel
-            </Link>
-          </p>
+          
         </div>
       </header>
 

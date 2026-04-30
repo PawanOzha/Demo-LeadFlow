@@ -92,11 +92,7 @@ export default async function SuperadminReportPage({
     <div className="space-y-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="max-w-2xl text-[13px] font-normal text-lf-label">
-            Same dashboard sections and export format (CSV / Excel / PDF) as
-            analyst, team lead, and executive portals. Histograms and ratio cards
-            below add organization-wide views.
-          </p>
+          
         </div>
         <SuperadminReportExport payload={vm.exportPayload} />
       </div>

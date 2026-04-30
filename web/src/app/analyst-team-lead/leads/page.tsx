@@ -288,18 +288,7 @@ export default async function AnalystTeamLeadLeadsPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[13px] font-normal text-lf-label">
-            {rangeLabel === "All time"
-              ? "All-time leads created by your analysts"
-              : `Leads created ${rangeLabel} · filtered by creation date`}{" "}
-            ·{" "}
-            <Link
-              href="/analyst-team-lead/reports"
-              className="text-lf-link hover:underline"
-            >
-              Back to report
-            </Link>
-          </p>
+          
         </div>
       </header>
 

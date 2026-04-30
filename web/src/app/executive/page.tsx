@@ -115,10 +115,7 @@ export default async function ExecutiveDashboardPage({
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="max-w-xl text-[13px] font-normal leading-relaxed text-lf-label">
-            Same report layout and export as every portal · Sales team{" "}
-            <span className="text-lf-text-secondary">{team?.name ?? "—"}</span>
-          </p>
+          
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <DashboardReportExport payload={vm.exportPayload} />

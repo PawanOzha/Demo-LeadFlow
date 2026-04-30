@@ -117,7 +117,7 @@ export function PortalAppShellLayout({
       {/* Main column: mobile top bar, desktop toolbar, scrollable content */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile: menu + inline brand + user tools */}
-        <div className="flex h-14 min-h-14 shrink-0 items-center gap-2 border-b border-lf-border bg-lf-header/95 px-3 shadow-sm shadow-black/[0.06] backdrop-blur-sm md:hidden">
+        <div className="flex h-14 min-h-14 shrink-0 items-center gap-2 border-b border-lf-border bg-lf-header/95 px-3 backdrop-blur-sm md:hidden">
           <button
             type="button"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-lf-border bg-lf-surface text-lf-text hover:bg-lf-row-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35"
@@ -232,3 +232,4 @@ export function PortalAppShellLayout({
     </div>
   );
 }
+

@@ -25,13 +25,7 @@ export default async function AnalystTeamLeadReportsPage() {
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="max-w-2xl text-[13px] font-normal leading-relaxed text-lf-label">
-            Single consolidated view — KPIs, funnel, analysts, routing to sales,
-            geography, and conversion (all-time lead creation).{" "}
-            {analystsList.length} analyst
-            {analystsList.length === 1 ? "" : "s"} · {teamCount} sales team
-            {teamCount === 1 ? "" : "s"}.
-          </p>
+          
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <DashboardReportExport payload={vm.exportPayload} />
