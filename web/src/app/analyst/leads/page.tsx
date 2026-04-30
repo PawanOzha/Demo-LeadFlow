@@ -128,10 +128,7 @@ export default async function AnalystAllLeadsPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
-            All leads
-          </h1>
-          <p className="mt-1 text-[13px] font-normal text-lf-label">
+          <p className="text-[13px] font-normal text-lf-label">
             Every lead you have added ·{" "}
             <Link
               href={hrefWithDateRange("/analyst", null, null, q)}

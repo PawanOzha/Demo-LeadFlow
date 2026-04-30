@@ -149,10 +149,7 @@ export default async function SuperadminDashboardPage({
   return (
     <div className="space-y-12">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-lf-text">
-          Dashboard
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-lf-muted">
+        <p className="max-w-2xl text-sm text-lf-muted">
           Snapshot of users, pipeline volume, and how leads are associated with
           teams and sales executives (current assignments).
         </p>

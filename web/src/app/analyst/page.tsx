@@ -84,10 +84,7 @@ export default async function AnalystDashboard() {
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
-            Dashboard
-          </h1>
-          <p className="mt-1 max-w-xl text-[13px] font-normal leading-relaxed text-lf-label">
+          <p className="max-w-xl text-[13px] font-normal leading-relaxed text-lf-label">
             All-time snapshot · same report layout as every portal. Filter by date
             on{" "}
             <Link

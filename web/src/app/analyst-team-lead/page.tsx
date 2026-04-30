@@ -14,10 +14,7 @@ export default async function AnalystTeamLeadDashboard() {
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
-            Dashboard
-          </h1>
-          <p className="mt-1 max-w-xl text-[13px] font-normal leading-relaxed text-lf-label">
+          <p className="max-w-xl text-[13px] font-normal leading-relaxed text-lf-label">
             All-time snapshot · {analystsList.length} analyst
             {analystsList.length === 1 ? "" : "s"} · {teamCount} sales team
             {teamCount === 1 ? "" : "s"}. Open{" "}

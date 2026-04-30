@@ -9,10 +9,14 @@ import {
   PortalShellUserCluster,
 } from "@/components/portal-shell-header";
 import { navFocusRing, appMainContentClass } from "@/lib/app-shell-ui";
+import {
+  pageTitleFromNav,
+  type PortalNavItem,
+} from "@/lib/portal-page-title";
 import { PortalNavIcon } from "@/components/portal-nav-icon";
 import type { AtlNotificationItem } from "@/components/atl/atl-notification-bell";
 
-export type PortalNavItem = { href: string; label: string };
+export type { PortalNavItem };
 
 export type PortalAppShellLayoutProps = {
   homeHref: string;
@@ -50,6 +54,7 @@ export function PortalAppShellLayout({
   children,
 }: PortalAppShellLayoutProps) {
   const pathname = usePathname();
+  const pageTitle = pageTitleFromNav(pathname, navItems);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -136,14 +141,9 @@ export function PortalAppShellLayout({
               />
             </svg>
           </button>
-          <Link
-            href={homeHref}
-            prefetch={true}
-            className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-lf-text"
-          >
-            <LogoMark className="h-8 w-8 shrink-0" />
-            <span className="truncate">LeadFlow</span>
-          </Link>
+          <h1 className="min-w-0 flex-1 truncate text-base font-semibold leading-tight text-lf-text">
+            {pageTitle}
+          </h1>
           <PortalShellUserCluster
             session={session}
             avatarUrl={avatarUrl}
@@ -167,6 +167,7 @@ export function PortalAppShellLayout({
             notificationLeadsHref={notificationLeadsHref}
             logoRight={logoRight}
             showBrand={false}
+            pageTitle={pageTitle}
           />
         </div>
 

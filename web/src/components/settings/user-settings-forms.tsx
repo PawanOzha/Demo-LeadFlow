@@ -128,17 +128,14 @@ export function UserSettingsForms({
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-lf-text md:text-3xl">
-          Settings
-        </h1>
-        {teamName != null && teamName !== "" ? (
-          <p className="mt-1 text-sm text-lf-muted">
-            Team{" "}
-            <span className="font-medium text-lf-text-secondary">{teamName}</span>
-          </p>
-        ) : null}
-      </header>
+      {teamName != null && teamName !== "" ? (
+        <p className="mb-8 text-sm text-lf-muted">
+          Team{" "}
+          <span className="font-medium text-lf-text-secondary">{teamName}</span>
+        </p>
+      ) : (
+        <div className="mb-6" aria-hidden />
+      )}
 
       <div className="flex flex-col gap-8 lg:flex-row">
         <nav className="flex shrink-0 flex-row gap-2 lg:w-48 lg:flex-col lg:gap-1">

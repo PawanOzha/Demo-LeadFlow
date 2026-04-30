@@ -49,10 +49,7 @@ export default async function TeamLeadSalesTeamPage() {
     <div className="mx-auto max-w-4xl space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-lf-text md:text-3xl">
-            Sales team
-          </h1>
-          <p className="mt-1 text-sm text-lf-muted">
+          <p className="text-sm text-lf-muted">
             {team?.name ?? "Your team"} · add representatives and share login
             details once.
           </p>

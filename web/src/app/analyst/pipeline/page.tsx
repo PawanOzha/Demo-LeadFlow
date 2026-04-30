@@ -74,12 +74,6 @@ export default async function AnalystPipelinePage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <header>
-        <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
-          Pipeline status
-        </h1>
-      </header>
-
       <AnalystDateRangeBar
         key={`${from ?? ""}|${to ?? ""}`}
         pathname="/analyst/pipeline"

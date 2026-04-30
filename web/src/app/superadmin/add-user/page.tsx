@@ -211,10 +211,7 @@ export default async function SuperadminAddUserPage({
     <div className="space-y-10">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
-            Add user
-          </h1>
-          <p className="mt-2 max-w-2xl text-[13px] font-normal text-lf-label">
+          <p className="max-w-2xl text-[13px] font-normal text-lf-label">
             Create Lead Analyst and Analyst Team Lead accounts from the card on
             the right. Set passwords or remove users (superadmin accounts are
             protected).

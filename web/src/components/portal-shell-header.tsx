@@ -60,11 +60,14 @@ export function PortalShellHeader({
   notificationLeadsHref,
   logoRight = false,
   showBrand = true,
+  pageTitle,
 }: PortalShellUserClusterProps & {
   homeHref: string;
   logoRight?: boolean;
   /** When false (e.g. brand lives in sidebar), toolbar shows user controls only, full width of the main column. */
   showBrand?: boolean;
+  /** Current section title (matches sidebar label); shown on the left when `showBrand` is false. */
+  pageTitle?: string;
 }) {
   const userCluster = (
     <PortalShellUserCluster
@@ -91,7 +94,12 @@ export function PortalShellHeader({
   if (!showBrand) {
     return (
       <header className="sticky top-0 z-20 flex h-14 min-h-14 w-full shrink-0 items-center border-b border-lf-border bg-lf-header/95 px-4 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
-        <div className="flex w-full items-center justify-end">{userCluster}</div>
+        <div className="flex min-w-0 w-full items-center justify-between gap-4">
+          <h1 className="min-w-0 truncate text-base font-semibold leading-tight text-lf-text sm:text-lg">
+            {pageTitle ?? ""}
+          </h1>
+          <div className="shrink-0">{userCluster}</div>
+        </div>
       </header>
     );
   }
