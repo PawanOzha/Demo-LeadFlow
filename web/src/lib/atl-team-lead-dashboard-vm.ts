@@ -24,8 +24,8 @@ type LeadDashRow = {
   lostNotes: string | null;
   createdById: string;
   assignedSalesExecId: string | null;
-  cb_name: string;
-  cb_email: string;
+  cb_name: string | null;
+  cb_email: string | null;
   se_name: string | null;
 };
 
@@ -53,14 +53,14 @@ export async function buildAtlTeamLeadDashboardViewModel(
   );
   const analystIds = analystsList.map((a) => a.id);
 
-  const { clause, params } = atlLeadSql(analystIds, from, to);
+  const { clause, params } = atlLeadSql(analystIds, from, to, null, "l");
   const leads =
     analystIds.length === 0
       ? []
       : await dbQuery<LeadDashRow>(
           `SELECT l.*, cb.name AS cb_name, cb.email AS cb_email, se.name AS se_name
            FROM "Lead" l
-           JOIN "User" cb ON cb.id = l."createdById"
+           LEFT JOIN "User" cb ON cb.id = l."createdById"
            LEFT JOIN "User" se ON se.id = l."assignedSalesExecId"
            WHERE ${clause}
            ORDER BY l."createdAt" DESC`,
@@ -90,8 +90,8 @@ export async function buildAtlTeamLeadDashboardViewModel(
     notes: l.notes,
     lostNotes: l.lostNotes,
     createdById: l.createdById,
-    createdByEmail: l.cb_email,
-    createdByName: l.cb_name,
+    createdByEmail: l.cb_email ?? "",
+    createdByName: l.cb_name ?? "Unknown analyst",
     assignedSalesExecId: l.assignedSalesExecId,
     assignedRepName: l.se_name ?? null,
   }));

@@ -30,18 +30,18 @@ export default async function TeamLeadLeadsPage({
     perPageRaw === 50 || perPageRaw === 100 ? perPageRaw : 25;
   const offset = (page - 1) * perPage;
   const rangeLabel = analystRangeSummaryLabel(null, null);
-  const { clause, params } = mtlLeadSql(session.id, null, null);
+  const { clause, params } = mtlLeadSql(session.id, null, null, "l");
 
   const mtlSelect = `SELECT l.*, cb.name AS cb_name, se.id AS se_id, se.name AS se_name
        FROM "Lead" l
-       JOIN "User" cb ON cb.id = l."createdById"
+       LEFT JOIN "User" cb ON cb.id = l."createdById"
        LEFT JOIN "User" se ON se.id = l."assignedSalesExecId"
        WHERE ${clause}
        ORDER BY l."createdAt" DESC`;
 
   const [countRows, leadRows, exportLeadRows] = await Promise.all([
     dbQuery<{ c: string }>(
-      `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${clause}`,
+      `SELECT COUNT(*)::text AS c FROM "Lead" l WHERE ${clause}`,
       params,
     ),
     dbQuery<{
@@ -56,7 +56,7 @@ export default async function TeamLeadLeadsPage({
       salesStage: string;
       execDeadlineAt: Date | null;
       assignedSalesExecId: string | null;
-      cb_name: string;
+      cb_name: string | null;
       se_id: string | null;
       se_name: string | null;
     }>(
@@ -76,7 +76,7 @@ export default async function TeamLeadLeadsPage({
       salesStage: string;
       execDeadlineAt: Date | null;
       assignedSalesExecId: string | null;
-      cb_name: string;
+      cb_name: string | null;
       se_id: string | null;
       se_name: string | null;
     }>(
@@ -107,7 +107,7 @@ export default async function TeamLeadLeadsPage({
     salesStage: l.salesStage,
     execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
     assignedSalesExecId: l.assignedSalesExecId,
-    createdBy: { name: l.cb_name },
+    createdBy: { name: l.cb_name ?? "Unknown analyst" },
     assignedSalesExec:
       l.se_id && l.se_name
         ? { id: l.se_id, name: l.se_name }
@@ -126,7 +126,7 @@ export default async function TeamLeadLeadsPage({
     leadScore: l.leadScore,
     salesStage: l.salesStage,
     execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
-    analystName: l.cb_name,
+    analystName: l.cb_name ?? "Unknown analyst",
     repName:
       l.se_id && l.se_name ? l.se_name : null,
   }));

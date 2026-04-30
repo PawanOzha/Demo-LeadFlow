@@ -15,7 +15,9 @@ export function atlLeadSql(
   from?: string | null,
   to?: string | null,
   filters?: AtlLeadSqlFilters | null,
+  leadAlias?: string,
 ): { clause: string; params: unknown[] } {
+  const c = (col: string) => (leadAlias ? `${leadAlias}."${col}"` : `"${col}"`);
   const range = leadCreatedAtRange(from, to);
   if (analystIds.length === 0) {
     return { clause: `FALSE`, params: [] };
@@ -26,12 +28,12 @@ export function atlLeadSql(
   let i = 0;
   const next = () => `$${++i}`;
 
-  parts.push(`"createdById" = ANY(${next()}::text[])`);
+  parts.push(`${c("createdById")} = ANY(${next()}::text[])`);
   params.push(analystIds);
 
   if (range) {
-    parts.push(`"createdAt" >= ${next()}::timestamp`);
-    parts.push(`"createdAt" <= ${next()}::timestamp`);
+    parts.push(`${c("createdAt")} >= ${next()}::timestamp`);
+    parts.push(`${c("createdAt")} <= ${next()}::timestamp`);
     params.push(range.gte, range.lte);
   }
 
@@ -40,19 +42,19 @@ export function atlLeadSql(
     qs &&
     (Object.values(QualificationStatus) as string[]).includes(qs)
   ) {
-    parts.push(`"qualificationStatus" = ${next()}`);
+    parts.push(`${c("qualificationStatus")} = ${next()}`);
     params.push(qs);
   }
 
   const analyst = filters?.createdById?.trim();
   if (analyst) {
-    parts.push(`"createdById" = ${next()}`);
+    parts.push(`${c("createdById")} = ${next()}`);
     params.push(analyst);
   }
 
   const src = filters?.source?.trim();
   if (src) {
-    parts.push(`"source" = ${next()}`);
+    parts.push(`${c("source")} = ${next()}`);
     params.push(src);
   }
 

@@ -31,8 +31,8 @@ type LeadDashRow = {
   lostNotes: string | null;
   createdById: string;
   assignedSalesExecId: string | null;
-  cb_name: string;
-  cb_email: string;
+  cb_name: string | null;
+  cb_email: string | null;
 };
 
 export default async function ExecutiveDashboardPage({
@@ -49,12 +49,12 @@ export default async function ExecutiveDashboardPage({
     analystRangeParams(sp),
   ]);
   const rangeLabel = analystRangeSummaryLabel(from, to);
-  const { clause, params } = execLeadSql(session.id, from, to);
+  const { clause, params } = execLeadSql(session.id, from, to, "l");
 
   const leads = await dbQuery<LeadDashRow>(
     `SELECT l.*, cb.name AS cb_name, cb.email AS cb_email
      FROM "Lead" l
-     JOIN "User" cb ON cb.id = l."createdById"
+     LEFT JOIN "User" cb ON cb.id = l."createdById"
      WHERE ${clause}
      ORDER BY l."createdAt" DESC`,
     params,
@@ -92,8 +92,8 @@ export default async function ExecutiveDashboardPage({
     notes: l.notes,
     lostNotes: l.lostNotes,
     createdById: l.createdById,
-    createdByEmail: l.cb_email,
-    createdByName: l.cb_name,
+    createdByEmail: l.cb_email ?? "",
+    createdByName: l.cb_name ?? "Unknown analyst",
     assignedSalesExecId: l.assignedSalesExecId,
     assignedRepName: session.name,
   }));

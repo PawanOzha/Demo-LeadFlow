@@ -35,7 +35,7 @@ type AtlJoinedRow = {
   createdAt: Date;
   teamId: string | null;
   assignedMainTeamLeadId: string | null;
-  cb_name: string;
+  cb_name: string | null;
   team_name: string | null;
   mtl_name: string | null;
   se_name: string | null;
@@ -59,7 +59,7 @@ function mapAtlRowsWithTimeline(
     createdAt: l.createdAt.toISOString(),
     teamId: l.teamId,
     assignedMainTeamLeadId: l.assignedMainTeamLeadId,
-    createdBy: { name: l.cb_name },
+    createdBy: { name: l.cb_name ?? "Unknown analyst" },
     team: l.team_name ? { name: l.team_name } : null,
     assignedMainTeamLead: l.mtl_name ? { name: l.mtl_name } : null,
     assignedSalesExec: l.se_name ? { name: l.se_name } : null,
@@ -94,7 +94,7 @@ function toAtlExportRows(
       leadScore: l.leadScore,
       salesStage: l.salesStage,
       createdAt: l.createdAt.toISOString(),
-      analystName: l.cb_name,
+      analystName: l.cb_name ?? "Unknown analyst",
       teamName: l.team_name,
       mtlName: l.mtl_name,
       repName: l.se_name,
@@ -156,13 +156,9 @@ export default async function AnalystTeamLeadLeadsPage({
     source: sourceFilter,
   };
 
-  const { clause, params } = atlLeadSql(analystIds, from, to, listFilters);
+  const { clause, params } = atlLeadSql(analystIds, from, to, listFilters, "l");
 
-  const { clause: sourceScopeClause, params: sourceScopeParams } = atlLeadSql(
-    analystIds,
-    from,
-    to,
-  );
+  const { clause: sourceScopeClause, params: sourceScopeParams } = atlLeadSql(analystIds, from, to, null, "l");
   const sourceOptionRows =
     analystIds.length === 0
       ? []
@@ -173,7 +169,7 @@ export default async function AnalystTeamLeadLeadsPage({
   const sourceOptions = sourceOptionRows.map((r) => r.source).filter(Boolean);
   const atlSelect = `SELECT l.*, cb.name AS cb_name, tm.name AS team_name, mtl.name AS mtl_name, se.name AS se_name
            FROM "Lead" l
-           JOIN "User" cb ON cb.id = l."createdById"
+           LEFT JOIN "User" cb ON cb.id = l."createdById"
            LEFT JOIN "Team" tm ON tm.id = l."teamId"
            LEFT JOIN "User" mtl ON mtl.id = l."assignedMainTeamLeadId"
            LEFT JOIN "User" se ON se.id = l."assignedSalesExecId"

@@ -163,8 +163,8 @@ type LeadReportRow = {
   estimatedDealValue: unknown;
   closedRevenue: unknown;
   dealCurrency: string;
-  cb_name: string;
-  cb_email: string;
+  cb_name: string | null;
+  cb_email: string | null;
   se_name: string | null;
 };
 
@@ -184,7 +184,7 @@ export async function getSuperadminReportAggregates(opts?: {
   const leadRows = await dbQuery<LeadReportRow>(
     `SELECT l.*, cb.name as cb_name, cb.email as cb_email, se.name as se_name
      FROM "Lead" l
-     INNER JOIN "User" cb ON cb.id = l."createdById"
+     LEFT JOIN "User" cb ON cb.id = l."createdById"
      LEFT JOIN "User" se ON se.id = l."assignedSalesExecId"
      ${rangeSql}
      ORDER BY l."createdAt" ASC`,
@@ -209,8 +209,8 @@ export async function getSuperadminReportAggregates(opts?: {
     createdAt: l.createdAt,
     createdBy: {
       id: l.createdById,
-      name: l.cb_name,
-      email: l.cb_email,
+      name: l.cb_name ?? "Unknown analyst",
+      email: l.cb_email ?? "",
     },
     assignedSalesExec: l.assignedSalesExecId
       ? { id: l.assignedSalesExecId, name: l.se_name ?? "" }

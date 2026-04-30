@@ -34,17 +34,17 @@ export default async function ExecutiveLeadsPage({
     perPageRaw === 50 || perPageRaw === 100 ? perPageRaw : 25;
   const offset = (page - 1) * perPage;
   const rangeLabel = analystRangeSummaryLabel(from, to);
-  const { clause, params } = execLeadSql(session.id, from, to);
+  const { clause, params } = execLeadSql(session.id, from, to, "l");
 
   const execSelect = `SELECT l.*, cb.name AS cb_name
        FROM "Lead" l
-       JOIN "User" cb ON cb.id = l."createdById"
+       LEFT JOIN "User" cb ON cb.id = l."createdById"
        WHERE ${clause}
        ORDER BY l."createdAt" DESC`;
 
   const [countRows, leadRows, exportLeadRows] = await Promise.all([
     dbQuery<{ c: string }>(
-      `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${clause}`,
+      `SELECT COUNT(*)::text AS c FROM "Lead" l WHERE ${clause}`,
       params,
     ),
     dbQuery<{
@@ -62,7 +62,7 @@ export default async function ExecutiveLeadsPage({
       estimatedDealValue: unknown;
       closedRevenue: unknown;
       dealCurrency: string;
-      cb_name: string;
+      cb_name: string | null;
     }>(
       `${execSelect}
        LIMIT ($${params.length + 1})::bigint OFFSET ($${params.length + 2})::bigint`,
@@ -83,7 +83,7 @@ export default async function ExecutiveLeadsPage({
       estimatedDealValue: unknown;
       closedRevenue: unknown;
       dealCurrency: string;
-      cb_name: string;
+      cb_name: string | null;
     }>(
       `${execSelect}
        LIMIT ($${params.length + 1})::bigint`,
@@ -103,7 +103,7 @@ export default async function ExecutiveLeadsPage({
     leadScore: l.leadScore,
     salesStage: l.salesStage,
     execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
-    createdBy: { name: l.cb_name },
+    createdBy: { name: l.cb_name ?? "Unknown analyst" },
     estimatedDealValue: coerceMoney(l.estimatedDealValue),
     closedRevenue: coerceMoney(l.closedRevenue),
     dealCurrency: l.dealCurrency?.trim() || "USD",
@@ -121,7 +121,7 @@ export default async function ExecutiveLeadsPage({
       salesStage: l.salesStage,
       execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
       createdAt: l.createdAt.toISOString(),
-      analystName: l.cb_name,
+      analystName: l.cb_name ?? "Unknown analyst",
       estimatedDealValue: coerceMoney(l.estimatedDealValue),
       closedRevenue: coerceMoney(l.closedRevenue),
       dealCurrency: l.dealCurrency?.trim() || "USD",
