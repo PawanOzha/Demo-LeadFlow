@@ -1,6 +1,7 @@
 import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
 import { analystFacingSalesLabel } from "@/lib/sales-stage-labels";
 import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import { formatDealMoney } from "@/lib/deal-money";
 
 export type PortalAnalystLeadExportRow = {
   leadName: string;
@@ -13,6 +14,9 @@ export type PortalAnalystLeadExportRow = {
   leadScore: number | null;
   salesStage: string;
   createdAt: string;
+  estimatedDealValue: number | null;
+  closedRevenue: number | null;
+  dealCurrency: string;
 };
 
 export type PortalAtlLeadExportRow = {
@@ -47,6 +51,9 @@ export type PortalExecLeadExportRow = {
   execDeadlineAt: string | null;
   createdAt: string;
   analystName: string;
+  estimatedDealValue: number | null;
+  closedRevenue: number | null;
+  dealCurrency: string;
 };
 
 export type PortalMtlLeadExportRow = {
@@ -81,6 +88,9 @@ export type PortalSuperadminLeadExportRow = {
   mtlLabel: string | null;
   execLabel: string | null;
   handoffSummary: string;
+  estimatedDealValue: number | null;
+  closedRevenue: number | null;
+  dealCurrency: string;
 };
 
 function exportSummaryExtras(opts: {
@@ -137,6 +147,9 @@ export function buildAnalystLeadsExportPayload(
     "Qualification",
     "Score",
     "Sales stage",
+    "Deal estimate",
+    "Closed revenue",
+    "Currency",
     "Analyst notes",
     "Executive notes",
     "Added",
@@ -150,6 +163,9 @@ export function buildAnalystLeadsExportPayload(
     String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—",
     l.leadScore ?? "—",
     analystFacingSalesLabel(l.salesStage),
+    formatDealMoney(l.estimatedDealValue, l.dealCurrency),
+    formatDealMoney(l.closedRevenue, l.dealCurrency),
+    l.dealCurrency ?? "USD",
     l.notes ?? "—",
     l.lostNotes ?? "—",
     l.createdAt ? new Date(l.createdAt).toLocaleString() : "—",
@@ -273,6 +289,9 @@ export function buildExecLeadsExportPayload(
     "Score",
     "Deadline",
     "Stage",
+    "Deal estimate",
+    "Closed revenue",
+    "Currency",
     "Analyst notes",
     "Lost-deal notes",
     "Added",
@@ -287,6 +306,9 @@ export function buildExecLeadsExportPayload(
     l.leadScore ?? "—",
     l.execDeadlineAt ? new Date(l.execDeadlineAt).toLocaleString() : "—",
     analystFacingSalesLabel(l.salesStage),
+    formatDealMoney(l.estimatedDealValue, l.dealCurrency),
+    formatDealMoney(l.closedRevenue, l.dealCurrency),
+    l.dealCurrency ?? "USD",
     l.notes ?? "—",
     l.lostNotes ?? "—",
     l.createdAt ? new Date(l.createdAt).toLocaleString() : "—",
@@ -393,6 +415,9 @@ export function buildSuperadminLeadsExportPayload(
     "Qualification",
     "Score",
     "Sales stage",
+    "Deal estimate",
+    "Closed revenue",
+    "Currency",
     "Created",
     "Lead analyst",
     "Team",
@@ -413,6 +438,9 @@ export function buildSuperadminLeadsExportPayload(
     String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—",
     l.leadScore ?? "—",
     analystFacingSalesLabel(l.salesStage),
+    formatDealMoney(l.estimatedDealValue, l.dealCurrency),
+    formatDealMoney(l.closedRevenue, l.dealCurrency),
+    l.dealCurrency ?? "USD",
     l.createdAt ? new Date(l.createdAt).toLocaleString() : "—",
     l.createdByLabel,
     l.teamName ?? "—",

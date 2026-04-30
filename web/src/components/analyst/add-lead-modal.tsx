@@ -16,6 +16,7 @@ import { AnalystPhoneField } from "@/components/analyst/analyst-phone-field";
 import { LEAD_SOURCE_OPTIONS } from "@/lib/lead-sources";
 import { countryNameFromPhone } from "@/lib/phone-location";
 import { QUALIFICATION_REASON_BY_STATUS } from "@/lib/qualification-reasons";
+import { DEAL_CURRENCY_OPTIONS } from "@/lib/deal-money";
 
 export const ANALYST_OPEN_ADD_LEAD_EVENT = "leadflow:analyst-open-add-lead";
 
@@ -324,6 +325,41 @@ function AddLeadModalInner({
               onChange={(e) => setScore(Number(e.target.value))}
               className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-lf-bg accent-lf-accent"
             />
+          </div>
+
+          <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
+              Deal value (optional)
+            </p>
+            <p className="mb-3 text-[11px] leading-relaxed text-gray-500">
+              Pipeline estimate for reporting. Final revenue is entered when the
+              deal is marked won.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col">
+                <FieldLabel>Estimated amount</FieldLabel>
+                <input
+                  name="estimatedDealValue"
+                  inputMode="decimal"
+                  placeholder="e.g. 15000"
+                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                />
+              </label>
+              <label className="flex flex-col">
+                <FieldLabel>Currency</FieldLabel>
+                <select
+                  name="dealCurrency"
+                  defaultValue="USD"
+                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                >
+                  {DEAL_CURRENCY_OPTIONS.map((o) => (
+                    <option key={o.code} value={o.code}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
 
           <label className="mt-6 flex flex-col">

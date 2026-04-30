@@ -4,6 +4,7 @@ import { QualificationStatus, SalesStage, UserRole } from "@/lib/constants";
 import { leadCreatedAtRange } from "@/lib/analyst-date-range";
 import { resolveLeadCity, resolveLeadCountry } from "@/lib/phone-location";
 import type { SuperadminLeadsWhereSql } from "@/lib/superadmin-leads-filters";
+import { coerceMoney } from "@/lib/deal-money";
 
 const ACTIVE_ROLES = [
   UserRole.LEAD_ANALYST,
@@ -21,6 +22,8 @@ export async function getSuperadminDashboardMetrics() {
     irrelevantRow,
     teamGroups,
     execGroups,
+    closedRevenueSumRow,
+    pipelineEstimateSumRow,
   ] = await Promise.all([
     dbQuery<{ c: string }>(
       `SELECT COUNT(*)::text as c FROM "User" WHERE role = ANY($1::text[])`,
@@ -44,6 +47,13 @@ export async function getSuperadminDashboardMetrics() {
     ),
     dbQuery<{ assignedSalesExecId: string | null; c: string }>(
       `SELECT "assignedSalesExecId", COUNT(*)::text as c FROM "Lead" WHERE "assignedSalesExecId" IS NOT NULL GROUP BY "assignedSalesExecId"`,
+    ),
+    dbQuery<{ s: string | null }>(
+      `SELECT COALESCE(SUM("closedRevenue"), 0)::text AS s FROM "Lead" WHERE "salesStage" = $1 AND "closedRevenue" IS NOT NULL`,
+      [SalesStage.CLOSED_WON],
+    ),
+    dbQuery<{ s: string | null }>(
+      `SELECT COALESCE(SUM("estimatedDealValue"), 0)::text AS s FROM "Lead" WHERE "estimatedDealValue" IS NOT NULL`,
     ),
   ]);
 
@@ -92,6 +102,9 @@ export async function getSuperadminDashboardMetrics() {
     count: Number(g.c),
   }));
 
+  const totalClosedRevenue = Number(closedRevenueSumRow[0]?.s ?? 0);
+  const totalPipelineEstimate = Number(pipelineEstimateSumRow[0]?.s ?? 0);
+
   return {
     activeUsers,
     totalLeads,
@@ -100,6 +113,8 @@ export async function getSuperadminDashboardMetrics() {
     irrelevant,
     leadsByTeam,
     leadsBySalesExec,
+    totalClosedRevenue,
+    totalPipelineEstimate,
   };
 }
 
@@ -145,6 +160,9 @@ type LeadReportRow = {
   createdAt: Date;
   createdById: string;
   assignedSalesExecId: string | null;
+  estimatedDealValue: unknown;
+  closedRevenue: unknown;
+  dealCurrency: string;
   cb_name: string;
   cb_email: string;
   se_name: string | null;
@@ -197,6 +215,9 @@ export async function getSuperadminReportAggregates(opts?: {
     assignedSalesExec: l.assignedSalesExecId
       ? { id: l.assignedSalesExecId, name: l.se_name ?? "" }
       : null,
+    estimatedDealValue: coerceMoney(l.estimatedDealValue),
+    closedRevenue: coerceMoney(l.closedRevenue),
+    dealCurrency: l.dealCurrency?.trim() || "USD",
   }));
 
   let closedWon = 0;
@@ -236,6 +257,17 @@ export async function getSuperadminReportAggregates(opts?: {
   const total = leads.length;
   const closedTotal = closedWon + closedLost;
 
+  let totalClosedRevenueInRange = 0;
+  let totalEstimatedPipelineInRange = 0;
+  for (const l of leads) {
+    if (l.salesStage === SalesStage.CLOSED_WON && l.closedRevenue != null) {
+      totalClosedRevenueInRange += l.closedRevenue;
+    }
+    if (l.estimatedDealValue != null) {
+      totalEstimatedPipelineInRange += l.estimatedDealValue;
+    }
+  }
+
   const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
   const pctClosed = (n: number) =>
     closedTotal > 0 ? (n / closedTotal) * 100 : 0;
@@ -247,6 +279,8 @@ export async function getSuperadminReportAggregates(opts?: {
     irrelevant,
     closedWon,
     closedLost,
+    totalClosedRevenueInRange,
+    totalEstimatedPipelineInRange,
     qualifiedRatio: pct(qualified),
     notQualifiedRatio: pct(notQualified),
     irrelevantRatio: pct(irrelevant),
@@ -297,6 +331,9 @@ type LeadDbRow = {
   execAssignedAt: Date | null;
   execDeadlineAt: Date | null;
   closedAt: Date | null;
+  estimatedDealValue: unknown;
+  closedRevenue: unknown;
+  dealCurrency: string;
   internalReassignCount: number;
   createdAt: Date;
   updatedAt: Date;

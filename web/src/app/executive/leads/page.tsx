@@ -12,6 +12,7 @@ import { ExecLeadsTableClient } from "@/components/portal-leads/exec-leads-table
 import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
 import type { PortalExecLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
+import { coerceMoney } from "@/lib/deal-money";
 
 export default async function ExecutiveLeadsPage({
   searchParams,
@@ -58,6 +59,9 @@ export default async function ExecutiveLeadsPage({
       salesStage: string;
       execDeadlineAt: Date | null;
       createdAt: Date;
+      estimatedDealValue: unknown;
+      closedRevenue: unknown;
+      dealCurrency: string;
       cb_name: string;
     }>(
       `${execSelect}
@@ -76,6 +80,9 @@ export default async function ExecutiveLeadsPage({
       salesStage: string;
       execDeadlineAt: Date | null;
       createdAt: Date;
+      estimatedDealValue: unknown;
+      closedRevenue: unknown;
+      dealCurrency: string;
       cb_name: string;
     }>(
       `${execSelect}
@@ -97,6 +104,9 @@ export default async function ExecutiveLeadsPage({
     salesStage: l.salesStage,
     execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
     createdBy: { name: l.cb_name },
+    estimatedDealValue: coerceMoney(l.estimatedDealValue),
+    closedRevenue: coerceMoney(l.closedRevenue),
+    dealCurrency: l.dealCurrency?.trim() || "USD",
   }));
 
   const execExportLeads: PortalExecLeadExportRow[] = exportLeadRows.map(
@@ -112,6 +122,9 @@ export default async function ExecutiveLeadsPage({
       execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
       createdAt: l.createdAt.toISOString(),
       analystName: l.cb_name,
+      estimatedDealValue: coerceMoney(l.estimatedDealValue),
+      closedRevenue: coerceMoney(l.closedRevenue),
+      dealCurrency: l.dealCurrency?.trim() || "USD",
     }),
   );
 

@@ -13,6 +13,7 @@ import {
   superadminHandoffLabels,
   superadminRoleLabel,
 } from "@/lib/superadmin-ui";
+import { formatDealMoney } from "@/lib/deal-money";
 
 type JourneyLog = {
   id: string;
@@ -51,6 +52,9 @@ type JourneyLead = {
     maxGroupSize: number;
   } | null;
   handoffLogs: JourneyLog[];
+  estimatedDealValue: number | null;
+  closedRevenue: number | null;
+  dealCurrency: string;
 };
 
 type AnalystGroup = {
@@ -147,6 +151,7 @@ export function SuperadminLeadsJourneyClient({
   const router = useRouter();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDealValueColumns, setShowDealValueColumns] = useState(true);
   const [singleState, singleFormAction, singlePending] = useActionState(
     superadminDeleteLeadFormAction,
     undefined,
@@ -210,18 +215,29 @@ export function SuperadminLeadsJourneyClient({
       <div className="space-y-8">
         <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-surface to-lf-bg p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="inline-flex items-center gap-2 text-sm text-lf-text-secondary">
-              <input
-                type="checkbox"
-                checked={isAllSelected}
-                onChange={(e) => {
-                  if (e.target.checked) setSelectedIds(new Set(allLeadIds));
-                  else setSelectedIds(new Set());
-                }}
-                className="h-4 w-4 rounded border-lf-border"
-              />
-              Select all visible leads
-            </label>
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="inline-flex items-center gap-2 text-sm text-lf-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedIds(new Set(allLeadIds));
+                    else setSelectedIds(new Set());
+                  }}
+                  className="h-4 w-4 rounded border-lf-border"
+                />
+                Select all visible leads
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-lf-text-secondary">
+                <input
+                  type="checkbox"
+                  checked={showDealValueColumns}
+                  onChange={(e) => setShowDealValueColumns(e.target.checked)}
+                  className="h-4 w-4 rounded border-lf-border"
+                />
+                Show deal value columns
+              </label>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-lg border border-lf-border bg-lf-bg/70 px-2.5 py-1 text-xs font-medium text-lf-text-secondary">
                 Selected: {selectedCount}
@@ -265,7 +281,7 @@ export function SuperadminLeadsJourneyClient({
         {analystGroups.map(({ analyst, leads }) => (
           <section key={analyst.id} className="space-y-4">
             <div className="overflow-x-auto rounded-xl border border-lf-border bg-lf-surface/90 shadow-sm">
-              <table className="min-w-[1260px] w-full table-fixed divide-y divide-lf-border text-sm">
+              <table className="min-w-[1480px] w-full table-fixed divide-y divide-lf-border text-sm">
                 <thead className="bg-lf-bg/70 text-left text-xs uppercase tracking-wide text-lf-subtle">
                   <tr>
                     <th className="w-[44px] px-4 py-3 font-semibold">
@@ -277,6 +293,16 @@ export function SuperadminLeadsJourneyClient({
                     <th className="w-[170px] px-4 py-3 font-semibold">Duplicate check</th>
                     <th className="w-[120px] px-4 py-3 font-semibold">Status</th>
                     <th className="w-[150px] px-4 py-3 font-semibold">Stage</th>
+                    {showDealValueColumns ? (
+                      <>
+                        <th className="w-[120px] px-4 py-3 font-semibold">
+                          Est. value
+                        </th>
+                        <th className="w-[120px] px-4 py-3 font-semibold">
+                          Closed revenue
+                        </th>
+                      </>
+                    ) : null}
                     <th className="w-[130px] px-4 py-3 font-semibold">Team</th>
                     <th className="w-[160px] px-4 py-3 font-semibold">Sales executive</th>
                   </tr>
@@ -352,6 +378,22 @@ export function SuperadminLeadsJourneyClient({
                       <td className="px-4 py-3">
                         {analystFacingSalesLabel(lead.salesStage)}
                       </td>
+                      {showDealValueColumns ? (
+                        <>
+                          <td className="px-4 py-3 text-xs tabular-nums text-lf-text-secondary">
+                            {formatDealMoney(
+                              lead.estimatedDealValue,
+                              lead.dealCurrency,
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs tabular-nums text-lf-text-secondary">
+                            {formatDealMoney(
+                              lead.closedRevenue,
+                              lead.dealCurrency,
+                            )}
+                          </td>
+                        </>
+                      ) : null}
                       <td className="px-4 py-3">{lead.team?.name ?? "—"}</td>
                       <td className="px-4 py-3">
                         {lead.assignedSalesExec?.name ?? "—"}
@@ -456,6 +498,24 @@ export function SuperadminLeadsJourneyClient({
               <dt>Lead score</dt>
               <dd className="text-lf-text-secondary">
                 {selected.lead.leadScore ?? "—"}
+              </dd>
+              <dt>Pipeline estimate</dt>
+              <dd className="text-lf-text-secondary">
+                {formatDealMoney(
+                  selected.lead.estimatedDealValue,
+                  selected.lead.dealCurrency,
+                )}
+              </dd>
+              <dt>Closed revenue</dt>
+              <dd className="text-lf-text-secondary">
+                {formatDealMoney(
+                  selected.lead.closedRevenue,
+                  selected.lead.dealCurrency,
+                )}
+              </dd>
+              <dt>Deal currency</dt>
+              <dd className="text-lf-text-secondary">
+                {selected.lead.dealCurrency || "USD"}
               </dd>
               <dt>Main team lead</dt>
               <dd className="text-lf-text-secondary">

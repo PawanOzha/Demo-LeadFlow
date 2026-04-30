@@ -5,6 +5,7 @@ import { dbQuery, dbQueryOne } from "@/lib/db/pool";
 import { getSession } from "@/lib/auth/session";
 import { LeadHandoffAction, SalesStage, UserRole } from "@/lib/constants";
 import { logLeadHandoff } from "@/lib/lead-handoff-log";
+import { parseRequiredMoney } from "@/lib/deal-money";
 
 export async function updateLeadSalesOutcome(formData: FormData) {
   const session = await getSession();
@@ -15,14 +16,18 @@ export async function updateLeadSalesOutcome(formData: FormData) {
   const leadId = String(formData.get("leadId") ?? "");
   const salesStage = String(formData.get("salesStage") ?? "");
   const lostNotesRaw = String(formData.get("lostNotes") ?? "").trim();
+  const closedRevenueRaw = String(formData.get("closedRevenue") ?? "").trim();
 
   if (!leadId) return { error: "Lead is required." };
   if (salesStage !== SalesStage.CLOSED_WON && salesStage !== SalesStage.CLOSED_LOST) {
     return { error: "Invalid status." };
   }
 
-  const lead = await dbQueryOne<{ assignedSalesExecId: string | null }>(
-    `SELECT "assignedSalesExecId" FROM "Lead" WHERE id = $1`,
+  const lead = await dbQueryOne<{
+    assignedSalesExecId: string | null;
+    dealCurrency: string | null;
+  }>(
+    `SELECT "assignedSalesExecId", "dealCurrency" FROM "Lead" WHERE id = $1`,
     [leadId],
   );
   if (!lead) return { error: "Lead not found." };
@@ -36,6 +41,15 @@ export async function updateLeadSalesOutcome(formData: FormData) {
     };
   }
 
+  let closedRevenue: number | null = null;
+  if (salesStage === SalesStage.CLOSED_WON) {
+    const parsed = parseRequiredMoney(closedRevenueRaw);
+    if (typeof parsed !== "number") {
+      return { error: parsed.error };
+    }
+    closedRevenue = parsed;
+  }
+
   const now = new Date();
   await dbQuery(
     `UPDATE "Lead" SET
@@ -43,16 +57,19 @@ export async function updateLeadSalesOutcome(formData: FormData) {
       "closedAt" = $2,
       "execDeadlineAt" = NULL,
       "lostNotes" = $3,
+      "closedRevenue" = $4,
       "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $4`,
+     WHERE id = $5`,
     [
       salesStage,
       now,
       salesStage === SalesStage.CLOSED_LOST ? lostNotesRaw : null,
+      closedRevenue,
       leadId,
     ],
   );
 
+  const currency = lead.dealCurrency?.trim() || "USD";
   await logLeadHandoff({
     leadId,
     action:
@@ -63,7 +80,7 @@ export async function updateLeadSalesOutcome(formData: FormData) {
     detail:
       salesStage === SalesStage.CLOSED_LOST
         ? `Lost · ${lostNotesRaw.slice(0, 200)}`
-        : "Won",
+        : `Won · ${closedRevenue != null ? `${currency} ${closedRevenue}` : ""}`,
   });
 
   revalidatePath("/executive");

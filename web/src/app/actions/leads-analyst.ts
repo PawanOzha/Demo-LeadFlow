@@ -21,6 +21,10 @@ import {
   isAllowedQualificationReason,
   joinNotesWithQualificationReason,
 } from "@/lib/qualification-reasons";
+import {
+  normalizeDealCurrency,
+  parseOptionalMoney,
+} from "@/lib/deal-money";
 
 const SOURCE_VALUES = new Set(
   LEAD_SOURCE_OPTIONS.map((o) => o.value as LeadSourceValue),
@@ -94,6 +98,13 @@ export async function createLeadAnalyst(formData: FormData) {
   const leadScore = scoreRaw === "" ? null : Number.parseInt(scoreRaw, 10);
   const leadAddedDateRaw = String(formData.get("leadAddedDate") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim() || null;
+  const estimatedRaw = String(formData.get("estimatedDealValue") ?? "");
+  const dealCurrency = normalizeDealCurrency(
+    String(formData.get("dealCurrency") ?? ""),
+  );
+  const estimatedParsed = parseOptionalMoney(estimatedRaw);
+  if (!estimatedParsed.ok) return { error: estimatedParsed.error };
+  const estimatedDealValue = estimatedParsed.value;
 
   if (!leadName) return { error: "Full name is required." };
   if (!phone) {
@@ -153,10 +164,12 @@ export async function createLeadAnalyst(formData: FormData) {
     await dbQuery(
       `INSERT INTO "Lead" (
         id, "leadName", phone, "leadEmail", country, city, source, "sourceWebsiteName", "sourceMetaProfileName",
-        notes, "qualificationStatus", "leadScore", "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount"
+        notes, "qualificationStatus", "leadScore", "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount",
+        "estimatedDealValue", "dealCurrency"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP, 0
+        $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP, 0,
+        $16, $17
       )`,
       [
         leadId,
@@ -174,16 +187,20 @@ export async function createLeadAnalyst(formData: FormData) {
         SalesStage.PRE_SALES,
         session.id,
         createdAt,
+        estimatedDealValue,
+        dealCurrency,
       ],
     );
   } else {
     await dbQuery(
       `INSERT INTO "Lead" (
         id, "leadName", phone, "leadEmail", country, city, source, "sourceWebsiteName", "sourceMetaProfileName",
-        notes, "qualificationStatus", "leadScore", "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount"
+        notes, "qualificationStatus", "leadScore", "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount",
+        "estimatedDealValue", "dealCurrency"
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
+        $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0,
+        $15, $16
       )`,
       [
         leadId,
@@ -200,6 +217,8 @@ export async function createLeadAnalyst(formData: FormData) {
         leadScore,
         SalesStage.PRE_SALES,
         session.id,
+        estimatedDealValue,
+        dealCurrency,
       ],
     );
   }

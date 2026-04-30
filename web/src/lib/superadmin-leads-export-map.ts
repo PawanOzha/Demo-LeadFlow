@@ -1,6 +1,7 @@
 import type { JourneyLead } from "@/lib/superadmin-stats";
 import type { PortalSuperadminLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { parseDbDate } from "@/lib/analyst-ui";
+import { coerceMoney } from "@/lib/deal-money";
 
 function toIsoOrEmpty(value: unknown): string {
   const d = parseDbDate(value);
@@ -44,6 +45,9 @@ export function flattenSuperadminJourneyGroupsForExport(
           ? `${lead.assignedSalesExec.name} (${lead.assignedSalesExec.email})`
           : null,
         handoffSummary,
+        estimatedDealValue: coerceMoney(lead.estimatedDealValue),
+        closedRevenue: coerceMoney(lead.closedRevenue),
+        dealCurrency: lead.dealCurrency?.trim() || "USD",
       });
     }
   }

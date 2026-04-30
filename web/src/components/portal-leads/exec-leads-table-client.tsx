@@ -14,6 +14,7 @@ import { buildExecLeadsExportPayload } from "@/lib/portal-all-leads-export-paylo
 import type { PortalExecLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { portalDataTableScrollClass } from "@/lib/app-shell-ui";
 import { PortalLeadsTableScrollHint } from "@/components/portal-leads/portal-leads-table-scroll-hint";
+import { formatDealMoney } from "@/lib/deal-money";
 
 export type ExecLeadRow = {
   id: string;
@@ -27,6 +28,9 @@ export type ExecLeadRow = {
   salesStage: string;
   execDeadlineAt: string | null;
   createdBy: { name: string };
+  estimatedDealValue: number | null;
+  closedRevenue: number | null;
+  dealCurrency: string;
 };
 
 export function ExecLeadsTableClient({
@@ -88,7 +92,7 @@ export function ExecLeadsTableClient({
         aria-label="My leads table"
         tabIndex={0}
       >
-        <table className="w-full min-w-[1100px] border-collapse text-[13px]">
+        <table className="w-full min-w-[1280px] border-collapse text-[13px]">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
@@ -99,6 +103,8 @@ export function ExecLeadsTableClient({
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Score</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Deadline</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Stage</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Est. value</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Closed revenue</th>
               <th className="max-w-[28rem] min-w-0 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 Analyst notes
               </th>
@@ -110,7 +116,7 @@ export function ExecLeadsTableClient({
             {leads.length === 0 ? (
               <tr>
                 <td
-                  colSpan={11}
+                  colSpan={13}
                   className="px-4 py-16 text-center text-[13px] text-gray-400"
                 >
                   No leads in this range.
@@ -119,7 +125,7 @@ export function ExecLeadsTableClient({
             ) : filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={11}
+                  colSpan={13}
                   className="px-4 py-16 text-center text-[13px] text-gray-400"
                 >
                   {hasQuery
@@ -167,6 +173,18 @@ export function ExecLeadsTableClient({
                     <td className="px-4 py-3 text-lf-muted">
                       {lead.salesStage.replaceAll("_", " ")}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs tabular-nums text-lf-muted">
+                      {formatDealMoney(
+                        lead.estimatedDealValue,
+                        lead.dealCurrency,
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs tabular-nums text-lf-muted">
+                      {formatDealMoney(
+                        lead.closedRevenue,
+                        lead.dealCurrency,
+                      )}
+                    </td>
                     <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top">
                       <AnalystNotesReadonly notes={lead.notes} />
                     </td>
@@ -182,7 +200,11 @@ export function ExecLeadsTableClient({
                     </td>
                     <td className="px-4 py-3">
                       {active ? (
-                        <UpdateOutcomeForm leadId={lead.id} />
+                        <UpdateOutcomeForm
+                          leadId={lead.id}
+                          dealCurrency={lead.dealCurrency}
+                          estimatedDealValue={lead.estimatedDealValue}
+                        />
                       ) : (
                         <span className="text-xs text-lf-subtle">—</span>
                       )}

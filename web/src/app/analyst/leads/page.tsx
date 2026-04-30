@@ -15,6 +15,7 @@ import type { PortalAnalystLeadExportRow } from "@/lib/portal-all-leads-export-p
 import { AnalystAllLeadsTableClient } from "@/components/portal-leads/analyst-all-leads-table-client";
 import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import { timedServerBlock } from "@/lib/server/log";
+import { coerceMoney } from "@/lib/deal-money";
 
 export default async function AnalystAllLeadsPage({
   searchParams,
@@ -58,6 +59,9 @@ export default async function AnalystAllLeadsPage({
           leadScore: number | null;
           salesStage: string;
           createdAt: Date;
+          estimatedDealValue: unknown;
+          closedRevenue: unknown;
+          dealCurrency: string;
         }>(
           `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "createdAt" DESC LIMIT ($${params.length + 1})::bigint OFFSET ($${params.length + 2})::bigint`,
           [...params, perPage, offset],
@@ -74,6 +78,9 @@ export default async function AnalystAllLeadsPage({
           leadScore: number | null;
           salesStage: string;
           createdAt: Date;
+          estimatedDealValue: unknown;
+          closedRevenue: unknown;
+          dealCurrency: string;
         }>(
           `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "createdAt" DESC LIMIT ($${params.length + 1})::bigint`,
           [...params, PORTAL_LEADS_EXPORT_ROW_CAP],
@@ -94,6 +101,9 @@ export default async function AnalystAllLeadsPage({
     leadScore: l.leadScore,
     salesStage: l.salesStage,
     createdAt: l.createdAt.toISOString(),
+    estimatedDealValue: coerceMoney(l.estimatedDealValue),
+    closedRevenue: coerceMoney(l.closedRevenue),
+    dealCurrency: l.dealCurrency?.trim() || "USD",
   }));
 
   const analystExportLeads: PortalAnalystLeadExportRow[] = exportLeads.map(
@@ -108,6 +118,9 @@ export default async function AnalystAllLeadsPage({
       leadScore: l.leadScore,
       salesStage: l.salesStage,
       createdAt: l.createdAt.toISOString(),
+      estimatedDealValue: coerceMoney(l.estimatedDealValue),
+      closedRevenue: coerceMoney(l.closedRevenue),
+      dealCurrency: l.dealCurrency?.trim() || "USD",
     }),
   );
 

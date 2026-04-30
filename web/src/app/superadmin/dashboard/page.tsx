@@ -158,7 +158,7 @@ export default async function SuperadminDashboardPage({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           label="Active users"
           value={metrics.activeUsers}
@@ -168,6 +168,25 @@ export default async function SuperadminDashboardPage({
         <StatCard label="Qualified leads" value={metrics.qualified} />
         <StatCard label="Not qualified" value={metrics.notQualified} />
         <StatCard label="Irrelevant leads" value={metrics.irrelevant} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StatCard
+          label="Total closed revenue"
+          value={metrics.totalClosedRevenue.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}
+          hint="Sum of closed revenue on won deals (numeric sum — align currency across deals for reporting)."
+        />
+        <StatCard
+          label="Total pipeline estimate"
+          value={metrics.totalPipelineEstimate.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}
+          hint="Sum of optional analyst estimates at lead creation."
+        />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">

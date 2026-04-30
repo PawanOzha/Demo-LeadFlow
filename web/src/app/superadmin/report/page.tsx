@@ -122,6 +122,25 @@ export default async function SuperadminReportPage({
         closedLost={r.closedLost}
       />
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <RatioCard
+          label="Closed revenue (date range)"
+          value={r.totalClosedRevenueInRange.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}
+          sub="Sum of closed revenue on won leads in range. Mixed currencies are summed numerically."
+        />
+        <RatioCard
+          label="Pipeline estimate (date range)"
+          value={r.totalEstimatedPipelineInRange.toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          })}
+          sub="Sum of analyst deal estimates for leads created in this range."
+        />
+      </div>
+
       <SuperadminReportHistograms
         scoreHistogram={r.scoreHistogram}
         createdByMonth={r.createdByMonth}

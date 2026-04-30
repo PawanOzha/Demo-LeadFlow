@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SuperadminLeadsFiltersBar } from "@/components/superadmin/superadmin-leads-filters";
-import { UserRole } from "@/lib/constants";
+import { SalesStage, UserRole } from "@/lib/constants";
+import { coerceMoney } from "@/lib/deal-money";
 import { getSuperadminLeadsWithJourney } from "@/lib/superadmin-stats";
 import {
   buildSuperadminLeadsWhereSql,
@@ -80,6 +81,33 @@ function PaginationBar({
   );
 }
 
+function RevenueSummaryCard({
+  title,
+  amount,
+  hint,
+}: {
+  title: string;
+  amount: number;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-gray-500">
+        {title}
+      </p>
+      <p className="mt-2 text-[22px] font-semibold tracking-tight text-gray-900 tabular-nums">
+        {amount.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })}
+      </p>
+      {hint ? (
+        <p className="mt-1 text-[11px] text-gray-400">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
 function QualSummaryCard({
   title,
   count,
@@ -119,8 +147,17 @@ export default async function SuperadminLeadsPage({
   const perPage = parsed.perPage;
   const offset = (page - 1) * perPage;
 
-  const [teams, execs, analysts, counts, paged, exportPack, duplicateRows] =
-    await timedServerBlock("route:/superadmin/leads page:queries", () =>
+  const [
+    teams,
+    execs,
+    analysts,
+    counts,
+    paged,
+    exportPack,
+    duplicateRows,
+    closedRevFiltered,
+    pipelineEstFiltered,
+  ] = await timedServerBlock("route:/superadmin/leads page:queries", () =>
       Promise.all([
         dbQuery<{ id: string; name: string }>(
           `SELECT id, name FROM "Team" ORDER BY name ASC`,
@@ -173,6 +210,14 @@ export default async function SuperadminLeadsPage({
            JOIN phone_dups pd ON pd.phone_key = f.phone_key`,
           where.params,
         ),
+        dbQuery<{ s: string | null }>(
+          `SELECT COALESCE(SUM("closedRevenue"), 0)::text AS s FROM "Lead" WHERE ${where.clause} AND "salesStage" = $${where.params.length + 1} AND "closedRevenue" IS NOT NULL`,
+          [...where.params, SalesStage.CLOSED_WON],
+        ),
+        dbQuery<{ s: string | null }>(
+          `SELECT COALESCE(SUM("estimatedDealValue"), 0)::text AS s FROM "Lead" WHERE ${where.clause} AND "estimatedDealValue" IS NOT NULL`,
+          where.params,
+        ),
       ]),
     );
   const qualTotals = {
@@ -183,6 +228,8 @@ export default async function SuperadminLeadsPage({
   const totalCount = Number(counts[0]?.total ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
   const analystGroups = paged.analystGroups;
+  const filteredClosedRevenueTotal = Number(closedRevFiltered[0]?.s ?? 0);
+  const filteredPipelineEstimateTotal = Number(pipelineEstFiltered[0]?.s ?? 0);
 
   const teamMeta = parsed.teamId
     ? teams.find((t) => t.id === parsed.teamId)
@@ -252,6 +299,9 @@ export default async function SuperadminLeadsPage({
       execAssignedAt: lead.execAssignedAt?.toISOString() ?? null,
       execDeadlineAt: lead.execDeadlineAt?.toISOString() ?? null,
       closedAt: lead.closedAt?.toISOString() ?? null,
+      estimatedDealValue: coerceMoney(lead.estimatedDealValue),
+      closedRevenue: coerceMoney(lead.closedRevenue),
+      dealCurrency: lead.dealCurrency?.trim() || "USD",
       internalReassignCount: lead.internalReassignCount,
       assignedMainTeamLead: lead.assignedMainTeamLead,
       team: lead.team,
@@ -318,6 +368,19 @@ export default async function SuperadminLeadsPage({
           title="Irrelevant"
           count={qualTotals.irrelevant}
           accent="muted"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <RevenueSummaryCard
+          title="Closed revenue (current filters)"
+          amount={filteredClosedRevenueTotal}
+          hint="Sum of closed revenue on won leads in this view. Amounts in different currencies are summed numerically."
+        />
+        <RevenueSummaryCard
+          title="Pipeline estimate (current filters)"
+          amount={filteredPipelineEstimateTotal}
+          hint="Sum of analyst deal estimates for leads in this view."
         />
       </div>
 

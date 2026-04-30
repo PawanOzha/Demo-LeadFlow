@@ -15,6 +15,7 @@ import { buildAnalystLeadsExportPayload } from "@/lib/portal-all-leads-export-pa
 import type { PortalAnalystLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { portalDataTableScrollClass } from "@/lib/app-shell-ui";
 import { PortalLeadsTableScrollHint } from "@/components/portal-leads/portal-leads-table-scroll-hint";
+import { formatDealMoney } from "@/lib/deal-money";
 
 export type AnalystAllLeadsRow = {
   id: string;
@@ -28,6 +29,9 @@ export type AnalystAllLeadsRow = {
   leadScore: number | null;
   salesStage: string;
   createdAt: string;
+  estimatedDealValue: number | null;
+  closedRevenue: number | null;
+  dealCurrency: string;
 };
 
 export function AnalystAllLeadsTableClient({
@@ -93,7 +97,7 @@ export function AnalystAllLeadsTableClient({
         aria-label="Your leads table"
         tabIndex={0}
       >
-          <table className="w-full min-w-[1000px] border-collapse text-[13px]">
+          <table className="w-full min-w-[1180px] border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
@@ -103,6 +107,8 @@ export function AnalystAllLeadsTableClient({
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Qualification</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Score</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sales status</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Est. value</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Closed revenue</th>
                 <th className="max-w-[28rem] min-w-[11rem] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                   Your notes
                 </th>
@@ -114,7 +120,7 @@ export function AnalystAllLeadsTableClient({
               {leads.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={12}
                     className="px-4 py-16 text-center text-[13px] text-gray-400"
                   >
                     {from || to
@@ -125,7 +131,7 @@ export function AnalystAllLeadsTableClient({
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={10}
+                    colSpan={12}
                     className="px-4 py-16 text-center text-[13px] text-gray-400"
                   >
                     {hasQuery
@@ -169,6 +175,12 @@ export function AnalystAllLeadsTableClient({
                     </td>
                     <td className="px-4 py-3 text-[13px] text-gray-700">
                       {analystFacingSalesLabel(l.salesStage)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-700">
+                      {formatDealMoney(l.estimatedDealValue, l.dealCurrency)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-700">
+                      {formatDealMoney(l.closedRevenue, l.dealCurrency)}
                     </td>
                     <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top text-[13px] text-gray-700">
                       <AnalystNotesReadonly notes={l.notes} />
