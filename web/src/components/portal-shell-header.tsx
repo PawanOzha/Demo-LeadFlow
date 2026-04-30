@@ -90,7 +90,7 @@ export function PortalShellHeader({
 
   if (!showBrand) {
     return (
-      <header className="sticky top-0 z-20 w-full shrink-0 border-b border-lf-border bg-lf-header/95 px-4 py-3.5 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
+      <header className="sticky top-0 z-20 flex h-14 min-h-14 w-full shrink-0 items-center border-b border-lf-border bg-lf-header/95 px-4 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
         <div className="flex w-full items-center justify-end">{userCluster}</div>
       </header>
     );
@@ -98,7 +98,7 @@ export function PortalShellHeader({
 
   return (
     <header className="sticky top-0 z-20 w-full shrink-0 border-b border-lf-border bg-lf-header/95 shadow-sm shadow-black/[0.06] backdrop-blur-sm">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
+      <div className="mx-auto flex h-14 min-h-14 max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6">
         {logoRight ? (
           <>
             {userCluster}

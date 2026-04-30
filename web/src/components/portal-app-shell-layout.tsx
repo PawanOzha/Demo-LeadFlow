@@ -9,6 +9,7 @@ import {
   PortalShellUserCluster,
 } from "@/components/portal-shell-header";
 import { navFocusRing, appMainContentClass } from "@/lib/app-shell-ui";
+import { PortalNavIcon } from "@/components/portal-nav-icon";
 import type { AtlNotificationItem } from "@/components/atl/atl-notification-bell";
 
 export type PortalNavItem = { href: string; label: string };
@@ -29,7 +30,7 @@ export type PortalAppShellLayoutProps = {
 function navLinkClass(pathname: string, href: string) {
   const active =
     pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
-  return `flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
+  return `flex cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
     active
       ? "bg-lf-sidebar-active font-semibold text-lf-cyan"
       : "text-lf-muted hover:bg-lf-row-hover hover:text-lf-text"
@@ -68,11 +69,11 @@ export function PortalAppShellLayout({
     <Link
       href={homeHref}
       prefetch={true}
-      className="flex min-w-0 items-center gap-2 text-sm font-semibold text-lf-text"
+      className="flex min-w-0 items-center gap-2.5 text-sm font-semibold leading-none text-lf-text"
       onClick={() => setMobileNavOpen(false)}
     >
-      <LogoMark className="h-9 w-9 shrink-0" />
-      <span className="truncate">LeadFlow</span>
+      <LogoMark className="h-8 w-8 shrink-0" />
+      <span className="truncate leading-tight">LeadFlow</span>
     </Link>
   );
 
@@ -86,7 +87,8 @@ export function PortalAppShellLayout({
           className={navLinkClass(pathname, item.href)}
           onClick={() => setMobileNavOpen(false)}
         >
-          {item.label}
+          <PortalNavIcon href={item.href} />
+          <span className="min-w-0 truncate">{item.label}</span>
         </Link>
       ))}
     </>
@@ -96,7 +98,9 @@ export function PortalAppShellLayout({
     <div className="flex h-dvh min-h-0 max-h-dvh flex-col overflow-hidden bg-lf-bg text-lf-text md:flex-row">
       {/* Desktop: full-height sidebar — logo + scrollable nav */}
       <aside className="hidden min-h-0 w-[240px] shrink-0 flex-col border-r border-lf-border bg-lf-surface md:flex">
-        <div className="shrink-0 border-b border-lf-border px-3 py-4">{brandRow}</div>
+        <div className="flex h-14 min-h-14 shrink-0 items-center border-b border-lf-border px-3">
+          {brandRow}
+        </div>
         <nav
           className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3"
           aria-label="Main navigation"
@@ -108,7 +112,7 @@ export function PortalAppShellLayout({
       {/* Main column: mobile top bar, desktop toolbar, scrollable content */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile: menu + inline brand + user tools */}
-        <div className="flex shrink-0 items-center gap-2 border-b border-lf-border bg-lf-header/95 px-3 py-3 shadow-sm shadow-black/[0.06] backdrop-blur-sm md:hidden">
+        <div className="flex h-14 min-h-14 shrink-0 items-center gap-2 border-b border-lf-border bg-lf-header/95 px-3 shadow-sm shadow-black/[0.06] backdrop-blur-sm md:hidden">
           <button
             type="button"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-lf-border bg-lf-surface text-lf-text hover:bg-lf-row-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35"
@@ -185,7 +189,7 @@ export function PortalAppShellLayout({
               id="portal-mobile-nav"
               className="absolute left-0 top-0 flex h-full w-[min(280px,88vw)] flex-col border-r border-lf-border bg-lf-surface shadow-xl"
             >
-              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-lf-border px-3 py-3">
+              <div className="flex h-14 min-h-14 shrink-0 items-center justify-between gap-2 border-b border-lf-border px-3">
                 <span id="portal-mobile-nav-title" className="sr-only">
                   Main navigation
                 </span>
