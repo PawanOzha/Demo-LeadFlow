@@ -1,15 +1,28 @@
 export type PortalNavItem = { href: string; label: string };
 
+function navMatches(pathname: string, item: PortalNavItem): boolean {
+  if (pathname === item.href) return true;
+  if (!item.href || item.href === "/") return false;
+  return pathname.startsWith(`${item.href}/`);
+}
+
+/** Single active sidebar href for a pathname (longest matching nav item). */
+export function activeNavHrefFromPath(
+  pathname: string,
+  navItems: readonly PortalNavItem[],
+): string | null {
+  const matches = navItems.filter((item) => navMatches(pathname, item));
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => b.href.length - a.href.length);
+  return matches[0].href;
+}
+
 /** Longest nav prefix match so nested routes get the most specific label (e.g. Import vs Leads). */
 export function pageTitleFromNav(
   pathname: string,
   navItems: readonly PortalNavItem[],
 ): string {
-  const matches = navItems.filter((item) => {
-    if (pathname === item.href) return true;
-    if (!item.href || item.href === "/") return false;
-    return pathname.startsWith(`${item.href}/`);
-  });
+  const matches = navItems.filter((item) => navMatches(pathname, item));
   if (matches.length === 0) {
     const p = pathname.replace(/\/$/, "") || "/";
     /* `/superadmin` renders the same view as the dashboard item but is not a nav href prefix. */

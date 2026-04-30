@@ -1,6 +1,7 @@
 "use client";
 
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   buildPortalDateRangeApplyHref,
   buildPortalDateRangeClearHref,
@@ -38,6 +39,9 @@ export default function AnalystDateRangeBar({
   preservedEntries,
   rangeSummary,
 }: AnalystDateRangeBarProps) {
+  const router = useRouter();
+  const currentPathname = usePathname();
+  const [isNavigating, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const fromInputRef = useRef<HTMLInputElement>(null);
@@ -46,6 +50,11 @@ export default function AnalystDateRangeBar({
   const hasActiveRange = Boolean(
     (defaultFrom ?? "").trim() || (defaultTo ?? "").trim(),
   );
+
+  useEffect(() => {
+    // Reset lock after route/query transition completes.
+    setIsSubmitting(false);
+  }, [currentPathname, defaultFrom, defaultTo]);
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,18 +75,20 @@ export default function AnalystDateRangeBar({
 
     setApplyError(null);
     setIsSubmitting(true);
-    window.location.assign(
-      buildPortalDateRangeApplyHref(pathname, fromSafe, toSafe, preservedEntries),
-    );
+    startTransition(() => {
+      router.replace(
+        buildPortalDateRangeApplyHref(pathname, fromSafe, toSafe, preservedEntries),
+      );
+    });
   }
 
   function onClear() {
     if (isSubmitting) return;
     setApplyError(null);
     setIsSubmitting(true);
-    window.location.assign(
-      buildPortalDateRangeClearHref(pathname, preservedEntries),
-    );
+    startTransition(() => {
+      router.replace(buildPortalDateRangeClearHref(pathname, preservedEntries));
+    });
   }
 
   return (
@@ -124,17 +135,17 @@ export default function AnalystDateRangeBar({
           </label>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isNavigating}
             className="min-h-10 rounded-lg bg-lf-accent px-4 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent"
           >
-            {isSubmitting ? "Applying..." : "Apply"}
+            {isSubmitting || isNavigating ? "Applying..." : "Apply"}
           </button>
         </form>
         {hasActiveRange ? (
           <button
             type="button"
             onClick={onClear}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isNavigating}
             className="min-h-10 rounded-lg border border-lf-border px-4 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50"
           >
             Clear

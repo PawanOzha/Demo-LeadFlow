@@ -10,6 +10,7 @@ import {
 } from "@/components/portal-shell-header";
 import { navFocusRing, appMainContentClass } from "@/lib/app-shell-ui";
 import {
+  activeNavHrefFromPath,
   pageTitleFromNav,
   type PortalNavItem,
 } from "@/lib/portal-page-title";
@@ -31,9 +32,7 @@ export type PortalAppShellLayoutProps = {
   children: React.ReactNode;
 };
 
-function navLinkClass(pathname: string, href: string) {
-  const active =
-    pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+function navLinkClass(active: boolean) {
   return `flex cursor-pointer items-center gap-2.5 rounded-[10px] px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
     active
       ? "bg-lf-sidebar-active font-semibold text-lf-cyan"
@@ -55,6 +54,7 @@ export function PortalAppShellLayout({
 }: PortalAppShellLayoutProps) {
   const pathname = usePathname();
   const pageTitle = pageTitleFromNav(pathname, navItems);
+  const activeHref = activeNavHrefFromPath(pathname, navItems);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export function PortalAppShellLayout({
           key={item.href}
           href={item.href}
           prefetch={true}
-          className={navLinkClass(pathname, item.href)}
+          className={navLinkClass(activeHref === item.href)}
           onClick={() => setMobileNavOpen(false)}
         >
           <PortalNavIcon href={item.href} />

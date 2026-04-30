@@ -147,32 +147,85 @@ export async function superadminSetUserPassword(formData: FormData) {
   const user = await dbQueryOne<{
     role: string;
     authUserId: string | null;
+    email: string;
   }>(
-    `SELECT role, "authUserId" FROM "User" WHERE id = $1`,
+    `SELECT role, "authUserId", email FROM "User" WHERE id = $1`,
     [userId],
   );
   if (!user || user.role === UserRole.SUPERADMIN) {
     return { error: "Cannot change password for this account." };
   }
-  if (!user.authUserId) {
-    return {
-      error:
-        "This user is not linked to Supabase Auth; set password in the Supabase dashboard or recreate the user.",
-    };
+
+  function isAuthUserNotFound(err: unknown): boolean {
+    return (
+      err instanceof Error &&
+      /user not found|not found/i.test(err.message)
+    );
   }
 
-  try {
-    await authAdminUpdatePassword(user.authUserId, password);
-  } catch (e) {
-    console.error("[superadminSetUserPassword]", e);
-    return { error: "Something went wrong. Please try again." };
+  async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+    try {
+      const row = await dbQueryOne<{ id: string }>(
+        `SELECT id::text AS id
+         FROM auth.users
+         WHERE lower(email) = lower($1)
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [email],
+      );
+      return row?.id ?? null;
+    } catch (e) {
+      console.error("[superadminSetUserPassword:findAuthUserIdByEmail]", e);
+      return null;
+    }
+  }
+
+  let authUserId = user.authUserId;
+
+  if (authUserId) {
+    try {
+      await authAdminUpdatePassword(authUserId, password);
+    } catch (e) {
+      if (!isAuthUserNotFound(e)) {
+        console.error("[superadminSetUserPassword:updateExistingAuth]", e);
+        return { error: "Something went wrong. Please try again." };
+      }
+      // Stale link from migration / old auth tenant.
+      authUserId = null;
+    }
+  }
+
+  if (!authUserId) {
+    const discovered = await findAuthUserIdByEmail(user.email);
+    if (discovered) {
+      authUserId = discovered;
+      try {
+        await authAdminUpdatePassword(authUserId, password);
+      } catch (e) {
+        console.error("[superadminSetUserPassword:updateDiscoveredAuth]", e);
+        return { error: "Could not update password in Supabase Auth." };
+      }
+    } else {
+      try {
+        authUserId = await authAdminCreateUser(user.email, password);
+      } catch (e) {
+        console.error("[superadminSetUserPassword:createAuthUser]", e);
+        return {
+          error:
+            "Could not create/link Supabase Auth user for this account. Verify the email is valid and unique in auth.users.",
+        };
+      }
+    }
   }
 
   await dbQuery(
     `UPDATE "User"
-     SET "passwordHash" = $1, "mustResetPassword" = false, "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $2`,
-    [password, userId],
+     SET "passwordHash" = $1,
+         "mustResetPassword" = false,
+         "authUserId" = $2,
+         "updatedAt" = CURRENT_TIMESTAMP
+     WHERE id = $3`,
+    [password, authUserId, userId],
   );
 
   revalidatePath("/superadmin");
