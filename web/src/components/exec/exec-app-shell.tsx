@@ -1,15 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { PortalShellHeader } from "@/components/portal-shell-header";
-import {
-  appMainContentClass,
-  navFocusRing,
-  portalAppShellContentRowClass,
-  portalAppShellRootClass,
-  portalAppShellSidebarClass,
-} from "@/lib/app-shell-ui";
+import { PortalAppShellLayout } from "@/components/portal-app-shell-layout";
 import type { AtlNotificationItem } from "@/components/atl/atl-notification-bell";
 
 const NAV = [
@@ -33,40 +24,18 @@ export function ExecAppShell({
   notificationUnreadCount: number;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
   return (
-    <div className={portalAppShellRootClass}>
-      <PortalShellHeader
-        homeHref="/executive"
-        session={session}
-        avatarUrl={avatarUrl}
-        teamName={teamName}
-        notifications={notifications}
-        notificationUnreadCount={notificationUnreadCount}
-        notificationLeadsHref="/executive/leads"
-      />
-      <div className={portalAppShellContentRowClass}>
-        <aside className={portalAppShellSidebarClass}>
-          <nav className="space-y-1">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={true}
-                className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
-                  pathname === item.href || pathname.startsWith(`${item.href}/`)
-                    ? "bg-lf-sidebar-active font-semibold text-lf-cyan"
-                    : "text-lf-muted hover:bg-lf-row-hover hover:text-lf-text"
-                } ${navFocusRing()}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-        <main className={appMainContentClass}>{children}</main>
-      </div>
-    </div>
+    <PortalAppShellLayout
+      homeHref="/executive"
+      navItems={NAV}
+      session={session}
+      avatarUrl={avatarUrl}
+      teamName={teamName}
+      notifications={notifications}
+      notificationUnreadCount={notificationUnreadCount}
+      notificationLeadsHref="/executive/leads"
+    >
+      {children}
+    </PortalAppShellLayout>
   );
 }

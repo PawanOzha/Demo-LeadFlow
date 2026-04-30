@@ -6,33 +6,38 @@ import {
   type AtlNotificationItem,
 } from "@/components/atl/atl-notification-bell";
 
-export function PortalShellHeader({
-  homeHref,
-  session,
-  avatarUrl,
-  teamName,
-  notifications,
-  notificationUnreadCount,
-  notificationLeadsHref,
-  logoRight = false,
-}: {
-  homeHref: string;
+export type PortalShellUserClusterProps = {
   session: { name: string; email: string };
   avatarUrl: string | null;
   teamName: string | null;
   notifications: AtlNotificationItem[];
   notificationUnreadCount: number;
   notificationLeadsHref: string;
-  logoRight?: boolean;
-}) {
-  const userCluster = (
+  /** Hide name/team text on the narrowest viewports (more room for actions). */
+  compact?: boolean;
+};
+
+export function PortalShellUserCluster({
+  session,
+  avatarUrl,
+  teamName,
+  notifications,
+  notificationUnreadCount,
+  notificationLeadsHref,
+  compact = false,
+}: PortalShellUserClusterProps) {
+  return (
     <div className="flex min-w-0 items-center gap-2 sm:gap-3">
       <PortalNotificationBell
         initialItems={notifications}
         initialUnread={notificationUnreadCount}
         leadsHref={notificationLeadsHref}
       />
-      <div className="flex min-w-0 max-w-[min(100vw-10rem,14rem)] flex-col text-right">
+      <div
+        className={`min-w-0 max-w-[min(100vw-10rem,14rem)] flex-col text-right ${
+          compact ? "hidden sm:flex" : "flex"
+        }`}
+      >
         <span className="truncate text-sm font-semibold text-lf-text">
           {session.name}
         </span>
@@ -42,6 +47,34 @@ export function PortalShellHeader({
       </div>
       <HeaderUserAvatar name={session.name} avatarUrl={avatarUrl} />
     </div>
+  );
+}
+
+export function PortalShellHeader({
+  homeHref,
+  session,
+  avatarUrl,
+  teamName,
+  notifications,
+  notificationUnreadCount,
+  notificationLeadsHref,
+  logoRight = false,
+  showBrand = true,
+}: PortalShellUserClusterProps & {
+  homeHref: string;
+  logoRight?: boolean;
+  /** When false (e.g. brand lives in sidebar), toolbar shows user controls only, full width of the main column. */
+  showBrand?: boolean;
+}) {
+  const userCluster = (
+    <PortalShellUserCluster
+      session={session}
+      avatarUrl={avatarUrl}
+      teamName={teamName}
+      notifications={notifications}
+      notificationUnreadCount={notificationUnreadCount}
+      notificationLeadsHref={notificationLeadsHref}
+    />
   );
 
   const brandLink = (
@@ -55,9 +88,17 @@ export function PortalShellHeader({
     </Link>
   );
 
+  if (!showBrand) {
+    return (
+      <header className="sticky top-0 z-20 w-full shrink-0 border-b border-lf-border bg-lf-header/95 px-4 py-3.5 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
+        <div className="flex w-full items-center justify-end">{userCluster}</div>
+      </header>
+    );
+  }
+
   return (
-    <header className="sticky top-0 z-20 border-b border-lf-border bg-lf-header/95 px-6 py-3.5 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3">
+    <header className="sticky top-0 z-20 w-full shrink-0 border-b border-lf-border bg-lf-header/95 shadow-sm shadow-black/[0.06] backdrop-blur-sm">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
         {logoRight ? (
           <>
             {userCluster}
