@@ -328,7 +328,7 @@ export async function getSuperadminLeadsWithJourney(
 
   const leadRows = await dbQuery<LeadDbRow>(
     hasPaging
-      ? `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "updatedAt" DESC LIMIT ($${baseParams.length + 1})::int OFFSET ($${baseParams.length + 2})::bigint`
+      ? `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "updatedAt" DESC LIMIT ($${baseParams.length + 1})::bigint OFFSET ($${baseParams.length + 2})::bigint`
       : `SELECT * FROM "Lead" WHERE ${clause} ORDER BY "updatedAt" DESC`,
     hasPaging ? [...baseParams, limit, offset] : baseParams,
   );

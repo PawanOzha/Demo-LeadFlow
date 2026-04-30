@@ -61,7 +61,7 @@ export default async function TeamLeadLeadsPage({
       se_name: string | null;
     }>(
       `${mtlSelect}
-       LIMIT ($${params.length + 1})::int OFFSET ($${params.length + 2})::bigint`,
+       LIMIT ($${params.length + 1})::bigint OFFSET ($${params.length + 2})::bigint`,
       [...params, perPage, offset],
     ),
     dbQuery<{
@@ -81,7 +81,7 @@ export default async function TeamLeadLeadsPage({
       se_name: string | null;
     }>(
       `${mtlSelect}
-       LIMIT $${params.length + 1}`,
+       LIMIT ($${params.length + 1})::bigint`,
       [...params, PORTAL_LEADS_EXPORT_ROW_CAP],
     ),
   ]);
