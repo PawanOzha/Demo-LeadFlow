@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PortalShellHeader } from "@/components/portal-shell-header";
-import { appMainContentClass, navFocusRing } from "@/lib/app-shell-ui";
+import {
+  appMainContentClass,
+  navFocusRing,
+  portalAppShellContentRowClass,
+  portalAppShellRootClass,
+  portalAppShellSidebarClass,
+} from "@/lib/app-shell-ui";
 import type { AtlNotificationItem } from "@/components/atl/atl-notification-bell";
 
 const NAV = [
@@ -32,7 +38,7 @@ export function SuperadminAppShell({
   const pathname = usePathname();
 
   return (
-    <div className="flex min-h-screen flex-col bg-lf-bg text-lf-text">
+    <div className={portalAppShellRootClass}>
       <PortalShellHeader
         homeHref="/superadmin/dashboard"
         session={session}
@@ -42,8 +48,8 @@ export function SuperadminAppShell({
         notificationUnreadCount={notificationUnreadCount}
         notificationLeadsHref="/superadmin/leads"
       />
-      <div className="flex min-h-0 flex-1">
-        <aside className="hidden h-screen w-64 shrink-0 border-r border-gray-200 bg-white px-3 py-4 md:block">
+      <div className={portalAppShellContentRowClass}>
+        <aside className={portalAppShellSidebarClass}>
           <nav className="space-y-1">
             {NAV.map((item) => (
               <Link

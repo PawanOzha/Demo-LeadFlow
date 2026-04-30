@@ -1,8 +1,23 @@
 /** Shared layout / a11y classes for all role app shells (same theme everywhere). */
 
+/** Fills the viewport; scroll is confined to main so the sidebar does not move. */
+export const portalAppShellRootClass =
+  "flex h-dvh min-h-0 max-h-dvh flex-col overflow-hidden bg-lf-bg text-lf-text";
+
+/** Row under the header: takes remaining height; children clip so only main scrolls. */
+export const portalAppShellContentRowClass =
+  "flex min-h-0 flex-1 overflow-hidden";
+
+/**
+ * Sidebar: full height of the content row, independent of main scroll.
+ * `overflow-y-auto` if nav items exceed viewport (rare).
+ */
+export const portalAppShellSidebarClass =
+  "hidden w-64 shrink-0 self-stretch overflow-y-auto border-r border-gray-200 bg-white px-3 py-4 md:block";
+
 /** No overflow-x-hidden — it blocks touch/scroll on wide tables inside main. */
 export const appMainContentClass =
-  "w-full min-w-0 flex-1 max-w-none px-4 py-4 sm:px-6 sm:py-6 lg:px-6 lg:py-6";
+  "min-h-0 w-full min-w-0 flex-1 max-w-none overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-6 lg:py-6";
 
 /** Wide lead tables: reliable horizontal scroll (incl. iOS) + touch pan. */
 export const portalDataTableScrollClass =
