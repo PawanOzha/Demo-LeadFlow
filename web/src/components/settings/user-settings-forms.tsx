@@ -153,10 +153,10 @@ export function UserSettingsForms({
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className={`h-9 rounded-lg px-3 text-left text-[13px] font-medium transition-colors lg:w-full ${
+              className={`h-9 rounded-[10px] px-3 text-left text-[13.5px] font-medium transition-all duration-150 lg:w-full ${
                 tab === id
-                  ? "bg-gray-100 text-gray-900"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  ? "bg-lf-sidebar-active font-semibold text-lf-cyan"
+                  : "text-lf-muted hover:bg-lf-row-hover hover:text-lf-text"
               }`}
             >
               {label}
@@ -166,7 +166,7 @@ export function UserSettingsForms({
 
         <div className="min-w-0 flex-1">
           {tab === "profile" ? (
-            <div className="rounded-2xl border border-lf-border bg-lf-surface p-6">
+            <div className="rounded-[14px] border border-lf-border bg-lf-surface p-6">
               <h2 className="text-lg font-semibold text-lf-text">Profile</h2>
               <p className="mt-1 text-sm text-lf-subtle">
                 Display name and profile photo
@@ -211,7 +211,7 @@ export function UserSettingsForms({
                       name="removePhoto"
                       type="checkbox"
                       value="true"
-                    className="h-4 w-4 cursor-pointer rounded border-gray-300 text-gray-900 focus:ring-gray-900 focus:ring-offset-0"
+                    className="h-4 w-4 cursor-pointer rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
                     />
                     <span>
                       Remove current profile photo (saved when you click Save
@@ -228,7 +228,7 @@ export function UserSettingsForms({
                 <button
                   type="submit"
                   disabled={profilePending}
-                  className="h-9 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+                  className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
                 >
                   {profilePending ? "Saving…" : "Save profile"}
                 </button>
@@ -276,7 +276,7 @@ export function UserSettingsForms({
                 <button
                   type="submit"
                   disabled={passPending}
-                  className="h-9 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+                  className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
                 >
                   {passPending ? "Updating…" : "Update password"}
                 </button>
@@ -335,11 +335,11 @@ export function UserSettingsForms({
                       aria-checked={on}
                       onClick={() => setOn(!on)}
                       className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-                        on ? "bg-gray-900" : "bg-gray-300"
+                        on ? "bg-lf-accent" : "bg-lf-control-off"
                       }`}
                     >
                       <span
-                        className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition ${
+                        className={`absolute top-0.5 h-6 w-6 rounded-full bg-lf-surface shadow transition ${
                           on ? "left-5" : "left-0.5"
                         }`}
                       />
@@ -350,7 +350,7 @@ export function UserSettingsForms({
               <div className="mt-6 flex justify-end">
                 <button
                   type="button"
-                  className="h-9 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                  className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
                 >
                   Save preferences
                 </button>
@@ -368,7 +368,7 @@ export function UserSettingsForms({
         <form action={logoutAction} className="mt-4">
           <button
             type="submit"
-            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
           >
             Sign out
           </button>

@@ -12,7 +12,7 @@ export const MtlSalesTeamActionsEntry = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex justify-end" aria-hidden>
-        <div className="h-9 w-44 rounded-lg bg-gray-100" />
+        <div className="h-9 w-44 rounded-lg bg-lf-elevated" />
       </div>
     ),
   },

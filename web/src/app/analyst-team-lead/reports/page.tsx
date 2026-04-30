@@ -25,10 +25,10 @@ export default async function AnalystTeamLeadReportsPage() {
     <div className="mx-auto max-w-6xl space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-[22px] font-semibold tracking-tight text-gray-900">
+          <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
             Report
           </h1>
-          <p className="mt-1 max-w-2xl text-[13px] font-normal leading-relaxed text-gray-600">
+          <p className="mt-1 max-w-2xl text-[13px] font-normal leading-relaxed text-lf-label">
             Single consolidated view — KPIs, funnel, analysts, routing to sales,
             geography, and conversion (all-time lead creation).{" "}
             {analystsList.length} analyst
@@ -40,18 +40,18 @@ export default async function AnalystTeamLeadReportsPage() {
           <DashboardReportExport payload={vm.exportPayload} />
           <Link
             href="/analyst-team-lead/team"
-            className="h-9 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
           >
             Members
           </Link>
         </div>
       </header>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-[15px] font-semibold text-gray-800">
+      <div className="rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
+        <h2 className="text-[15px] font-semibold text-lf-text">
           Unified portal dashboard (same as Superadmin sections)
         </h2>
-        <p className="mt-1 text-[11px] text-gray-400">
+        <p className="mt-1 text-[11px] text-lf-muted">
           All-time data · matches the analyst / team lead / executive dashboard
           layout and export tables (scoped to your analysts).
         </p>

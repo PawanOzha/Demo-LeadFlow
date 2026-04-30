@@ -13,21 +13,21 @@ export const portalAppShellContentRowClass =
  * `overflow-y-auto` if nav items exceed viewport (rare).
  */
 export const portalAppShellSidebarClass =
-  "hidden w-64 shrink-0 self-stretch overflow-y-auto border-r border-gray-200 bg-white px-3 py-4 md:block";
+  "hidden w-[240px] shrink-0 self-stretch overflow-y-auto border-r border-lf-border bg-lf-surface px-3 py-4 md:block";
 
 /** No overflow-x-hidden — it blocks touch/scroll on wide tables inside main. */
 export const appMainContentClass =
-  "min-h-0 w-full min-w-0 flex-1 max-w-none overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-6 lg:py-6";
+  "min-h-0 w-full min-w-0 flex-1 max-w-none overflow-y-auto px-6 py-6 sm:px-7 sm:py-6 lg:px-7 lg:py-6";
 
 /** Wide lead tables: reliable horizontal scroll (incl. iOS) + touch pan. */
 export const portalDataTableScrollClass =
   "w-full min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] touch-pan-x scroll-smooth";
 
-/** Keyboard focus ring — brand blue (distinct from red primary CTAs). */
+/** Keyboard focus ring — accent blue halo (~accent 22%). */
 export function navFocusRing() {
-  return "outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/45 focus-visible:ring-offset-2 focus-visible:ring-offset-lf-header";
+  return "outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2 focus-visible:ring-offset-lf-header";
 }
 
 /** Standard card surface (dashboards, settings). */
 export const portalCardClass =
-  "rounded-2xl border border-lf-border bg-lf-surface p-6 shadow-sm shadow-[#0066ff]/8";
+  "rounded-[14px] border border-lf-border bg-lf-surface p-6 shadow-[0_8px_20px_var(--color-lf-card-shadow)]";

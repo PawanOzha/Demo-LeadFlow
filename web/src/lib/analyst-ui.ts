@@ -34,7 +34,7 @@ export function pipelinePillForLead(q: string, stage: string): PipelinePill {
     return {
       label: "—",
       className:
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600 ring-1 ring-gray-200",
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-lf-elevated text-lf-label ring-1 ring-lf-border",
     };
   }
   switch (stage) {
@@ -42,37 +42,37 @@ export function pipelinePillForLead(q: string, stage: string): PipelinePill {
       return {
         label: "Pending",
         className:
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-lf-warning/30 bg-lf-warning/15 text-lf-warning",
       };
     case SalesStage.WITH_TEAM_LEAD:
       return {
         label: "Assigned",
         className:
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-lf-brand/30 bg-lf-brand/15 text-lf-brand",
       };
     case SalesStage.WITH_EXECUTIVE:
       return {
         label: "In progress",
         className:
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-lf-brand/30 bg-lf-brand/15 text-lf-brand",
       };
     case SalesStage.CLOSED_WON:
       return {
         label: "Closed won",
         className:
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-lf-success/30 bg-lf-success/15 text-lf-success",
       };
     case SalesStage.CLOSED_LOST:
       return {
         label: "Closed lost",
         className:
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-700 ring-1 ring-red-200",
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border border-lf-danger/30 bg-lf-danger/15 text-lf-danger",
       };
     default:
       return {
         label: stage,
         className:
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-600 ring-1 ring-gray-200",
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-lf-elevated text-lf-label ring-1 ring-lf-border",
       };
   }
 }

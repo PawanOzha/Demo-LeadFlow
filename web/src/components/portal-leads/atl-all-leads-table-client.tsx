@@ -142,54 +142,54 @@ export function AtlAllLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
-        className={`w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ${portalDataTableScrollClass}`}
+        className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="Team leads table"
         tabIndex={0}
       >
         <table className="w-full min-w-[1320px] border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="min-w-[120px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-lf-border bg-lf-bg/80">
+                <th className="min-w-[120px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Name
                 </th>
-                <th className="min-w-[100px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[100px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Analyst
                 </th>
-                <th className="min-w-[104px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[104px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Phone
                 </th>
-                <th className="min-w-[152px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[152px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Email
                 </th>
-                <th className="min-w-[160px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[160px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Source
                 </th>
-                <th className="min-w-[11rem] max-w-[28rem] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[11rem] max-w-[28rem] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Analyst notes
                 </th>
-                <th className="min-w-0 whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-0 whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Qualification
                 </th>
-                <th className="min-w-[64px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[64px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Score
                 </th>
-                <th className="min-w-[112px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[112px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Sales status
                 </th>
-                <th className="min-w-[168px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[168px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Executive notes
                 </th>
-                <th className="min-w-[104px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[104px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Added
                 </th>
-                <th className="min-w-[152px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[152px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Route TL
                 </th>
-                <th className="min-w-[168px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[168px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Route SE
                 </th>
-                <th className="min-w-[220px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                <th className="min-w-[220px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Pass timeline / gap
                 </th>
               </tr>
@@ -199,7 +199,7 @@ export function AtlAllLeadsTableClient({
                 <tr>
                   <td
                     colSpan={14}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     {from || to
                       ? "No leads in this date range."
@@ -214,7 +214,7 @@ export function AtlAllLeadsTableClient({
                 <tr>
                   <td
                     colSpan={14}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     {hasQuery
                       ? "No leads match this name or phone with the current filters."
@@ -262,7 +262,7 @@ export function AtlAllLeadsTableClient({
                   return (
                     <tr
                       key={l.id}
-                      className="group align-top border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0"
+                      className="group align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"
                     >
                       <td className="min-w-[140px] max-w-[min(16rem,40vw)] px-4 py-3 align-top font-semibold text-lf-text break-words [overflow-wrap:anywhere]">
                         {l.leadName || "—"}
@@ -288,7 +288,7 @@ export function AtlAllLeadsTableClient({
                         <AnalystNotesReadonly notes={l.notes} />
                       </td>
                       <td className="min-w-0 whitespace-nowrap px-4 py-3 text-lf-text-secondary">
-                        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-gray-600 ring-1 ring-gray-200">
+                        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-lf-elevated px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-lf-label ring-1 ring-lf-border">
                           {String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—"}
                         </span>
                       </td>

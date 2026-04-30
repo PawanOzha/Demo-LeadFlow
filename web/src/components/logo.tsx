@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-const BRAND = "#0066ff";
-const INK = "#1a1a1a";
+const BRAND = "#2563eb";
+const INK = "#111827";
 
 /** Pipeline mark — brand blue + white (Zoho-style CRM chrome). */
 export function LogoMark({ className }: { className?: string }) {

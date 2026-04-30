@@ -46,7 +46,7 @@ function FieldLabel({
   required?: boolean;
 }) {
   return (
-    <span className="mb-1 flex items-center gap-1 text-[12px] font-medium uppercase tracking-wide text-gray-500">
+    <span className="mb-1 flex items-center gap-1 text-[12px] font-medium uppercase tracking-wide text-lf-muted">
       {children}
       {req ? <span className="text-lf-danger">*</span> : null}
     </span>
@@ -95,23 +95,23 @@ function AddLeadModalInner({
         aria-label="Close overlay"
         onClick={onClose}
       />
-      <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-lg">
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-gray-200 bg-white/95 px-6 py-4 backdrop-blur-md">
+      <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-lf-border bg-lf-surface shadow-lg">
+        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-lf-border bg-lf-surface/95 px-6 py-4 backdrop-blur-md">
           <div>
             <h2
               id="add-lead-title"
-              className="text-[15px] font-semibold text-gray-800"
+              className="text-[15px] font-semibold text-lf-text"
             >
               Add new lead
             </h2>
-            <p className="mt-1 text-[11px] text-gray-400">
+            <p className="mt-1 text-[11px] text-lf-muted">
               Required fields are marked. You can refine qualification later.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-lg px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            className="h-9 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text"
             aria-label="Close"
           >
             <svg
@@ -145,7 +145,7 @@ function AddLeadModalInner({
                   name="leadName"
                   required
                   placeholder="e.g. Rajesh Sharma"
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 />
               </label>
               <label className="flex flex-col sm:col-span-2">
@@ -170,7 +170,7 @@ function AddLeadModalInner({
                 <input
                   name="city"
                   placeholder="e.g. Mumbai"
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 />
                 <span className="mt-1 text-[11px] text-lf-subtle">
                   Shown in analytics and exports only — not on the lead list.
@@ -182,7 +182,7 @@ function AddLeadModalInner({
                   name="leadEmail"
                   type="email"
                   placeholder="email@company.com"
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 />
               </label>
               <label className="flex flex-col">
@@ -192,7 +192,7 @@ function AddLeadModalInner({
                   required
                   value={leadSource}
                   onChange={(e) => setLeadSource(e.target.value)}
-                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 >
                   {LEAD_SOURCE_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
@@ -211,7 +211,7 @@ function AddLeadModalInner({
                   name="sourceWebsiteName"
                   autoComplete="off"
                   placeholder="e.g. company.com or landing page"
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 />
                 <span className="mt-1 text-[11px] text-lf-subtle">
                   Optional. Shown on reports and lead lists for website sources.
@@ -230,7 +230,7 @@ function AddLeadModalInner({
                   name="sourceMetaProfileName"
                   autoComplete="off"
                   placeholder="e.g. Page name or profile /username"
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 />
                 <span className="mt-1 text-[11px] text-lf-subtle">
                   Optional. Which Meta / Facebook profile or page generated this
@@ -274,10 +274,10 @@ function AddLeadModalInner({
                       setQual(v);
                       setQualificationReason("");
                     }}
-                    className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${
+                    className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand focus-visible:ring-offset-2 ${
                       active
-                        ? "border-gray-300 bg-gray-100 text-gray-900"
-                        : "border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "border-lf-brand/30 bg-lf-brand/15 text-lf-brand"
+                        : "border-lf-border bg-lf-surface text-lf-label hover:bg-lf-row-hover hover:text-lf-text"
                     }`}
                   >
                     {label}
@@ -294,7 +294,7 @@ function AddLeadModalInner({
                   required
                   value={qualificationReason}
                   onChange={(e) => setQualificationReason(e.target.value)}
-                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 >
                   <option value="">Select reason</option>
                   {QUALIFICATION_REASON_BY_STATUS[qual].map((reason) => (
@@ -327,11 +327,11 @@ function AddLeadModalInner({
             />
           </div>
 
-          <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-4">
+          <div className="mt-6 rounded-xl border border-lf-divide bg-lf-bg/80/80 px-4 py-4">
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
               Deal value (optional)
             </p>
-            <p className="mb-3 text-[11px] leading-relaxed text-gray-500">
+            <p className="mb-3 text-[11px] leading-relaxed text-lf-muted">
               Pipeline estimate for reporting. Final revenue is entered when the
               deal is marked won.
             </p>
@@ -342,7 +342,7 @@ function AddLeadModalInner({
                   name="estimatedDealValue"
                   inputMode="decimal"
                   placeholder="e.g. 15000"
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 />
               </label>
               <label className="flex flex-col">
@@ -350,7 +350,7 @@ function AddLeadModalInner({
                 <select
                   name="dealCurrency"
                   defaultValue="USD"
-                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
                 >
                   {DEAL_CURRENCY_OPTIONS.map((o) => (
                     <option key={o.code} value={o.code}>
@@ -369,7 +369,7 @@ function AddLeadModalInner({
               name="leadAddedDate"
               inputMode="numeric"
               placeholder="YYYY/MM/DD"
-              className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900 [color-scheme:light]"
+              className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand [color-scheme:light]"
             />
             <span className="mt-1 text-[11px] text-lf-subtle">
               Use Year/Month/Day format, e.g. 2026/04/06.
@@ -382,7 +382,7 @@ function AddLeadModalInner({
               name="notes"
               rows={4}
               placeholder="Context, source details, follow-ups…"
-              className="mt-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-700 placeholder:text-gray-400 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+              className="mt-1 rounded-lg border border-lf-border bg-lf-surface px-3 py-2 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
             />
           </label>
 
@@ -392,18 +392,18 @@ function AddLeadModalInner({
             </p>
           ) : null}
 
-          <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-lf-border pt-6 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
-              className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+              className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={pending}
-              className="h-9 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+              className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
             >
               {pending ? "Saving…" : "Save lead"}
             </button>
@@ -458,7 +458,7 @@ export function AnalystHeaderAddButton() {
     <button
       type="button"
       onClick={trigger}
-      className="h-9 w-full rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 sm:w-auto"
+      className="h-9 w-full rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 sm:w-auto"
     >
       + Add lead
     </button>

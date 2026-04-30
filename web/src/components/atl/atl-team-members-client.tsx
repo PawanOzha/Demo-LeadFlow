@@ -118,7 +118,7 @@ function AddMemberMenu({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex h-9 items-center gap-2 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+        className="inline-flex h-9 items-center gap-2 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
       >
         Add member
         <svg
@@ -144,7 +144,7 @@ function AddMemberMenu({
           <button
             type="button"
             role="menuitem"
-            className="h-9 w-full px-3 text-left text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+            className="h-9 w-full px-3 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover hover:text-lf-text"
             onClick={() => {
               onPick("analyst");
               setOpen(false);
@@ -155,7 +155,7 @@ function AddMemberMenu({
           <button
             type="button"
             role="menuitem"
-            className="h-9 w-full px-3 text-left text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+            className="h-9 w-full px-3 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover hover:text-lf-text"
             onClick={() => {
               onPick("mtl");
               setOpen(false);

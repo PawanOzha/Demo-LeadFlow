@@ -58,10 +58,10 @@ export function AnalystAppShell({
                   key={item.href}
                   href={item.href}
                   prefetch={true}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                  className={`flex cursor-pointer items-center gap-3 rounded-[10px] px-3 py-2 text-[13.5px] font-medium transition-all duration-150 ${
                     pathname === item.href || pathname.startsWith(`${item.href}/`)
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-lf-sidebar-active font-semibold text-lf-cyan"
+                      : "text-lf-muted hover:bg-lf-row-hover hover:text-lf-text"
                   } ${navFocusRing()}`}
                 >
                   {item.label}

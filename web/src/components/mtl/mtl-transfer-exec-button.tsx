@@ -52,13 +52,13 @@ function Modal({
       }}
     >
       <div
-        className="relative w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-lg"
+        className="relative w-full max-w-lg rounded-2xl border border-lf-border bg-lf-surface p-6 shadow-lg"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="h-9 rounded-lg px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          className="h-9 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text"
           aria-label="Close"
         >
           <svg
@@ -130,7 +130,7 @@ function TransferExecForm({
           <select
             name="targetTeamId"
             required
-            className="mt-1 h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900"
+            className="mt-1 h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
             defaultValue=""
           >
             <option value="" disabled>
@@ -150,14 +150,14 @@ function TransferExecForm({
           <button
             type="submit"
             disabled={pending}
-            className="h-9 rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+            className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
           >
             {pending ? "Transferring…" : "Confirm transfer"}
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
           >
             Cancel
           </button>
@@ -199,7 +199,7 @@ export function MtlTransferExecButton({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="mt-6 h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+              className="mt-6 h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
             >
               Close
             </button>
@@ -228,7 +228,7 @@ export function MtlTransferExecButton({
             ? "No other teams available"
             : "Transfer to another sales team"
         }
-        className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Transfer
       </button>

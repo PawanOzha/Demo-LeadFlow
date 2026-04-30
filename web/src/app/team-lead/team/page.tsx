@@ -72,14 +72,14 @@ export default async function TeamLeadSalesTeamPage() {
           move a rep to another sales team when your organisation reassigns
           them.
         </p>
-        <div className="mt-6 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="mt-6 w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
           <table className="w-full border-collapse text-[13px]">
-            <thead className="border-b border-gray-200 bg-gray-50">
+            <thead className="border-b border-lf-border bg-lf-bg/80">
               <tr>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Email</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Temp. password</th>
-                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-gray-500">Actions</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Name</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Email</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Temp. password</th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -87,7 +87,7 @@ export default async function TeamLeadSalesTeamPage() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     No sales executives yet. Use Add sales executive to create
                     one.
@@ -95,15 +95,15 @@ export default async function TeamLeadSalesTeamPage() {
                 </tr>
               ) : (
                 execs.map((e) => (
-                  <tr key={e.id} className="border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0">
-                    <td className="px-4 py-3 text-[13px] font-medium text-gray-700">
+                  <tr key={e.id} className="border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0">
+                    <td className="px-4 py-3 text-[13px] font-medium text-lf-text-secondary">
                       {e.name}
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-700">{e.email}</td>
-                    <td className="px-4 py-3 text-[13px] text-gray-700">
+                    <td className="px-4 py-3 text-[13px] text-lf-text-secondary">{e.email}</td>
+                    <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
                       <MtlProvisionedPasswordCell />
                     </td>
-                    <td className="px-4 py-3 text-right text-[13px] text-gray-700">
+                    <td className="px-4 py-3 text-right text-[13px] text-lf-text-secondary">
                       <MtlTransferExecButton
                         execId={e.id}
                         execName={e.name}

@@ -1,32 +1,78 @@
 @import "tailwindcss";
 
 /*
- * LeadFlow — Zoho CRM–inspired: electric blue brand, white chrome, red CTAs.
- * Canvas: light blue-gray · Surfaces: white · Brand: #0066FF · Primary actions: #E53935
+ * LeadFlow — Chat Tracker–inspired: pale blue shell, white surfaces, blue primary (#2563eb),
+ * DM Sans + JetBrains Mono. See DESIGNER_SKILL.md (Chat Tracker palette).
  */
 @theme {
-  --color-lf-bg: #f0f5ff;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --color-lf-bg: #eef4ff;
   --color-lf-header: #ffffff;
   --color-lf-surface: #ffffff;
-  --color-lf-elevated: #f8fafc;
-  --color-lf-border: #1a1a1a14;
-  --color-lf-divide: #1a1a1a12;
-  /* Brand blue (links, focus, nav emphasis) */
-  --color-lf-brand: #0066ff;
-  --color-lf-brand-bright: #3385ff;
-  /* Primary CTA — red */
-  --color-lf-accent: #e53935;
-  --color-lf-accent-hover: #c62828;
-  --color-lf-accent-deep: #b71c1c;
+  --color-lf-elevated: #f5f9ff;
+  --color-lf-card2: #f5f9ff;
+  --color-lf-border: #d9e7ff;
+  --color-lf-divide: #e7f0ff;
+  --color-lf-dim: #e7f0ff;
+  --color-lf-row-hover: #f9fafb;
+  --color-lf-sidebar-active: #eaf0ff;
+  --color-lf-cyan: #1d4ed8;
+  --color-lf-brand: #2563eb;
+  --color-lf-brand-bright: #3b82f6;
+  --color-lf-accent: #2563eb;
+  --color-lf-accent-hover: #1d4ed8;
+  --color-lf-accent-deep: #1e40af;
   --color-lf-on-accent: #ffffff;
-  --color-lf-link: #0066ff;
-  --color-lf-link-bright: #3385ff;
-  --color-lf-muted: #5c6370;
-  --color-lf-subtle: #7a8292;
-  --color-lf-text: #1a1a1a;
-  --color-lf-text-secondary: #2d3138;
-  --color-lf-success: #1d6b3a;
-  --color-lf-danger: #c62828;
-  --color-lf-warning: #9a5f0a;
-  --color-lf-control-off: #e2e6ef;
+  --color-lf-link: #2563eb;
+  --color-lf-link-bright: #3b82f6;
+  --color-lf-muted: #6b7280;
+  --color-lf-subtle: #4b5563;
+  --color-lf-label: #4b5563;
+  --color-lf-text: #111827;
+  --color-lf-text-secondary: #4b5563;
+  --color-lf-success: #16a34a;
+  --color-lf-danger: #dc2626;
+  --color-lf-warning: #d97706;
+  --color-lf-control-off: #d9e7ff;
+  --color-lf-shell-gradient-start: #f6f9ff;
+  --color-lf-shell-gradient-end: #eef4ff;
+  --color-lf-card-shadow: #1d4ed80f;
+  --color-lf-popover-shadow: #0000001f;
+}
+
+@layer base {
+  body {
+    background-image: linear-gradient(
+      180deg,
+      var(--color-lf-shell-gradient-start) 0%,
+      var(--color-lf-shell-gradient-end) 100%
+    );
+    background-attachment: fixed;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--color-lf-border) 85%, transparent);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    transition-property: color, background-color, border-color, opacity, box-shadow;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
+  }
+
+  tbody tr {
+    transition: background-color 0.1s ease;
+  }
 }

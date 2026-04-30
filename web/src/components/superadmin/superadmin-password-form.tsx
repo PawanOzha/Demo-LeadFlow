@@ -64,14 +64,14 @@ export function SuperadminPasswordForm({
               type="button"
               onClick={copyPassword}
               disabled={!savedPassword}
-              className="h-9 rounded-lg px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-40"
+              className="h-9 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text disabled:opacity-40"
             >
               {copied ? "Copied" : "Copy"}
             </button>
             <button
               type="button"
               onClick={() => setVisible((v) => !v)}
-              className="h-9 rounded-lg px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              className="h-9 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text"
             >
               {visible ? "Hide" : "Show"}
             </button>
@@ -98,7 +98,7 @@ export function SuperadminPasswordForm({
         <button
           type="submit"
           disabled={pending}
-          className="h-9 shrink-0 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+          className="h-9 shrink-0 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
         >
           {pending ? "…" : "Set"}
         </button>

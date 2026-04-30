@@ -16,7 +16,7 @@ export default function LoginForm() {
           type="email"
           required
           autoComplete="username"
-          className="mt-2 min-h-11 w-full rounded-full border border-lf-border bg-lf-elevated px-4 py-2.5 text-lf-text outline-none transition placeholder:text-lf-subtle focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25"
+          className="mt-2 min-h-11 w-full rounded-lg border border-lf-border bg-lf-surface px-[13px] py-[9px] text-[13.5px] text-lf-text outline-none transition placeholder:text-lf-subtle focus:border-lf-brand focus:ring-[3px] focus:ring-lf-brand/20"
         />
       </label>
       <label className="block text-sm font-medium text-lf-text-secondary">
@@ -27,7 +27,7 @@ export default function LoginForm() {
             type={showPassword ? "text" : "password"}
             required
             autoComplete="current-password"
-            className="min-h-11 w-full rounded-full border border-lf-border bg-lf-elevated px-4 py-2.5 pr-12 text-lf-text outline-none transition placeholder:text-lf-subtle focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25"
+            className="min-h-11 w-full rounded-lg border border-lf-border bg-lf-surface px-[13px] py-[9px] pr-12 text-[13.5px] text-lf-text outline-none transition placeholder:text-lf-subtle focus:border-lf-brand focus:ring-[3px] focus:ring-lf-brand/20"
           />
           <button
             type="button"
@@ -68,7 +68,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="min-h-11 rounded-full bg-lf-accent px-6 py-2.5 text-sm font-bold uppercase tracking-wide text-lf-on-accent shadow-lg shadow-[#c62828]/35 transition hover:bg-lf-accent-hover disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent active:scale-[0.99]"
+        className="min-h-11 rounded-lg bg-lf-accent px-[22px] py-2.5 text-[13.5px] font-semibold text-lf-on-accent shadow-sm transition duration-150 ease-out hover:opacity-[0.85] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-lf-brand/30 focus-visible:ring-offset-2 focus-visible:ring-offset-lf-bg active:scale-[0.99]"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>

@@ -205,7 +205,7 @@ export function AnalystExcelImportClient() {
           <button
             type="submit"
             disabled={pending}
-            className="rounded-xl bg-lf-accent px-6 py-2.5 text-sm font-semibold text-lf-on-accent shadow-lg shadow-[#c62828]/30 transition hover:bg-lf-accent-deep disabled:opacity-50"
+            className="rounded-xl bg-lf-accent px-6 py-2.5 text-sm font-semibold text-lf-on-accent shadow-md shadow-lf-brand/20 transition hover:bg-lf-accent-deep disabled:opacity-50"
           >
             {pending ? "Importing…" : "Import leads"}
           </button>

@@ -134,10 +134,10 @@ export default async function TeamLeadLeadsPage({
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <header>
-        <h1 className="text-[22px] font-semibold tracking-tight text-gray-900">
+        <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
           All leads
         </h1>
-        <p className="mt-1 text-[13px] font-normal text-gray-600">
+        <p className="mt-1 text-[13px] font-normal text-lf-label">
           All-time qualified leads routed to you ·{" "}
           <Link
             href="/team-lead/reports"

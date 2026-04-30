@@ -16,7 +16,7 @@ export function PortalLeadSearchLiveField({ value, onChange }: Props) {
         Search by client name or phone number
       </label>
       <div className="relative min-w-0 flex-1">
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lf-muted">
           <svg
             className="h-3.5 w-3.5"
             fill="none"
@@ -40,14 +40,14 @@ export function PortalLeadSearchLiveField({ value, onChange }: Props) {
           placeholder="Search by name or phone…"
           autoComplete="off"
           enterKeyHint="search"
-          className="h-9 w-64 rounded-lg border border-gray-300 bg-gray-50 pl-9 pr-4 text-[13px] text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-transparent focus:bg-white focus:ring-2 focus:ring-gray-900"
+          className="h-9 w-64 rounded-lg border border-lf-border bg-lf-bg/80 pl-9 pr-4 text-[13px] text-lf-text placeholder:text-lf-muted outline-none transition-all focus:border-transparent focus:bg-lf-surface focus:ring-2 focus:ring-lf-brand"
         />
       </div>
       {value.trim() ? (
         <button
           type="button"
           onClick={() => onChange("")}
-          className="h-9 shrink-0 rounded-lg px-3 text-[13px] font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+          className="h-9 shrink-0 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand focus-visible:ring-offset-2"
         >
           Clear
         </button>

@@ -56,7 +56,7 @@ export function PortalShellHeader({
   );
 
   return (
-    <header className="sticky top-0 z-20 border-b border-lf-border bg-lf-header/95 px-4 py-3 shadow-sm shadow-black/8 backdrop-blur-sm sm:px-6">
+    <header className="sticky top-0 z-20 border-b border-lf-border bg-lf-header/95 px-6 py-3.5 shadow-sm shadow-black/[0.06] backdrop-blur-sm sm:px-6">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3">
         {logoRight ? (
           <>

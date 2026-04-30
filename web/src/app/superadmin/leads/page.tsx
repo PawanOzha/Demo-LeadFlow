@@ -39,7 +39,7 @@ function PaginationBar({
   nextHref: string | null;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
       <p className="text-lf-subtle">
         Showing{" "}
         <span className="font-semibold text-lf-text">
@@ -52,7 +52,7 @@ function PaginationBar({
         {prevHref ? (
           <Link
             href={prevHref}
-            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100"
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
           >
             Previous
           </Link>
@@ -67,7 +67,7 @@ function PaginationBar({
         {nextHref ? (
           <Link
             href={nextHref}
-            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100"
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
           >
             Next
           </Link>
@@ -91,18 +91,18 @@ function RevenueSummaryCard({
   hint?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-      <p className="text-[12px] font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-lf-border bg-lf-surface px-5 py-4 shadow-sm">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         {title}
       </p>
-      <p className="mt-2 text-[22px] font-semibold tracking-tight text-gray-900 tabular-nums">
+      <p className="mt-2 text-[22px] font-semibold tracking-tight text-lf-text tabular-nums">
         {amount.toLocaleString(undefined, {
           minimumFractionDigits: 0,
           maximumFractionDigits: 2,
         })}
       </p>
       {hint ? (
-        <p className="mt-1 text-[11px] text-gray-400">{hint}</p>
+        <p className="mt-1 text-[11px] text-lf-muted">{hint}</p>
       ) : null}
     </div>
   );
@@ -125,10 +125,10 @@ function QualSummaryCard({
         : "border-lf-border bg-lf-bg/80";
   return (
     <div className={`rounded-xl border px-5 py-4 ${ring}`}>
-      <p className="text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         {title}
       </p>
-      <p className="mt-2 text-[22px] font-semibold tracking-tight text-gray-900 tabular-nums">
+      <p className="mt-2 text-[22px] font-semibold tracking-tight text-lf-text tabular-nums">
         {count}
       </p>
     </div>
@@ -400,7 +400,7 @@ export default async function SuperadminLeadsPage({
       />
 
       {analystGroups.length === 0 ? (
-        <p className="text-[13px] font-normal text-gray-600">
+        <p className="text-[13px] font-normal text-lf-label">
           No leads match these filters.
         </p>
       ) : (

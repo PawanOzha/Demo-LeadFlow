@@ -197,12 +197,12 @@ export default async function SuperadminDashboardPage({
           <p className="mt-1 text-xs text-lf-subtle">
             Count of leads with a team assignment (current state).
           </p>
-          <div className="mt-4 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="mt-4 w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
             <table className="w-full min-w-[280px] border-collapse text-[13px]">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-lf-border bg-lf-bg/80">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Team</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Leads</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Team</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Leads</th>
                 </tr>
               </thead>
               <tbody>
@@ -210,16 +210,16 @@ export default async function SuperadminDashboardPage({
                   <tr>
                     <td
                       colSpan={2}
-                      className="px-4 py-16 text-center text-[13px] text-gray-400"
+                      className="px-4 py-16 text-center text-[13px] text-lf-muted"
                     >
                       No team-routed leads yet.
                     </td>
                   </tr>
                 ) : (
                   metrics.leadsByTeam.map((row) => (
-                    <tr key={row.teamId} className="border-b border-gray-100 text-[13px] text-gray-700 last:border-b-0">
-                      <td className="px-4 py-3 text-[13px] text-gray-700">{row.teamName}</td>
-                      <td className="px-4 py-3 text-[13px] text-gray-700 tabular-nums">
+                    <tr key={row.teamId} className="border-b border-lf-divide text-[13px] text-lf-text-secondary last:border-b-0">
+                      <td className="px-4 py-3 text-[13px] text-lf-text-secondary">{row.teamName}</td>
+                      <td className="px-4 py-3 text-[13px] text-lf-text-secondary tabular-nums">
                         {row.count}
                       </td>
                     </tr>
@@ -237,12 +237,12 @@ export default async function SuperadminDashboardPage({
             Count of leads currently assigned to each rep (or historically
             holding assignment).
           </p>
-          <div className="mt-4 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="mt-4 w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
             <table className="w-full min-w-[280px] border-collapse text-[13px]">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-lf-border bg-lf-bg/80">
                 <tr>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sales executive</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Leads</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Sales executive</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Leads</th>
                 </tr>
               </thead>
               <tbody>
@@ -250,18 +250,18 @@ export default async function SuperadminDashboardPage({
                   <tr>
                     <td
                       colSpan={2}
-                      className="px-4 py-16 text-center text-[13px] text-gray-400"
+                      className="px-4 py-16 text-center text-[13px] text-lf-muted"
                     >
                       No assignments yet.
                     </td>
                   </tr>
                 ) : (
                   metrics.leadsBySalesExec.map((row) => (
-                    <tr key={row.salesExecId} className="border-b border-gray-100 text-[13px] text-gray-700 last:border-b-0">
-                      <td className="max-w-[240px] px-4 py-3 text-[13px] text-gray-700">
+                    <tr key={row.salesExecId} className="border-b border-lf-divide text-[13px] text-lf-text-secondary last:border-b-0">
+                      <td className="max-w-[240px] px-4 py-3 text-[13px] text-lf-text-secondary">
                         {row.label}
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-gray-700 tabular-nums">
+                      <td className="px-4 py-3 text-[13px] text-lf-text-secondary tabular-nums">
                         {row.count}
                       </td>
                     </tr>
@@ -286,15 +286,15 @@ export default async function SuperadminDashboardPage({
           totalCount={totalHandoffs}
           countNoun="events"
         />
-        <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
           <table className="w-full min-w-[800px] border-collapse text-[13px]">
-            <thead className="border-b border-gray-200 bg-gray-50">
+            <thead className="border-b border-lf-border bg-lf-bg/80">
               <tr>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">When</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Lead</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Action</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Actor</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Detail</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">When</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Lead</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Action</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Actor</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Detail</th>
               </tr>
             </thead>
             <tbody>
@@ -302,14 +302,14 @@ export default async function SuperadminDashboardPage({
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     No handoff events yet.
                   </td>
                 </tr>
               ) : (
                 handoffs.map((h) => (
-                  <tr key={h.id} className="align-top border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0">
+                  <tr key={h.id} className="align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0">
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-lf-subtle">
                       {h.createdAt.toLocaleString()}
                     </td>
@@ -359,15 +359,15 @@ export default async function SuperadminDashboardPage({
         <p className="text-sm text-lf-subtle">
           When a main team lead moves a rep to another team.
         </p>
-        <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
           <table className="w-full min-w-[720px] border-collapse text-[13px]">
-            <thead className="border-b border-gray-200 bg-gray-50">
+            <thead className="border-b border-lf-border bg-lf-bg/80">
               <tr>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">When</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sales executive</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">From team</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">To team</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Transferred by (MTL)</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">When</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Sales executive</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">From team</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">To team</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Transferred by (MTL)</th>
               </tr>
             </thead>
             <tbody>
@@ -375,14 +375,14 @@ export default async function SuperadminDashboardPage({
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     No sales executive transfers recorded yet.
                   </td>
                 </tr>
               ) : (
                 seTransfers.map((t) => (
-                  <tr key={t.id} className="align-top border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0">
+                  <tr key={t.id} className="align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0">
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-lf-subtle">
                       {t.createdAt.toLocaleString()}
                     </td>

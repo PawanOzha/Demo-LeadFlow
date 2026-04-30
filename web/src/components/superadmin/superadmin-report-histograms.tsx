@@ -107,13 +107,13 @@ export function SuperadminReportHistograms({
           title="Lead score distribution"
           subtitle="Bins by score (0–100). “No score” when not set."
           rows={scoreHistogram}
-          barClass="bg-gradient-to-t from-[#1a1a1a]/85 to-lf-accent/75"
+          barClass="bg-gradient-to-t from-lf-text/85 to-lf-accent/75"
         />
         <HistogramBlock
           title="Leads created by month"
           subtitle="Count of leads by calendar month (created date)."
           rows={createdByMonth}
-          barClass="bg-gradient-to-t from-[#1a1a1a]/85 to-lf-accent-hover/65"
+          barClass="bg-gradient-to-t from-lf-text/85 to-lf-accent-hover/65"
           formatLabel={formatMonthYm}
         />
       </div>
@@ -122,7 +122,7 @@ export function SuperadminReportHistograms({
         title="Top countries (lead volume)"
         subtitle="Top 16 countries by lead count (same geography rules as the table below)."
         rows={countryHistogram}
-        barClass="bg-gradient-to-t from-[#1a1a1a]/85 to-lf-link/70"
+        barClass="bg-gradient-to-t from-lf-text/85 to-lf-link/70"
       />
     </div>
   );

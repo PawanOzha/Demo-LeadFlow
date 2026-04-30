@@ -67,7 +67,7 @@ export function SuperadminUsersTableClient({
     <div className="space-y-4">
       <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-surface to-lf-bg p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[13px] text-gray-700">
+          <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[13px] text-lf-text-secondary">
             <input
               type="checkbox"
               checked={isAllSelected}
@@ -75,7 +75,7 @@ export function SuperadminUsersTableClient({
                 if (e.target.checked) setSelectedIds(new Set(allUserIds));
                 else setSelectedIds(new Set());
               }}
-              className="h-4 w-4 cursor-pointer rounded border-gray-300 text-gray-900 focus:ring-gray-900 focus:ring-offset-0"
+              className="h-4 w-4 cursor-pointer rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
             />
             Select all visible users
           </label>
@@ -100,7 +100,7 @@ export function SuperadminUsersTableClient({
               <button
                 type="submit"
                 disabled={bulkPending || selectedCount === 0}
-                className="h-9 rounded-lg bg-red-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+                className="h-9 rounded-lg bg-lf-danger px-4 text-[13px] font-medium text-lf-on-accent transition-colors hover:bg-lf-danger/90 focus:outline-none focus:ring-2 focus:ring-lf-danger/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {bulkPending
                   ? "Deleting..."
@@ -118,23 +118,23 @@ export function SuperadminUsersTableClient({
         ) : null}
       </div>
 
-      <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
         <table className="w-full min-w-[1080px] border-collapse text-[13px]">
-          <thead className="border-b border-gray-200 bg-gray-50">
+          <thead className="border-b border-lf-border bg-lf-bg/80">
             <tr>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500"> </th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Email</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Role</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Manager / team</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Analyst team</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Password</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500"> </th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted"> </th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Email</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Name</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Role</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Manager / team</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Analyst team</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Password</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted"> </th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="align-top border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0">
+              <tr key={u.id} className="align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0">
                 <td className="px-4 py-3">
                   {isNonDeletable(u) ? (
                     <span className="text-xs text-lf-subtle">—</span>
@@ -150,7 +150,7 @@ export function SuperadminUsersTableClient({
                           return next;
                         });
                       }}
-                      className="h-4 w-4 cursor-pointer rounded border-gray-300 text-gray-900 focus:ring-gray-900 focus:ring-offset-0"
+                      className="h-4 w-4 cursor-pointer rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
                       aria-label={`Select ${u.email}`}
                     />
                   )}

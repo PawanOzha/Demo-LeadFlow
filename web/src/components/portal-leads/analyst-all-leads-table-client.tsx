@@ -92,28 +92,28 @@ export function AnalystAllLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
-        className={`w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ${portalDataTableScrollClass}`}
+        className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="Your leads table"
         tabIndex={0}
       >
           <table className="w-full min-w-[1180px] border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Phone</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Email</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Source</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Qualification</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Score</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Sales status</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Est. value</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Closed revenue</th>
-                <th className="max-w-[28rem] min-w-[11rem] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-lf-border bg-lf-bg/80">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Name</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Phone</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Email</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Source</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Qualification</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Score</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Sales status</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Est. value</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Closed revenue</th>
+                <th className="max-w-[28rem] min-w-[11rem] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                   Your notes
                 </th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Executive notes</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Added</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Executive notes</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Added</th>
               </tr>
             </thead>
             <tbody>
@@ -121,7 +121,7 @@ export function AnalystAllLeadsTableClient({
                 <tr>
                   <td
                     colSpan={12}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     {from || to
                       ? "No leads in this date range."
@@ -132,7 +132,7 @@ export function AnalystAllLeadsTableClient({
                 <tr>
                   <td
                     colSpan={12}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     {hasQuery
                       ? "No leads match this name or phone in the current filters."
@@ -145,15 +145,15 @@ export function AnalystAllLeadsTableClient({
                 filtered.map((l) => (
                   <tr
                     key={l.id}
-                    className="border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0"
+                    className="border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"
                   >
-                    <td className="px-4 py-3 text-[13px] font-semibold text-gray-700">
+                    <td className="px-4 py-3 text-[13px] font-semibold text-lf-text-secondary">
                       {l.leadName || "—"}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[13px] text-gray-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-[13px] text-lf-text-secondary">
                       {l.phone || "—"}
                     </td>
-                    <td className="max-w-[220px] min-w-0 px-4 py-3 text-[13px] text-gray-700">
+                    <td className="max-w-[220px] min-w-0 px-4 py-3 text-[13px] text-lf-text-secondary">
                       <span
                         className="block truncate"
                         title={l.leadEmail ?? undefined}
@@ -161,34 +161,34 @@ export function AnalystAllLeadsTableClient({
                         {l.leadEmail || "—"}
                       </span>
                     </td>
-                    <td className="min-w-0 max-w-[260px] px-4 py-3 align-top text-[13px] text-gray-700">
+                    <td className="min-w-0 max-w-[260px] px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                       <LeadSourcePill source={l.source} />
                     </td>
-                    <td className="px-4 py-3 align-middle text-[13px] text-gray-700">
+                    <td className="px-4 py-3 align-middle text-[13px] text-lf-text-secondary">
                       <AnalystQualificationSelect
                         leadId={l.id}
                         value={l.qualificationStatus}
                       />
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-700 tabular-nums">
+                    <td className="px-4 py-3 text-[13px] text-lf-text-secondary tabular-nums">
                       {l.leadScore ?? "—"}
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-700">
+                    <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
                       {analystFacingSalesLabel(l.salesStage)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-lf-text-secondary">
                       {formatDealMoney(l.estimatedDealValue, l.dealCurrency)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-gray-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-[12px] tabular-nums text-lf-text-secondary">
                       {formatDealMoney(l.closedRevenue, l.dealCurrency)}
                     </td>
-                    <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top text-[13px] text-gray-700">
+                    <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                       <AnalystNotesReadonly notes={l.notes} />
                     </td>
-                    <td className="px-4 py-3 align-top text-[13px] text-gray-700">
+                    <td className="px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                       <ExecLostNotesReadonly notes={l.lostNotes} />
                     </td>
-                    <td className="px-4 py-3 text-[13px] text-gray-700">
+                    <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
                       {formatAnalystDate(new Date(l.createdAt))}
                     </td>
                   </tr>

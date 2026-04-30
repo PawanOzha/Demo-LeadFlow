@@ -6,7 +6,7 @@ import { assignLeadToExecutive } from "@/app/actions/mtl";
 type ExecOption = { id: string; name: string };
 
 const selectClass =
-  "h-9 w-full max-w-[11rem] cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900";
+  "h-9 w-full max-w-[11rem] cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand";
 
 export function AssignToExecForm({
   leadId,
@@ -49,7 +49,7 @@ export function AssignToExecForm({
       <button
         type="submit"
         disabled={pending}
-        className="h-9 w-fit rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+        className="h-9 w-fit rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
       >
         {pending ? "…" : currentExecId ? "Reassign" : "Assign"}
       </button>

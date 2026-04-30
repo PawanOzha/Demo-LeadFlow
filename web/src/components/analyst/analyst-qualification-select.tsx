@@ -40,7 +40,7 @@ export default function AnalystQualificationSelect({
           }
         });
       }}
-      className="h-9 w-full min-w-[9.5rem] cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900 disabled:cursor-wait disabled:opacity-60"
+      className="h-9 w-full min-w-[9.5rem] cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand disabled:cursor-wait disabled:opacity-60"
     >
       {OPTIONS.map((o) => (
         <option key={o.value} value={o.value}>

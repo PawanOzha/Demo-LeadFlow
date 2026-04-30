@@ -27,7 +27,7 @@ export function SuperadminDeleteForm({
       <ConfirmSubmitButton
         message={`Delete user ${email}? This cannot be undone.`}
         disabled={pending}
-        className="h-9 rounded-lg bg-red-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-40"
+        className="h-9 rounded-lg bg-lf-danger px-4 text-[13px] font-medium text-lf-on-accent transition-colors hover:bg-lf-danger/90 focus:outline-none focus:ring-2 focus:ring-lf-danger/40 focus:ring-offset-2 disabled:opacity-40"
       >
         {pending ? "…" : "Delete"}
       </ConfirmSubmitButton>

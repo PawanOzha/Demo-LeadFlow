@@ -11,7 +11,7 @@ export function PortalLeadsExportBar({
   description?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
       <div className="min-w-0">
         <p className="text-xs font-semibold uppercase tracking-wider text-lf-subtle">
           Export leads

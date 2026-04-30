@@ -27,14 +27,14 @@ function RatioCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-[12px] font-medium uppercase tracking-wide text-gray-500">
+    <div className="rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         {label}
       </p>
-      <p className="mt-2 text-[22px] font-semibold tracking-tight text-gray-900 tabular-nums">
+      <p className="mt-2 text-[22px] font-semibold tracking-tight text-lf-text tabular-nums">
         {value}
       </p>
-      {sub ? <p className="mt-1 text-[11px] text-gray-400">{sub}</p> : null}
+      {sub ? <p className="mt-1 text-[11px] text-lf-muted">{sub}</p> : null}
     </div>
   );
 }
@@ -92,10 +92,10 @@ export default async function SuperadminReportPage({
     <div className="space-y-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-gray-900">
+          <h1 className="text-[22px] font-semibold tracking-tight text-lf-text">
             Report
           </h1>
-          <p className="mt-2 max-w-2xl text-[13px] font-normal text-gray-600">
+          <p className="mt-2 max-w-2xl text-[13px] font-normal text-lf-label">
             Same dashboard sections and export format (CSV / Excel / PDF) as
             analyst, team lead, and executive portals. Histograms and ratio cards
             below add organization-wide views.
@@ -148,7 +148,7 @@ export default async function SuperadminReportPage({
       />
 
       <div>
-        <h2 className="text-[15px] font-semibold text-gray-800">Ratios</h2>
+        <h2 className="text-[15px] font-semibold text-lf-text">Ratios</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <RatioCard
             label="Conversion (won / all leads)"
@@ -187,11 +187,11 @@ export default async function SuperadminReportPage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h2 className="text-[15px] font-semibold text-gray-800">
+      <div className="rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
+        <h2 className="text-[15px] font-semibold text-lf-text">
           Unified portal dashboard (same as other roles)
         </h2>
-        <p className="mt-1 text-[11px] text-gray-400">
+        <p className="mt-1 text-[11px] text-lf-muted">
           {rangeLabel === "All time"
             ? "All-time data · matches the analyst / team lead / executive dashboard layout and export tables."
             : `Leads created in ${rangeLabel} · export uses the same range.`}

@@ -59,9 +59,9 @@ export function AnalystPipelineTableClient({
         <PortalLeadSearchLiveField value={query} onChange={setQuery} />
       </div>
 
-      <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
         <div className="border-b border-lf-border bg-lf-bg/40 px-5 py-4">
-          <h2 className="text-[15px] font-semibold text-gray-800">
+          <h2 className="text-[15px] font-semibold text-lf-text">
             All qualified leads — pipeline view
           </h2>
         </div>
@@ -74,13 +74,13 @@ export function AnalystPipelineTableClient({
         >
           <table className="w-full min-w-[880px] border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Lead</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Source</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Notes</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Score</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Pipeline</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Qualified on</th>
+              <tr className="border-b border-lf-border bg-lf-bg/80">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Lead</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Source</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Notes</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Score</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Pipeline</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Qualified on</th>
               </tr>
             </thead>
             <tbody>
@@ -88,7 +88,7 @@ export function AnalystPipelineTableClient({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     {from || to
                       ? "No qualified leads in this date range."
@@ -99,7 +99,7 @@ export function AnalystPipelineTableClient({
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-16 text-center text-[13px] text-gray-400"
+                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
                     {hasQuery
                       ? "No qualified leads match this name or phone in the current filters."
@@ -118,15 +118,15 @@ export function AnalystPipelineTableClient({
                   return (
                     <tr
                       key={l.id}
-                      className="border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0"
+                      className="border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"
                     >
-                      <td className="px-4 py-3 text-[13px] font-semibold text-gray-700">
+                      <td className="px-4 py-3 text-[13px] font-semibold text-lf-text-secondary">
                         {l.leadName || "—"}
                       </td>
-                      <td className="min-w-0 max-w-[260px] px-4 py-3 align-top text-[13px] text-gray-700">
+                      <td className="min-w-0 max-w-[260px] px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                         <LeadSourcePill source={l.source} />
                       </td>
-                      <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top text-[13px] text-gray-700">
+                      <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                         {l.salesStage === SalesStage.CLOSED_LOST ? (
                           l.lostNotes?.trim() ? (
                             <ExecLostNotesReadonly notes={l.lostNotes} />
@@ -139,7 +139,7 @@ export function AnalystPipelineTableClient({
                           <AnalystNotesReadonly notes={l.notes} />
                         )}
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-gray-700">
+                      <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-16 overflow-hidden rounded-full bg-lf-bg">
                             <div
@@ -154,14 +154,14 @@ export function AnalystPipelineTableClient({
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-gray-700">
+                      <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${pill.className}`}
                         >
                           {pill.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-gray-700">
+                      <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
                         {formatAnalystDate(new Date(l.createdAt))}
                       </td>
                     </tr>

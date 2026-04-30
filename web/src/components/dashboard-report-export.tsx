@@ -76,7 +76,7 @@ export function DashboardReportExport({
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={busy !== null}
-        className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
       >
         {busy ? (
           <span className="text-lf-muted">Exporting…</span>
@@ -112,7 +112,7 @@ export function DashboardReportExport({
             <button
               type="button"
               role="menuitem"
-              className="h-9 block w-full px-3 text-left text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              className="h-9 block w-full px-3 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover hover:text-lf-text"
               onClick={() => void run("pdf")}
             >
               PDF
@@ -120,7 +120,7 @@ export function DashboardReportExport({
             <button
               type="button"
               role="menuitem"
-              className="h-9 block w-full px-3 text-left text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              className="h-9 block w-full px-3 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover hover:text-lf-text"
               onClick={() => void run("xlsx")}
             >
               Excel (.xlsx)
@@ -128,7 +128,7 @@ export function DashboardReportExport({
             <button
               type="button"
               role="menuitem"
-              className="h-9 block w-full px-3 text-left text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              className="h-9 block w-full px-3 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover hover:text-lf-text"
               onClick={() => void run("csv")}
             >
               CSV

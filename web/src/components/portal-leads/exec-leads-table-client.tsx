@@ -87,29 +87,29 @@ export function ExecLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
-        className={`w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ${portalDataTableScrollClass}`}
+        className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="My leads table"
         tabIndex={0}
       >
         <table className="w-full min-w-[1280px] border-collapse text-[13px]">
-          <thead className="border-b border-gray-200 bg-gray-50">
+          <thead className="border-b border-lf-border bg-lf-bg/80">
             <tr>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Phone</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Email</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Source</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Analyst</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Score</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Deadline</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Stage</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Est. value</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Closed revenue</th>
-              <th className="max-w-[28rem] min-w-0 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Name</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Phone</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Email</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Source</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Analyst</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Score</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Deadline</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Stage</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Est. value</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Closed revenue</th>
+              <th className="max-w-[28rem] min-w-0 px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
                 Analyst notes
               </th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Lost-deal notes</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Update</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Lost-deal notes</th>
+              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Update</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +117,7 @@ export function ExecLeadsTableClient({
               <tr>
                 <td
                   colSpan={13}
-                  className="px-4 py-16 text-center text-[13px] text-gray-400"
+                  className="px-4 py-16 text-center text-[13px] text-lf-muted"
                 >
                   No leads in this range.
                 </td>
@@ -126,7 +126,7 @@ export function ExecLeadsTableClient({
               <tr>
                 <td
                   colSpan={13}
-                  className="px-4 py-16 text-center text-[13px] text-gray-400"
+                  className="px-4 py-16 text-center text-[13px] text-lf-muted"
                 >
                   {hasQuery
                     ? "No leads match this name or phone in the current filters."
@@ -140,7 +140,7 @@ export function ExecLeadsTableClient({
                 return (
                   <tr
                     key={lead.id}
-                    className="align-top border-b border-gray-100 text-[13px] text-gray-700 transition-colors hover:bg-gray-50 last:border-b-0"
+                    className="align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"
                   >
                     <td className="px-4 py-3 font-medium text-lf-text">
                       {lead.leadName || "—"}

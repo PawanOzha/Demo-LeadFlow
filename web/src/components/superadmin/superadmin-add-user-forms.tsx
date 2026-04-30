@@ -7,7 +7,7 @@ import { superadminCreateUserFormAction } from "@/app/actions/superadmin";
 import { UserRole } from "@/lib/constants";
 
 const inputClass =
-  "h-9 w-full min-w-[140px] rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none focus:border-transparent focus:ring-2 focus:ring-gray-900";
+  "h-9 w-full min-w-[140px] rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand";
 
 function ChevronDown({ open }: { open: boolean }) {
   return (
@@ -143,11 +143,11 @@ function AddLeadAnalystForm({
             (copy now — it will not be shown again.)
           </p>
         ) : null}
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Name
         <input name="name" required className={`mt-1 ${inputClass}`} />
       </label>
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Email
         <input
           name="email"
@@ -157,7 +157,7 @@ function AddLeadAnalystForm({
           className={`mt-1 ${inputClass} appearance-none`}
         />
       </label>
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Password
         <input
           name="password"
@@ -168,7 +168,7 @@ function AddLeadAnalystForm({
           className={`mt-1 ${inputClass}`}
         />
       </label>
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Analyst team lead
         <select
           name="managerId"
@@ -186,7 +186,7 @@ function AddLeadAnalystForm({
           ))}
         </select>
       </label>
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Analyst team name
         <input
           name="analystTeamName"
@@ -207,7 +207,7 @@ function AddLeadAnalystForm({
       <button
         type="submit"
         disabled={laPending}
-        className="h-9 w-full rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+        className="h-9 w-full rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
       >
         {laPending ? "Creating…" : "Create"}
       </button>
@@ -241,11 +241,11 @@ function AddAnalystTeamLeadForm({
           (copy now — it will not be shown again.)
         </p>
       ) : null}
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Name
         <input name="name" required className={`mt-1 ${inputClass}`} />
       </label>
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Email
         <input
           name="email"
@@ -255,7 +255,7 @@ function AddAnalystTeamLeadForm({
           className={`mt-1 ${inputClass}`}
         />
       </label>
-      <label className="block text-[12px] font-medium uppercase tracking-wide text-gray-500">
+      <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Team name
         <input
           name="analystTeamName"
@@ -279,7 +279,7 @@ function AddAnalystTeamLeadForm({
       <button
         type="submit"
         disabled={atlPending}
-        className="h-9 w-full rounded-lg bg-gray-900 px-4 text-[13px] font-medium text-white transition-colors hover:bg-gray-700 active:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 disabled:opacity-40"
+        className="h-9 w-full rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
       >
         {atlPending ? "Creating…" : "Create"}
       </button>
@@ -312,7 +312,7 @@ function AddUserCardMenu({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-      className="flex h-9 w-full min-w-[220px] max-w-[min(100vw-2rem,280px)] items-center justify-between gap-3 rounded-lg border border-gray-300 bg-white px-4 text-left text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+      className="flex h-9 w-full min-w-[220px] max-w-[min(100vw-2rem,280px)] items-center justify-between gap-3 rounded-lg border border-lf-border bg-lf-surface px-4 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
       >
         <div>
           <span className="block text-sm font-semibold text-lf-text">Add user</span>
@@ -322,13 +322,13 @@ function AddUserCardMenu({
       </button>
       {open ? (
         <div
-          className="absolute right-0 z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+          className="absolute right-0 z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-lg"
           role="menu"
         >
           <button
             type="button"
             role="menuitem"
-            className="w-full cursor-pointer px-3 py-2 text-left text-[13px] text-gray-700 transition-colors hover:bg-gray-50"
+            className="w-full cursor-pointer px-3 py-2 text-left text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover"
             onClick={() => {
               onPick("atl");
               setOpen(false);
@@ -339,7 +339,7 @@ function AddUserCardMenu({
           <button
             type="button"
             role="menuitem"
-            className="w-full cursor-pointer px-3 py-2 text-left text-[13px] text-gray-700 transition-colors hover:bg-gray-50"
+            className="w-full cursor-pointer px-3 py-2 text-left text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover"
             onClick={() => {
               onPick("la");
               setOpen(false);

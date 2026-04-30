@@ -53,15 +53,15 @@ export function AtlLeadsFiltersBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
-      <p className="mb-0 px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+    <div className="flex flex-wrap items-center gap-3 border-b border-lf-border bg-lf-surface px-4 py-3">
+      <p className="mb-0 px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-lf-muted">
         Filters
       </p>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-        <label className="flex min-w-[180px] flex-1 flex-col gap-1.5 text-[12px] font-medium uppercase tracking-wide text-gray-500">
+        <label className="flex min-w-[180px] flex-1 flex-col gap-1.5 text-[12px] font-medium uppercase tracking-wide text-lf-muted">
           Status
           <select
-            className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary focus:border-transparent focus:outline-none focus:ring-2 focus:ring-lf-brand"
             value={status ?? ""}
             onChange={(e) => {
               const v = e.target.value;
@@ -76,10 +76,10 @@ export function AtlLeadsFiltersBar({
             <option value={QualificationStatus.IRRELEVANT}>Irrelevant</option>
           </select>
         </label>
-        <label className="flex min-w-[200px] flex-1 flex-col gap-1.5 text-[12px] font-medium uppercase tracking-wide text-gray-500">
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1.5 text-[12px] font-medium uppercase tracking-wide text-lf-muted">
           Lead analyst
           <select
-            className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary focus:border-transparent focus:outline-none focus:ring-2 focus:ring-lf-brand"
             value={analystId ?? ""}
             onChange={(e) => {
               const v = e.target.value;
@@ -95,10 +95,10 @@ export function AtlLeadsFiltersBar({
             ))}
           </select>
         </label>
-        <label className="flex min-w-[200px] flex-1 flex-col gap-1.5 text-[12px] font-medium uppercase tracking-wide text-gray-500">
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1.5 text-[12px] font-medium uppercase tracking-wide text-lf-muted">
           Source
           <select
-            className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary focus:border-transparent focus:outline-none focus:ring-2 focus:ring-lf-brand"
             value={source ?? ""}
             onChange={(e) => {
               const v = e.target.value;

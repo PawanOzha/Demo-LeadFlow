@@ -67,8 +67,8 @@ export function PortalPaginationBar({
             })}
             className={`h-9 rounded-lg border px-4 text-[13px] font-medium ${
               perPage === n
-                ? "border-gray-300 bg-white text-gray-700"
-                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                ? "border-lf-border bg-lf-surface text-lf-text-secondary"
+                : "border-lf-border bg-lf-surface text-lf-text-secondary hover:bg-lf-row-hover"
             }`}
           >
             {n}
@@ -77,7 +77,7 @@ export function PortalPaginationBar({
         {prevHref ? (
           <Link
             href={prevHref}
-            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
           >
             Previous
           </Link>
@@ -92,7 +92,7 @@ export function PortalPaginationBar({
         {nextHref ? (
           <Link
             href={nextHref}
-            className="h-9 rounded-lg border border-gray-300 bg-white px-4 text-[13px] font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
           >
             Next
           </Link>

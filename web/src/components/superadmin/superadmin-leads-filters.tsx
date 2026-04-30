@@ -98,14 +98,14 @@ export function SuperadminLeadsFiltersBar({
   }, [nextHref, router]);
 
   const fieldLabel =
-    "text-[12px] font-medium uppercase tracking-wide text-gray-500 xl:text-[11px]";
+    "text-[12px] font-medium uppercase tracking-wide text-lf-muted xl:text-[11px]";
   const fieldControl =
-    "mt-1.5 block h-9 w-full rounded-lg border border-gray-300 bg-white px-3 text-[13px] text-gray-700 outline-none appearance-none focus:border-transparent focus:ring-2 focus:ring-gray-900 xl:mt-1 xl:h-9 xl:px-3 xl:text-[13px]";
+    "mt-1.5 block h-9 w-full rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none appearance-none focus:border-transparent focus:ring-2 focus:ring-lf-brand xl:mt-1 xl:h-9 xl:px-3 xl:text-[13px]";
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-3">
+    <div className="flex flex-wrap items-center gap-3 border-b border-lf-border bg-lf-surface px-4 py-3">
       <div className="flex w-full flex-col gap-3 xl:flex-row xl:items-end xl:gap-3">
-        <p className="shrink-0 px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-400 xl:pb-1.5">
+        <p className="shrink-0 px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-widest text-lf-muted xl:pb-1.5">
           Filters
         </p>
 
@@ -118,15 +118,15 @@ export function SuperadminLeadsFiltersBar({
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Name, phone, or email…"
-                className="h-9 w-64 rounded-lg border border-gray-300 bg-gray-50 pl-9 pr-4 text-[13px] text-gray-900 placeholder:text-gray-400 outline-none transition-all focus:border-transparent focus:bg-white focus:ring-2 focus:ring-gray-900"
+                className="h-9 w-64 rounded-lg border border-lf-border bg-lf-bg/80 pl-9 pr-4 text-[13px] text-lf-text placeholder:text-lf-muted outline-none transition-all focus:border-transparent focus:bg-lf-surface focus:ring-2 focus:ring-lf-brand"
               />
             </label>
-            <label className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-[13px] text-lf-text-secondary cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={duplicatePhonesOnly}
                 onChange={(e) => setDuplicatePhonesOnly(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-gray-300 text-gray-900 focus:ring-gray-900 focus:ring-offset-0"
+                className="h-4 w-4 cursor-pointer rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
               />
               <span className="whitespace-nowrap leading-tight">Dup phones</span>
             </label>

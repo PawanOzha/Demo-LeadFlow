@@ -18,13 +18,13 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-[#0052cc] via-[#0066ff] to-[#0052cc] px-4">
-      <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-8 shadow-2xl shadow-black/25 ring-1 ring-white/30">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-lf-shell-gradient-start to-lf-bg px-4">
+      <div className="w-full max-w-[430px] rounded-[14px] border border-lf-border bg-lf-surface p-8 shadow-[0_8px_20px_var(--color-lf-card-shadow)]">
         <div className="text-center">
-          <h1 className="text-[22px] font-semibold tracking-tight text-gray-900">
+          <h1 className="text-[20px] font-bold tracking-tight text-lf-text">
             LeadFlow
           </h1>
-          <p className="mt-1 text-[13px] font-normal text-gray-600">Sign in to continue</p>
+          <p className="mt-1 text-[13px] font-normal text-lf-label">Sign in to continue</p>
         </div>
         <LoginForm />
       </div>
