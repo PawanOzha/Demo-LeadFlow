@@ -166,9 +166,14 @@ export function buildPortalDateRangeApplyHref(
   preservedEntries: [string, string][],
 ): string {
   const p = new URLSearchParams();
+  const seen = new Set<string>();
   for (const [k, v] of preservedEntries) {
     if (k === "from" || k === "to" || k === "page") continue;
-    p.append(k, String(v));
+    const val = String(v);
+    const sig = `${k}\u0000${val}`;
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    p.append(k, val);
   }
   if (fromYmd) p.set("from", fromYmd);
   if (toYmd) p.set("to", toYmd);
@@ -183,9 +188,14 @@ export function buildPortalDateRangeClearHref(
   preservedEntries: [string, string][],
 ): string {
   const p = new URLSearchParams();
+  const seen = new Set<string>();
   for (const [k, v] of preservedEntries) {
     if (k === "from" || k === "to" || k === "page") continue;
-    p.append(k, String(v));
+    const val = String(v);
+    const sig = `${k}\u0000${val}`;
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    p.append(k, val);
   }
   const qs = p.toString();
   return qs ? `${pathname}?${qs}` : pathname;

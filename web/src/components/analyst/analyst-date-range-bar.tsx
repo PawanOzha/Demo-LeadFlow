@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildPortalDateRangeApplyHref,
@@ -40,6 +40,7 @@ export default function AnalystDateRangeBar({
   rangeSummary,
 }: AnalystDateRangeBarProps) {
   const router = useRouter();
+  const [isNavigating, startTransition] = useTransition();
   const [applyError, setApplyError] = useState<string | null>(null);
   const fromInputRef = useRef<HTMLInputElement>(null);
   const toInputRef = useRef<HTMLInputElement>(null);
@@ -65,14 +66,18 @@ export default function AnalystDateRangeBar({
     }
 
     setApplyError(null);
-    router.push(
-      buildPortalDateRangeApplyHref(pathname, fromSafe, toSafe, preservedEntries),
-    );
+    startTransition(() => {
+      router.replace(
+        buildPortalDateRangeApplyHref(pathname, fromSafe, toSafe, preservedEntries),
+      );
+    });
   }
 
   function onClear() {
     setApplyError(null);
-    router.push(buildPortalDateRangeClearHref(pathname, preservedEntries));
+    startTransition(() => {
+      router.replace(buildPortalDateRangeClearHref(pathname, preservedEntries));
+    });
   }
 
   return (
@@ -120,15 +125,17 @@ export default function AnalystDateRangeBar({
           </label>
           <button
             type="submit"
+            disabled={isNavigating}
             className="min-h-10 rounded-lg bg-lf-accent px-4 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent"
           >
-            Apply
+            {isNavigating ? "Applying..." : "Apply"}
           </button>
         </form>
         {hasActiveRange ? (
           <button
             type="button"
             onClick={onClear}
+            disabled={isNavigating}
             className="min-h-10 rounded-lg border border-lf-border px-4 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50"
           >
             Clear
