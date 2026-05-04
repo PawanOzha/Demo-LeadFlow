@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SuperadminLeadsFiltersBar } from "@/components/superadmin/superadmin-leads-filters";
-import { SalesStage, UserRole } from "@/lib/constants";
+import { QualificationStatus, SalesStage, UserRole } from "@/lib/constants";
 import { coerceMoney } from "@/lib/deal-money";
 import { getSuperadminLeadsWithJourney } from "@/lib/superadmin-stats";
 import {
@@ -90,7 +90,10 @@ export default async function SuperadminLeadsPage({
     teams,
     execs,
     analysts,
-    counts,
+    countTotalRows,
+    countQualifiedRows,
+    countNotQualifiedRows,
+    countIrrelevantRows,
     paged,
     exportPack,
     duplicateRows,
@@ -109,20 +112,22 @@ export default async function SuperadminLeadsPage({
           `SELECT id, name, email FROM "User" WHERE role = $1 ORDER BY name ASC`,
           [UserRole.LEAD_ANALYST],
         ),
-        dbQuery<{
-          total: string;
-          qualified: string;
-          notQualified: string;
-          irrelevant: string;
-        }>(
-          `SELECT
-             COUNT(*)::text AS total,
-             COUNT(*) FILTER (WHERE "qualificationStatus" = 'QUALIFIED')::text AS qualified,
-             COUNT(*) FILTER (WHERE "qualificationStatus" = 'NOT_QUALIFIED')::text AS "notQualified",
-             COUNT(*) FILTER (WHERE "qualificationStatus" = 'IRRELEVANT')::text AS irrelevant
-           FROM "Lead"
-           WHERE ${where.clause}`,
+        // One column `c` per query — same shape as superadmin dashboard metrics (reliable via exec_sql).
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause}`,
           where.params,
+        ),
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = $${where.params.length + 1}`,
+          [...where.params, QualificationStatus.QUALIFIED],
+        ),
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = $${where.params.length + 1}`,
+          [...where.params, QualificationStatus.NOT_QUALIFIED],
+        ),
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = $${where.params.length + 1}`,
+          [...where.params, QualificationStatus.IRRELEVANT],
         ),
         getSuperadminLeadsWithJourney(where, { limit: perPage, offset }),
         getSuperadminLeadsWithJourney(where, {
@@ -159,12 +164,12 @@ export default async function SuperadminLeadsPage({
         ),
       ]),
     );
+  const totalCount = Number(countTotalRows[0]?.c ?? 0);
   const qualTotals = {
-    qualified: Number(counts[0]?.qualified ?? 0),
-    notQualified: Number(counts[0]?.notQualified ?? 0),
-    irrelevant: Number(counts[0]?.irrelevant ?? 0),
+    qualified: Number(countQualifiedRows[0]?.c ?? 0),
+    notQualified: Number(countNotQualifiedRows[0]?.c ?? 0),
+    irrelevant: Number(countIrrelevantRows[0]?.c ?? 0),
   };
-  const totalCount = Number(counts[0]?.total ?? 0);
   const qualSumKnownStatuses =
     qualTotals.qualified + qualTotals.notQualified + qualTotals.irrelevant;
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
@@ -284,7 +289,7 @@ export default async function SuperadminLeadsPage({
       : null;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-10">
       <SuperadminLeadsFiltersBar
         key={filtersKey}
         initial={parsed}

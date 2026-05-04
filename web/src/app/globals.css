@@ -60,7 +60,7 @@
       var(--color-lf-shell-gradient-start) 0%,
       var(--color-lf-shell-gradient-end) 100%
     );
-    background-attachment: fixed;
+    /* scroll — fixed attachment + nested overflow:auto shells causes repaint seams / “cut off” UI */
   }
 
   ::-webkit-scrollbar {

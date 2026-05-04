@@ -17,6 +17,8 @@ import {
 import { formatDealMoney } from "@/lib/deal-money";
 import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
 import { DashboardReportExport } from "@/components/dashboard-report-export";
+import AnalystNotesReadonly from "@/components/analyst-notes-readonly";
+import ExecLostNotesReadonly from "@/components/exec-lost-notes-readonly";
 
 export type SuperadminLeadsPaginationChrome = {
   totalCount: number;
@@ -227,7 +229,12 @@ export function SuperadminLeadsJourneyClient({
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-lf-border bg-lf-surface shadow-sm ring-1 ring-black/[0.04]">
+      {/*
+        Avoid overflow-hidden on this outer card: it stacks with overflow-x-auto inside <main>
+        and body background-attachment:fixed and can make the bottom of the section look clipped.
+        Horizontal clipping stays on the inner table wrapper only.
+      */}
+      <div className="min-w-0 w-full rounded-2xl border border-lf-border bg-lf-surface shadow-sm ring-1 ring-black/[0.04]">
         <div className="border-b border-lf-border/80 bg-gradient-to-b from-lf-bg/[0.45] to-lf-bg/[0.12]">
           <div
             className="flex flex-wrap items-center gap-x-3 gap-y-2.5 px-3 py-2.5 sm:gap-x-4 sm:px-4 lg:px-5 lg:py-3"
@@ -373,7 +380,7 @@ export function SuperadminLeadsJourneyClient({
               <section key={analyst.id}>
                 <div className="overflow-x-auto bg-lf-surface/95">
               <table
-                className={`w-full table-fixed border-collapse text-[13px] leading-snug ${showDealValueColumns ? "min-w-[1336px]" : "min-w-[1120px]"}`}
+                className={`w-full table-fixed border-collapse text-[13px] leading-snug ${showDealValueColumns ? "min-w-[1680px]" : "min-w-[1480px]"}`}
               >
                 <thead className="border-b border-lf-border bg-lf-bg/70 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-subtle">
                   <tr>
@@ -395,6 +402,12 @@ export function SuperadminLeadsJourneyClient({
                         </th>
                       </>
                     ) : null}
+                    <th className="min-w-[11rem] max-w-[28rem] px-3 py-2 align-bottom">
+                      Your notes
+                    </th>
+                    <th className="min-w-[9rem] max-w-[20rem] px-3 py-2 align-bottom">
+                      Executive notes
+                    </th>
                     <th className="w-[116px] px-3 py-2 align-bottom">Team</th>
                     <th className="w-[148px] px-3 py-2 align-bottom">
                       Sales executive
@@ -482,6 +495,18 @@ export function SuperadminLeadsJourneyClient({
                           </td>
                         </>
                       ) : null}
+                      <td
+                        className="max-w-[28rem] min-w-0 px-3 py-2 align-top"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <AnalystNotesReadonly notes={lead.notes} />
+                      </td>
+                      <td
+                        className="max-w-[280px] min-w-0 px-3 py-2 align-top"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExecLostNotesReadonly notes={lead.lostNotes} />
+                      </td>
                       <td className="px-3 py-2 align-top text-[12px]">
                         <span className="block min-w-0 truncate" title={lead.team?.name ?? undefined}>
                           {lead.team?.name ?? "—"}

@@ -40,16 +40,41 @@ function reviveRows<T>(rows: unknown[]): T[] {
   return rows.map((row) => reviveRowDates(row) as T);
 }
 
-/** Supabase `exec_sql` may return a JSON string of either `[...rows]` or `{ rows: [...] }`. */
-function rowsFromParsedRpcPayload<T>(parsed: unknown): T[] | null {
+/**
+ * Normalizes what Supabase `exec_sql` returns (`setof jsonb`) into a row array.
+ * Handles: `[rows]`, `{ rows }`, a single row object, JSON strings, double-nested arrays,
+ * and arrays of stringified JSON rows (some PostgREST paths).
+ */
+function normalizeExecSqlRpcResult(parsed: unknown): unknown[] {
+  if (parsed == null) return [];
+
   if (Array.isArray(parsed)) {
-    return reviveRows<T>(parsed);
+    if (parsed.length === 0) return [];
+    // Double-nested: [[ {...}, {...} ]]
+    if (parsed.length === 1 && Array.isArray(parsed[0])) {
+      return normalizeExecSqlRpcResult(parsed[0]);
+    }
+    // Each row is a JSON string
+    if (parsed.every((x) => typeof x === "string")) {
+      return parsed.map((s) => {
+        try {
+          return JSON.parse(s as string);
+        } catch {
+          return s;
+        }
+      });
+    }
+    return parsed;
   }
-  if (parsed && typeof parsed === "object" && "rows" in parsed) {
-    const rows = (parsed as { rows?: unknown }).rows;
-    if (Array.isArray(rows)) return reviveRows<T>(rows);
+
+  if (typeof parsed === "object") {
+    if ("rows" in parsed && Array.isArray((parsed as { rows?: unknown }).rows)) {
+      return normalizeExecSqlRpcResult((parsed as { rows: unknown[] }).rows);
+    }
+    return [parsed];
   }
-  return null;
+
+  return [];
 }
 
 function sqlRpcName(): string {
@@ -82,22 +107,18 @@ async function runSql<T = Record<string, unknown>>(
   if (error) {
     throw new Error(`Supabase SQL RPC failed: ${error.message}`);
   }
+
+  let payload: unknown = data;
   if (typeof data === "string") {
     try {
-      const parsed = JSON.parse(data);
-      const fromPayload = rowsFromParsedRpcPayload<T>(parsed);
-      if (fromPayload !== null) return fromPayload;
-      return [];
+      payload = JSON.parse(data);
     } catch {
       return [];
     }
   }
-  const fromObject = rowsFromParsedRpcPayload<T>(data);
-  if (fromObject !== null) return fromObject;
-  if (!Array.isArray(data)) {
-    return [];
-  }
-  return reviveRows<T>(data);
+
+  const rows = normalizeExecSqlRpcResult(payload);
+  return reviveRows<T>(rows);
 }
 
 async function runSqlBatchTransaction(

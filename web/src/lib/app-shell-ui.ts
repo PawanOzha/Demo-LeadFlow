@@ -14,7 +14,7 @@ export const portalAppShellSidebarClass =
 
 /** Main scroll region inside the column to the right of the sidebar. */
 export const appMainContentClass =
-  "min-h-0 w-full min-w-0 flex-1 max-w-none overflow-y-auto px-4 py-4 sm:px-7 sm:py-6 lg:px-7 lg:py-6";
+  "min-h-0 w-full min-w-0 flex-1 max-w-none overflow-y-auto [scrollbar-gutter:stable] px-4 py-4 sm:px-7 sm:py-6 lg:px-7 lg:py-6";
 
 /**
  * Default wrapper for portal route pages — fills the main column (no artificial max-width centering).
