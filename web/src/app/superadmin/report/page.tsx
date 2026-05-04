@@ -90,21 +90,18 @@ export default async function SuperadminReportPage({
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          
-        </div>
+      <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-start lg:justify-between lg:gap-x-6">
+        <AnalystDateRangeBar
+          key={`${from ?? ""}|${to ?? ""}`}
+          pathname="/superadmin/report"
+          defaultFrom={from ?? ""}
+          defaultTo={to ?? ""}
+          preservedEntries={preservedEntries}
+          rangeSummary={rangeLabel}
+          compact
+        />
         <SuperadminReportExport payload={vm.exportPayload} />
       </div>
-
-      <AnalystDateRangeBar
-        key={`${from ?? ""}|${to ?? ""}`}
-        pathname="/superadmin/report"
-        defaultFrom={from ?? ""}
-        defaultTo={to ?? ""}
-        preservedEntries={preservedEntries}
-        rangeSummary={rangeLabel}
-      />
 
       <SuperadminReportCharts
         totalLeads={r.total}

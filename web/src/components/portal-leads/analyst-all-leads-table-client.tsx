@@ -6,8 +6,8 @@ import AnalystQualificationSelect from "@/components/analyst/analyst-qualificati
 import AnalystNotesReadonly from "@/components/analyst-notes-readonly";
 import ExecLostNotesReadonly from "@/components/exec-lost-notes-readonly";
 import { PortalLeadSearchLiveField } from "@/components/portal-lead-search-live-field";
-import { filterLeadsByNameOrPhone } from "@/lib/lead-client-search";
 import { useDebouncedLeadSearchUrl } from "@/lib/use-debounced-lead-search-url";
+import { usePortalLeadTablePageScroll } from "@/lib/use-portal-lead-table-page-scroll";
 import { LeadSourcePill } from "@/components/lead-source-display";
 import { formatAnalystDate } from "@/lib/analyst-ui";
 import { analystFacingSalesLabel } from "@/lib/sales-stage-labels";
@@ -36,6 +36,7 @@ export type AnalystAllLeadsRow = {
 
 export function AnalystAllLeadsTableClient({
   leads,
+  page,
   initialQ,
   from,
   to,
@@ -45,6 +46,7 @@ export function AnalystAllLeadsTableClient({
   exportRowCount,
 }: {
   leads: AnalystAllLeadsRow[];
+  page: number;
   initialQ: string | null;
   from: string | null;
   to: string | null;
@@ -55,26 +57,17 @@ export function AnalystAllLeadsTableClient({
 }) {
   const [query, setQuery] = useState(initialQ ?? "");
   useDebouncedLeadSearchUrl(query);
-
-  const filtered = useMemo(
-    () => filterLeadsByNameOrPhone(leads, query),
-    [leads, query],
-  );
-
-  const filteredExport = useMemo(
-    () => filterLeadsByNameOrPhone(exportLeads, query),
-    [exportLeads, query],
-  );
+  const tableScrollRef = usePortalLeadTablePageScroll(page);
 
   const exportPayload = useMemo(
     () =>
-      buildAnalystLeadsExportPayload(filteredExport, {
+      buildAnalystLeadsExportPayload(exportLeads, {
         rangeLabel,
-        searchQuery: query,
+        searchQuery: initialQ ?? "",
         rangeTotalCount,
         exportRowCount,
       }),
-    [filteredExport, rangeLabel, query, rangeTotalCount, exportRowCount],
+    [exportLeads, rangeLabel, initialQ, rangeTotalCount, exportRowCount],
   );
 
   const hasQuery = query.trim().length > 0;
@@ -92,6 +85,7 @@ export function AnalystAllLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
+        ref={tableScrollRef}
         className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="Your leads table"
@@ -123,17 +117,6 @@ export function AnalystAllLeadsTableClient({
                     colSpan={12}
                     className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
-                    {from || to
-                      ? "No leads in this date range."
-                      : "No leads yet."}
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={12}
-                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
-                  >
                     {hasQuery
                       ? "No leads match this name or phone in the current filters."
                       : from || to
@@ -142,7 +125,7 @@ export function AnalystAllLeadsTableClient({
                   </td>
                 </tr>
               ) : (
-                filtered.map((l) => (
+                leads.map((l) => (
                   <tr
                     key={l.id}
                     className="border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"

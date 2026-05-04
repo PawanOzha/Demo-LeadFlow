@@ -7,6 +7,10 @@ import {
 
 export const DEMO_PASSWORD = "password123";
 
+type DemoPgPool = {
+  query: (text: string, params?: unknown[]) => Promise<unknown>;
+};
+
 export type DemoAuthIds = {
   superadmin: string;
   atl: string;
@@ -17,7 +21,7 @@ export type DemoAuthIds = {
 };
 
 export async function seedBootstrapSuperAdminOnly(
-  pool: any,
+  pool: DemoPgPool,
   superadminAuthId: string,
 ) {
   const id = randomUUID();
@@ -34,7 +38,7 @@ export async function seedBootstrapSuperAdminOnly(
   );
 }
 
-export async function seedDemoWithAuthIds(pool: any, ids: DemoAuthIds) {
+export async function seedDemoWithAuthIds(pool: DemoPgPool, ids: DemoAuthIds) {
   const superadminDbId = randomUUID();
   const atlId = randomUUID();
   const analystId = randomUUID();

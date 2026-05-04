@@ -18,7 +18,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-lf-shell-gradient-start to-lf-bg px-4">
+    <div className="flex h-full min-h-full w-full flex-col items-center justify-center overflow-y-auto bg-gradient-to-b from-lf-shell-gradient-start to-lf-bg px-4 py-10">
       <div className="w-full max-w-[430px] rounded-[14px] border border-lf-border bg-lf-surface p-8 shadow-[0_8px_20px_var(--color-lf-card-shadow)]">
         <div className="text-center">
           <h1 className="text-[20px] font-bold tracking-tight text-lf-text">

@@ -1,28 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { dbQuery } from "@/lib/db/pool";
-import { PortalPaginationBar } from "@/components/portal-pagination-bar";
-import {
-  superadminHandoffLabels,
-  superadminRoleLabel,
-} from "@/lib/superadmin-ui";
 import { getSuperadminDashboardMetrics } from "@/lib/superadmin-stats";
-
-function first(sp: string | string[] | undefined): string | undefined {
-  if (Array.isArray(sp)) return sp[0];
-  return sp;
-}
-
-function parseHandoffPaging(sp: Record<string, string | string[] | undefined>): {
-  page: number;
-  perPage: 25 | 50 | 100;
-} {
-  const pageRaw = Number.parseInt(first(sp.page) ?? "", 10);
-  const perPageRaw = Number.parseInt(first(sp.perPage) ?? "", 10);
-  const perPage: 25 | 50 | 100 =
-    perPageRaw === 50 || perPageRaw === 100 ? perPageRaw : 25;
-  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
-  return { page, perPage };
-}
 
 export const metadata: Metadata = {
   title: "Dashboard · Superadmin",
@@ -52,18 +31,6 @@ function StatCard({
   );
 }
 
-type HandoffRow = {
-  id: string;
-  createdAt: Date;
-  action: string;
-  detail: string | null;
-  lead_id: string | null;
-  lead_leadName: string | null;
-  actor_name: string | null;
-  actor_email: string | null;
-  actor_role: string | null;
-};
-
 type TransferRow = {
   id: string;
   createdAt: Date;
@@ -75,17 +42,9 @@ type TransferRow = {
   tb_email: string;
 };
 
-export default async function SuperadminDashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const sp = await searchParams;
-  const { page: pageRaw, perPage } = parseHandoffPaging(sp);
-
-  const [metrics, handoffCountRow, transferRows] = await Promise.all([
+export default async function SuperadminDashboardPage() {
+  const [metrics, transferRows] = await Promise.all([
     getSuperadminDashboardMetrics(),
-    dbQuery<{ c: string }>(`SELECT COUNT(*)::text AS c FROM "LeadHandoffLog"`),
     dbQuery<TransferRow>(
       `SELECT t.id, t."createdAt",
         se.name AS se_name, se.email AS se_email,
@@ -101,42 +60,6 @@ export default async function SuperadminDashboardPage({
     ),
   ]);
 
-  const totalHandoffs = Number(handoffCountRow[0]?.c ?? 0);
-  const totalPages = Math.max(1, Math.ceil(totalHandoffs / perPage));
-  const page = Math.min(pageRaw, totalPages);
-  const offset = (page - 1) * perPage;
-
-  const handoffRows = await dbQuery<HandoffRow>(
-    `SELECT h.id, h."createdAt", h.action, h.detail,
-        l.id AS lead_id, l."leadName" AS lead_leadName,
-        a.name AS actor_name, a.email AS actor_email, a.role AS actor_role
-       FROM "LeadHandoffLog" h
-       LEFT JOIN "Lead" l ON l.id = h."leadId"
-       LEFT JOIN "User" a ON a.id = h."actorId"
-       ORDER BY h."createdAt" DESC
-       LIMIT ($1)::bigint OFFSET ($2)::bigint`,
-    [perPage, offset],
-  );
-
-  const handoffs = handoffRows.map((h) => ({
-    id: h.id,
-    createdAt: h.createdAt,
-    action: h.action,
-    detail: h.detail,
-    lead: {
-      id: h.lead_id ?? "",
-      leadName: h.lead_leadName ?? "",
-    },
-    actor:
-      h.actor_name && h.actor_email && h.actor_role
-        ? {
-            name: h.actor_name,
-            email: h.actor_email,
-            role: h.actor_role,
-          }
-        : null,
-  }));
-
   const seTransfers = transferRows.map((t) => ({
     id: t.id,
     createdAt: t.createdAt,
@@ -151,7 +74,15 @@ export default async function SuperadminDashboardPage({
       <div>
         <p className="max-w-2xl text-sm text-lf-muted">
           Snapshot of users, pipeline volume, and how leads are associated with
-          teams and sales executives (current assignments).
+          teams and sales executives (current assignments).           For the full lead
+          handoff event log, open{" "}
+          <Link
+            href="/superadmin/transfer-log"
+            className="font-medium text-lf-link underline-offset-2 hover:underline"
+          >
+            Lead transfer log
+          </Link>
+          .
         </p>
       </div>
 
@@ -269,85 +200,6 @@ export default async function SuperadminDashboardPage({
           </div>
         </div>
       </div>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-lf-text">Lead transfer log</h2>
-        <p className="text-sm text-lf-subtle">
-          Recent routing and close events (newest first).
-        </p>
-        <PortalPaginationBar
-          pathname="/superadmin/dashboard"
-          query={{ perPage: String(perPage) }}
-          page={page}
-          perPage={perPage}
-          totalCount={totalHandoffs}
-          countNoun="events"
-        />
-        <div className="w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
-          <table className="w-full min-w-[800px] border-collapse text-[13px]">
-            <thead className="border-b border-lf-border bg-lf-bg/80">
-              <tr>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">When</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Lead</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Action</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Actor</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {handoffs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
-                  >
-                    No handoff events yet.
-                  </td>
-                </tr>
-              ) : (
-                handoffs.map((h) => (
-                  <tr key={h.id} className="align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0">
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-lf-subtle">
-                      {h.createdAt.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-lf-text-secondary">
-                      {h.lead.leadName || h.lead.id.slice(0, 8)}
-                    </td>
-                    <td className="px-4 py-3 text-lf-muted">
-                      {superadminHandoffLabels[h.action] ?? h.action}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-lf-text-secondary">
-                      {h.actor ? (
-                        <>
-                          {h.actor.name}
-                          <br />
-                          <span className="text-lf-subtle">
-                            {superadminRoleLabel(h.actor.role)} ·{" "}
-                            {h.actor.email}
-                          </span>
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="max-w-md px-4 py-3 text-xs text-lf-subtle">
-                      {h.detail ?? "—"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <PortalPaginationBar
-          pathname="/superadmin/dashboard"
-          query={{ perPage: String(perPage) }}
-          page={page}
-          perPage={perPage}
-          totalCount={totalHandoffs}
-          countNoun="events"
-        />
-      </section>
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-lf-text">

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -14,6 +15,18 @@ import {
   superadminRoleLabel,
 } from "@/lib/superadmin-ui";
 import { formatDealMoney } from "@/lib/deal-money";
+import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
+import { DashboardReportExport } from "@/components/dashboard-report-export";
+
+export type SuperadminLeadsPaginationChrome = {
+  totalCount: number;
+  offset: number;
+  perPage: number;
+  page: number;
+  totalPages: number;
+  prevHref: string | null;
+  nextHref: string | null;
+};
 
 type JourneyLog = {
   id: string;
@@ -137,16 +150,16 @@ function fmtGap(fromIso: string | null, toIso: string | null) {
   return `${minutes}m`;
 }
 
-function duplicateLabel(meta: JourneyLead["duplicateMeta"]) {
-  if (!meta) return null;
-  if (meta.byPhone) return `Duplicate phone (${meta.maxGroupSize})`;
-  return null;
-}
-
 export function SuperadminLeadsJourneyClient({
   analystGroups,
+  pagination,
+  exportPayload,
+  exportDescription,
 }: {
   analystGroups: AnalystGroup[];
+  pagination: SuperadminLeadsPaginationChrome;
+  exportPayload: DashboardExportPayload;
+  exportDescription?: string;
 }) {
   const router = useRouter();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
@@ -210,13 +223,72 @@ export function SuperadminLeadsJourneyClient({
   const isAllSelected = allLeadIds.length > 0 && selectedCount === allLeadIds.length;
   const selectedIdsCsv = Array.from(visibleSelectedIds).join(",");
 
+  const pg = pagination;
+
   return (
     <>
-      <div className="space-y-8">
-        <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-surface to-lf-bg p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="inline-flex items-center gap-2 text-sm text-lf-text-secondary">
+      <div className="overflow-hidden rounded-2xl border border-lf-border bg-lf-surface shadow-sm ring-1 ring-black/[0.04]">
+        <div className="border-b border-lf-border/80 bg-gradient-to-b from-lf-bg/[0.45] to-lf-bg/[0.12]">
+          <div
+            className="flex flex-wrap items-center gap-x-3 gap-y-2.5 px-3 py-2.5 sm:gap-x-4 sm:px-4 lg:px-5 lg:py-3"
+            title={exportDescription ?? undefined}
+          >
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-3">
+              <p className="whitespace-nowrap text-[13px] text-lf-subtle">
+                <span className="tabular-nums text-lf-text">
+                  {pg.totalCount === 0 ? 0 : pg.offset + 1}–
+                  {Math.min(pg.offset + pg.perPage, pg.totalCount)}
+                </span>
+                <span className="mx-1 text-lf-muted">of</span>
+                <span className="tabular-nums font-semibold text-lf-text">
+                  {pg.totalCount}
+                </span>
+                <span className="ml-1 text-lf-muted">leads</span>
+              </p>
+              <span
+                className="hidden h-5 w-px shrink-0 bg-lf-border sm:block"
+                aria-hidden
+              />
+              <div className="flex flex-wrap items-center gap-1">
+                {pg.prevHref ? (
+                  <Link
+                    replace
+                    href={pg.prevHref}
+                    className="inline-flex h-8 items-center rounded-lg border border-lf-border bg-lf-surface px-3 text-[12px] font-medium text-lf-text-secondary shadow-sm transition-colors hover:bg-lf-row-hover sm:h-9 sm:px-3.5 sm:text-[13px]"
+                  >
+                    Previous
+                  </Link>
+                ) : (
+                  <span className="inline-flex h-8 cursor-not-allowed items-center rounded-lg border border-lf-border px-3 text-[12px] text-lf-subtle opacity-45 sm:h-9 sm:px-3.5 sm:text-[13px]">
+                    Previous
+                  </span>
+                )}
+                <span className="px-1 text-[11px] tabular-nums text-lf-muted">
+                  Page {Math.min(pg.page, pg.totalPages)} of {pg.totalPages}
+                </span>
+                {pg.nextHref ? (
+                  <Link
+                    replace
+                    href={pg.nextHref}
+                    className="inline-flex h-8 items-center rounded-lg border border-lf-border bg-lf-surface px-3 text-[12px] font-medium text-lf-text-secondary shadow-sm transition-colors hover:bg-lf-row-hover sm:h-9 sm:px-3.5 sm:text-[13px]"
+                  >
+                    Next
+                  </Link>
+                ) : (
+                  <span className="inline-flex h-8 cursor-not-allowed items-center rounded-lg border border-lf-border px-3 text-[12px] text-lf-subtle opacity-45 sm:h-9 sm:px-3.5 sm:text-[13px]">
+                    Next
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <span
+              className="hidden h-5 w-px shrink-0 bg-lf-border/90 lg:block"
+              aria-hidden
+            />
+
+            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-2 lg:gap-x-4">
+              <label className="inline-flex cursor-pointer select-none items-center gap-1.5 text-[12px] text-lf-text-secondary sm:text-[13px]">
                 <input
                   type="checkbox"
                   checked={isAllSelected}
@@ -226,21 +298,23 @@ export function SuperadminLeadsJourneyClient({
                   }}
                   className="h-4 w-4 rounded border-lf-border"
                 />
-                Select all visible leads
+                <span className="hidden sm:inline">Select all visible</span>
+                <span className="sm:hidden">Select all</span>
               </label>
-              <label className="inline-flex items-center gap-2 text-sm text-lf-text-secondary">
+              <label className="inline-flex cursor-pointer select-none items-center gap-1.5 text-[12px] text-lf-text-secondary sm:text-[13px]">
                 <input
                   type="checkbox"
                   checked={showDealValueColumns}
-                  onChange={(e) => setShowDealValueColumns(e.target.checked)}
+                  onChange={(e) =>
+                    setShowDealValueColumns(e.target.checked)
+                  }
                   className="h-4 w-4 rounded border-lf-border"
                 />
-                Show deal value columns
+                <span className="hidden sm:inline">Deal value columns</span>
+                <span className="sm:hidden">Deal $</span>
               </label>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-lg border border-lf-border bg-lf-bg/70 px-2.5 py-1 text-xs font-medium text-lf-text-secondary">
-                Selected: {selectedCount}
+              <span className="rounded-md border border-lf-border/90 bg-lf-surface px-2 py-0.5 text-[11px] font-medium tabular-nums text-lf-text-secondary">
+                Selected {selectedCount}
               </span>
               <form
                 action={bulkFormAction}
@@ -254,57 +328,77 @@ export function SuperadminLeadsJourneyClient({
                   );
                   if (!ok) e.preventDefault();
                 }}
-                className="flex items-center gap-2"
+                className="flex items-center"
               >
                 <input type="hidden" name="leadIdsCsv" value={selectedIdsCsv} />
                 <button
                   type="submit"
                   disabled={bulkPending || selectedCount === 0}
-                  className="rounded-lg bg-lf-danger px-3 py-2 text-xs font-semibold text-white hover:bg-lf-danger/90 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-8 rounded-lg bg-lf-danger px-2.5 text-[12px] font-semibold text-white shadow-sm transition-colors hover:bg-lf-danger/90 disabled:cursor-not-allowed disabled:opacity-55 sm:h-9 sm:px-3"
                 >
                   {bulkPending
                     ? "Deleting..."
                     : selectedCount > 0
-                      ? `Delete selected (${selectedCount})`
-                      : "Delete selected"}
+                      ? `Delete (${selectedCount})`
+                      : "Delete"}
                 </button>
               </form>
+              <div className="flex shrink-0 items-center border-l border-lf-border/70 pl-3 lg:pl-4">
+                <DashboardReportExport payload={exportPayload} />
+              </div>
             </div>
           </div>
           {bulkState?.error ? (
-            <p className="mt-2 text-xs text-lf-danger" role="alert">
+            <p
+              className="border-t border-lf-border/60 bg-lf-danger/[0.06] px-4 py-2 text-xs text-lf-danger lg:px-5"
+              role="alert"
+            >
               {bulkState.error}
             </p>
           ) : null}
         </div>
 
-        {analystGroups.map(({ analyst, leads }) => (
-          <section key={analyst.id} className="space-y-4">
-            <div className="overflow-x-auto rounded-xl border border-lf-border bg-lf-surface/90 shadow-sm">
-              <table className="min-w-[1480px] w-full table-fixed divide-y divide-lf-border text-sm">
-                <thead className="bg-lf-bg/70 text-left text-xs uppercase tracking-wide text-lf-subtle">
+        {analystGroups.length === 0 ? (
+          <div className="border-t border-lf-border bg-lf-surface px-4 py-14 text-center lg:px-6">
+            <p className="text-[15px] font-medium text-lf-text">
+              No leads match these filters
+            </p>
+            <p className="mt-1.5 text-[13px] text-lf-muted">
+              Adjust filters or date range, then try again.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-lf-border">
+            {analystGroups.map(({ analyst, leads }) => (
+              <section key={analyst.id}>
+                <div className="overflow-x-auto bg-lf-surface/95">
+              <table
+                className={`w-full table-fixed border-collapse text-[13px] leading-snug ${showDealValueColumns ? "min-w-[1336px]" : "min-w-[1120px]"}`}
+              >
+                <thead className="border-b border-lf-border bg-lf-bg/70 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-subtle">
                   <tr>
-                    <th className="w-[44px] px-4 py-3 font-semibold">
+                    <th className="w-9 px-2 py-2 text-center align-middle">
                       <span className="sr-only">Select</span>
                     </th>
-                    <th className="w-[240px] px-4 py-3 font-semibold">Lead</th>
-                    <th className="w-[210px] px-4 py-3 font-semibold">Contact</th>
-                    <th className="w-[240px] px-4 py-3 font-semibold">Source</th>
-                    <th className="w-[170px] px-4 py-3 font-semibold">Duplicate check</th>
-                    <th className="w-[120px] px-4 py-3 font-semibold">Status</th>
-                    <th className="w-[150px] px-4 py-3 font-semibold">Stage</th>
+                    <th className="w-[200px] px-3 py-2 align-bottom">Lead</th>
+                    <th className="w-[188px] px-3 py-2 align-bottom">Contact</th>
+                    <th className="w-[200px] px-3 py-2 align-bottom">Source</th>
+                    <th className="w-[104px] px-3 py-2 align-bottom">Status</th>
+                    <th className="w-[128px] px-3 py-2 align-bottom">Stage</th>
                     {showDealValueColumns ? (
                       <>
-                        <th className="w-[120px] px-4 py-3 font-semibold">
+                        <th className="w-[108px] px-3 py-2 text-right align-bottom tabular-nums">
                           Est. value
                         </th>
-                        <th className="w-[120px] px-4 py-3 font-semibold">
+                        <th className="w-[108px] px-3 py-2 text-right align-bottom tabular-nums">
                           Closed revenue
                         </th>
                       </>
                     ) : null}
-                    <th className="w-[130px] px-4 py-3 font-semibold">Team</th>
-                    <th className="w-[160px] px-4 py-3 font-semibold">Sales executive</th>
+                    <th className="w-[116px] px-3 py-2 align-bottom">Team</th>
+                    <th className="w-[148px] px-3 py-2 align-bottom">
+                      Sales executive
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-lf-border">
@@ -320,9 +414,9 @@ export function SuperadminLeadsJourneyClient({
                           openLead(lead.id);
                         }
                       }}
-                      className="cursor-pointer align-top text-lf-text-secondary transition odd:bg-lf-bg/[0.16] hover:bg-lf-bg/[0.28] focus:outline-none focus:ring-2 focus:ring-lf-brand/30"
+                      className="cursor-pointer text-lf-text-secondary transition odd:bg-lf-bg/[0.16] hover:bg-lf-bg/[0.28] focus:outline-none focus:ring-2 focus:ring-lf-brand/30"
                     >
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2 align-middle text-center">
                         <input
                           type="checkbox"
                           checked={visibleSelectedIds.has(lead.id)}
@@ -339,54 +433,48 @@ export function SuperadminLeadsJourneyClient({
                           aria-label={`Select ${lead.leadName || "lead"}`}
                         />
                       </td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-lf-text">
+                      <td className="px-3 py-2 align-top">
+                        <span className="font-semibold text-lf-text">
                           {lead.leadName || "Unnamed lead"}
-                        </p>
-                        <p className="mt-1 text-xs text-lf-subtle">
-                          Created {fmtDateTime(lead.createdAt)}
-                        </p>
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-lf-text-secondary">
-                        <p>{lead.phone || "—"}</p>
-                        <p className="mt-1 truncate">{lead.leadEmail || "—"}</p>
-                        <p className="mt-1 text-lf-subtle">
-                          {lead.city || "—"}, {lead.country || "—"}
-                        </p>
+                      <td className="px-3 py-2 align-top text-[12px] text-lf-text-secondary">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="block whitespace-nowrap">
+                            {lead.phone || "—"}
+                          </span>
+                          <span className="block truncate" title={lead.leadEmail ?? undefined}>
+                            {lead.leadEmail || "—"}
+                          </span>
+                          <span className="block text-[11px] text-lf-subtle">
+                            {lead.city || "—"}, {lead.country || "—"}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 align-top">
                         <LeadSourcePill source={lead.source} />
                       </td>
-                      <td className="px-4 py-3">
-                        {duplicateLabel(lead.duplicateMeta) ? (
-                          <span className="inline-flex rounded-full bg-lf-warning/15 px-2.5 py-1 text-[11px] font-semibold text-lf-warning">
-                            {duplicateLabel(lead.duplicateMeta)}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-lf-subtle">No duplicate match</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 align-top">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${statusPillClass(
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusPillClass(
                             lead.qualificationStatus,
                           )}`}
                         >
                           {lead.qualificationStatus.replace(/_/g, " ")}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 py-2 align-top text-[12px]">
                         {analystFacingSalesLabel(lead.salesStage)}
                       </td>
                       {showDealValueColumns ? (
                         <>
-                          <td className="px-4 py-3 text-xs tabular-nums text-lf-text-secondary">
+                          <td className="px-3 py-2 align-top text-right text-[12px] tabular-nums text-lf-text-secondary">
                             {formatDealMoney(
                               lead.estimatedDealValue,
                               lead.dealCurrency,
                             )}
                           </td>
-                          <td className="px-4 py-3 text-xs tabular-nums text-lf-text-secondary">
+                          <td className="px-3 py-2 align-top text-right text-[12px] tabular-nums text-lf-text-secondary">
                             {formatDealMoney(
                               lead.closedRevenue,
                               lead.dealCurrency,
@@ -394,17 +482,28 @@ export function SuperadminLeadsJourneyClient({
                           </td>
                         </>
                       ) : null}
-                      <td className="px-4 py-3">{lead.team?.name ?? "—"}</td>
-                      <td className="px-4 py-3">
-                        {lead.assignedSalesExec?.name ?? "—"}
+                      <td className="px-3 py-2 align-top text-[12px]">
+                        <span className="block min-w-0 truncate" title={lead.team?.name ?? undefined}>
+                          {lead.team?.name ?? "—"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 align-top text-[12px]">
+                        <span
+                          className="block min-w-0 truncate"
+                          title={lead.assignedSalesExec?.name ?? undefined}
+                        >
+                          {lead.assignedSalesExec?.name ?? "—"}
+                        </span>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          </section>
-        ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
 
       {selected ? (
@@ -545,10 +644,6 @@ export function SuperadminLeadsJourneyClient({
               <dt>Updated at</dt>
               <dd className="text-lf-text-secondary">
                 {fmtDateTime(selected.lead.updatedAt)}
-              </dd>
-              <dt>Duplicate check</dt>
-              <dd className="text-lf-text-secondary">
-                {duplicateLabel(selected.lead.duplicateMeta) ?? "No duplicate match"}
               </dd>
               <dt>Analyst notes</dt>
               <dd className="text-lf-text-secondary whitespace-pre-wrap">

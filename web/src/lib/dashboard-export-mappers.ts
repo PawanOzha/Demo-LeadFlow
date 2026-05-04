@@ -109,7 +109,7 @@ export function buildAnalystTeamLeadDashboardExport(
 ): DashboardExportPayload {
   const summaryRows = [
     { label: "Analysts", value: p.analystCount },
-    { label: "Sales teams", value: p.teamCount },
+    { label: "Teams with routed leads", value: p.teamCount },
     { label: "Total leads (range)", value: p.total },
     { label: "Qualified", value: p.qualified },
     { label: "Qualification rate %", value: p.qualRate.toFixed(1) },

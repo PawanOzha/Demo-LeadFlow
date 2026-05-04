@@ -42,7 +42,19 @@
 }
 
 @layer base {
+  /**
+   * Lock document scroll: dashboard shells use an inner <main> with overflow-y-auto.
+   * Standalone routes (login, etc.) opt into scrolling via their own overflow-y-auto wrapper.
+   */
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden;
     background-image: linear-gradient(
       180deg,
       var(--color-lf-shell-gradient-start) 0%,

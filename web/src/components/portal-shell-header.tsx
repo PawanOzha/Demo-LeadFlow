@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { logoutAction } from "@/app/actions/auth";
 import { LogoMark } from "@/components/logo";
 import { HeaderUserAvatar } from "@/components/header-user-avatar";
 import {
@@ -46,6 +47,14 @@ export function PortalShellUserCluster({
         </span>
       </div>
       <HeaderUserAvatar name={session.name} avatarUrl={avatarUrl} />
+      <form action={logoutAction} className="shrink-0">
+        <button
+          type="submit"
+          className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[12px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 sm:px-4 sm:text-[13px]"
+        >
+          Sign out
+        </button>
+      </form>
     </div>
   );
 }

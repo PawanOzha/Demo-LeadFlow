@@ -21,7 +21,9 @@ export default function AnalystQualificationSelect({
   const [selected, setSelected] = useState(value);
 
   useEffect(() => {
-    setSelected(value);
+    queueMicrotask(() => {
+      setSelected(value);
+    });
   }, [value]);
 
   return (

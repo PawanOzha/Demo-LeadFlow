@@ -38,18 +38,6 @@ export function PortalNavIcon({ href }: { href: string }) {
       </svg>
     );
   }
-  if (h.includes("/pipeline")) {
-    return (
-      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
-        <path
-          d="M6 4v16M12 9v11M18 6v14"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
   if (h.includes("/settings")) {
     return (
       <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -70,6 +58,23 @@ export function PortalNavIcon({ href }: { href: string }) {
           strokeWidth="1.75"
           strokeLinecap="round"
           strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (h.includes("transfer-log")) {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M8 7h12M8 12h12M8 17h8"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M4 7h.01M4 12h.01M4 17h.01"
+          strokeWidth="2"
+          strokeLinecap="round"
         />
       </svg>
     );

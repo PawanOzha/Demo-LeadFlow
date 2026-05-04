@@ -6,10 +6,27 @@ import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
 export function SuperadminUsersExportBar({
   payload,
   description = "PDF, Excel, or CSV for every user listed in this table.",
+  variant = "card",
 }: {
   payload: DashboardExportPayload;
   description?: string;
+  /** `inline`: compact row for toolbar next to Add user (no full-width card). */
+  variant?: "card" | "inline";
 }) {
+  if (variant === "inline") {
+    return (
+      <div
+        className="flex shrink-0 items-center gap-2"
+        title={description}
+      >
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-lf-subtle">
+          Export
+        </span>
+        <DashboardReportExport payload={payload} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-lf-border bg-lf-surface px-4 py-4 shadow-sm sm:px-5 sm:py-4">
       <div className="min-w-0">

@@ -651,7 +651,10 @@ function buildUnifiedExportPayload(
     summaryRows.push({ label: "Analysts (ATL)", value: meta.analystCount });
   }
   if (meta.teamCount != null) {
-    summaryRows.push({ label: "Sales teams (ATL)", value: meta.teamCount });
+    summaryRows.push({
+      label: "Teams with routed leads (your analysts)",
+      value: meta.teamCount,
+    });
   }
   if (meta.teamName) {
     summaryRows.push({ label: "Team", value: meta.teamName });

@@ -73,7 +73,7 @@ export default async function AnalystTeamLeadTeamPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="w-full min-w-0">
       <AtlTeamMembersClient
         analysts={analysts}
         teams={teams}

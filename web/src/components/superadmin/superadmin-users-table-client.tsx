@@ -3,9 +3,12 @@
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { superadminDeleteUsersBulkFormAction } from "@/app/actions/superadmin";
+import { SuperadminAddUserCard } from "@/components/superadmin/superadmin-add-user-forms";
 import { SuperadminDeleteForm } from "@/components/superadmin/superadmin-delete-form";
 import { SuperadminPasswordForm } from "@/components/superadmin/superadmin-password-form";
+import { SuperadminUsersExportBar } from "@/components/superadmin/superadmin-users-export-bar";
 import { UserRole } from "@/lib/constants";
+import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
 import { superadminRoleLabel } from "@/lib/superadmin-ui";
 
 const PROTECTED_SUPERADMIN_EMAIL = "superadmin@demo.local";
@@ -21,10 +24,21 @@ type UserRow = {
   team: { name: string } | null;
 };
 
+type AtlasOption = {
+  id: string;
+  name: string;
+  email: string;
+  analystTeamName: string | null;
+};
+
 export function SuperadminUsersTableClient({
   users,
+  atlas,
+  exportPayload,
 }: {
   users: UserRow[];
+  atlas: AtlasOption[];
+  exportPayload: DashboardExportPayload;
 }) {
   const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -65,8 +79,17 @@ export function SuperadminUsersTableClient({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-surface to-lf-bg p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-lf-border bg-lf-surface px-4 py-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2 lg:flex-nowrap">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <SuperadminAddUserCard atlas={atlas} />
+          <div
+            className="hidden h-8 w-px shrink-0 bg-lf-border sm:block"
+            aria-hidden
+          />
+          <SuperadminUsersExportBar payload={exportPayload} variant="inline" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-lf-border pt-3 sm:ml-auto sm:border-t-0 sm:pt-0">
           <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[13px] text-lf-text-secondary">
             <input
               type="checkbox"
@@ -77,42 +100,41 @@ export function SuperadminUsersTableClient({
               }}
               className="h-4 w-4 cursor-pointer rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
             />
-            Select all visible users
+            <span className="whitespace-nowrap">Select all visible</span>
           </label>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-lg border border-lf-border bg-lf-bg/70 px-2.5 py-1 text-xs font-medium text-lf-text-secondary">
-              Selected: {selectedCount}
-            </span>
-            <form
-              action={bulkAction}
-              onSubmit={(e) => {
-                if (selectedCount === 0) {
-                  e.preventDefault();
-                  return;
-                }
-                const ok = window.confirm(
-                  `Delete ${selectedCount} selected user(s) permanently? This cannot be undone.`,
-                );
-                if (!ok) e.preventDefault();
-              }}
+          <span className="rounded-lg border border-lf-border bg-lf-bg/70 px-2.5 py-1 text-xs font-medium tabular-nums text-lf-text-secondary">
+            Selected: {selectedCount}
+          </span>
+          <form
+            action={bulkAction}
+            className="inline-flex"
+            onSubmit={(e) => {
+              if (selectedCount === 0) {
+                e.preventDefault();
+                return;
+              }
+              const ok = window.confirm(
+                `Delete ${selectedCount} selected user(s) permanently? This cannot be undone.`,
+              );
+              if (!ok) e.preventDefault();
+            }}
+          >
+            <input type="hidden" name="userIdsCsv" value={selectedIdsCsv} />
+            <button
+              type="submit"
+              disabled={bulkPending || selectedCount === 0}
+              className="h-9 shrink-0 rounded-lg bg-lf-danger px-4 text-[13px] font-medium text-lf-on-accent transition-colors hover:bg-lf-danger/90 focus:outline-none focus:ring-2 focus:ring-lf-danger/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <input type="hidden" name="userIdsCsv" value={selectedIdsCsv} />
-              <button
-                type="submit"
-                disabled={bulkPending || selectedCount === 0}
-                className="h-9 rounded-lg bg-lf-danger px-4 text-[13px] font-medium text-lf-on-accent transition-colors hover:bg-lf-danger/90 focus:outline-none focus:ring-2 focus:ring-lf-danger/40 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {bulkPending
-                  ? "Deleting..."
-                  : selectedCount > 0
-                    ? `Delete selected (${selectedCount})`
-                    : "Delete selected"}
-              </button>
-            </form>
-          </div>
+              {bulkPending
+                ? "Deleting..."
+                : selectedCount > 0
+                  ? `Delete (${selectedCount})`
+                  : "Delete selected"}
+            </button>
+          </form>
         </div>
         {bulkState?.error ? (
-          <p className="mt-2 text-xs text-lf-danger" role="alert">
+          <p className="basis-full text-xs text-lf-danger" role="alert">
             {bulkState.error}
           </p>
         ) : null}

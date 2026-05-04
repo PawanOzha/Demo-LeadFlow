@@ -20,6 +20,8 @@ export type AnalystDateRangeBarProps = {
    * Confirms the URL was read and matches dashboard/list data.
    */
   rangeSummary?: string;
+  /** Tighter padding and shorter hints (e.g. superadmin report toolbar). */
+  compact?: boolean;
 };
 
 /**
@@ -38,6 +40,7 @@ export default function AnalystDateRangeBar({
   defaultTo,
   preservedEntries,
   rangeSummary,
+  compact = false,
 }: AnalystDateRangeBarProps) {
   const router = useRouter();
   const currentPathname = usePathname();
@@ -52,8 +55,10 @@ export default function AnalystDateRangeBar({
   );
 
   useEffect(() => {
-    // Reset lock after route/query transition completes.
-    setIsSubmitting(false);
+    // Reset lock after route/query transition completes (deferred — avoids sync setState-in-effect lint).
+    queueMicrotask(() => {
+      setIsSubmitting(false);
+    });
   }, [currentPathname, defaultFrom, defaultTo]);
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -91,12 +96,22 @@ export default function AnalystDateRangeBar({
     });
   }
 
+  const inputDateClass = compact
+    ? "mt-1 block min-h-9 w-auto min-w-[9.25rem] max-w-[11rem] rounded-lg border border-lf-border bg-lf-bg px-2.5 py-1.5 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light]"
+    : "mt-1.5 block min-h-10 w-auto min-w-[9.5rem] max-w-[11rem] rounded-lg border border-lf-border bg-lf-bg px-3 py-2 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light]";
+
   return (
-    <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm sm:px-5 sm:py-5">
-      <div className="flex flex-wrap items-end gap-3">
+    <div
+      className={
+        compact
+          ? "w-full max-w-xl rounded-xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-3 py-3 shadow-sm sm:max-w-none sm:w-fit sm:min-w-0"
+          : "rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm sm:px-5 sm:py-5"
+      }
+    >
+      <div className="flex flex-wrap items-end gap-2 sm:gap-3">
         <form
           onSubmit={onSubmit}
-          className="flex flex-wrap items-end gap-3"
+          className="flex flex-wrap items-end gap-2 sm:gap-3"
           noValidate
         >
           {preservedEntries.map(([k, v], i) => (
@@ -116,7 +131,7 @@ export default function AnalystDateRangeBar({
               type="date"
               name="from"
               defaultValue={defaultFrom}
-              className="mt-1.5 block min-h-10 w-full min-w-[10rem] rounded-lg border border-lf-border bg-lf-bg px-3 py-2 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light]"
+              className={inputDateClass}
               aria-invalid={applyError ? true : undefined}
               aria-describedby={applyError ? "date-range-apply-error" : undefined}
             />
@@ -128,7 +143,7 @@ export default function AnalystDateRangeBar({
               type="date"
               name="to"
               defaultValue={defaultTo}
-              className="mt-1.5 block min-h-10 w-full min-w-[10rem] rounded-lg border border-lf-border bg-lf-bg px-3 py-2 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light]"
+              className={inputDateClass}
               aria-invalid={applyError ? true : undefined}
               aria-describedby={applyError ? "date-range-apply-error" : undefined}
             />
@@ -136,7 +151,11 @@ export default function AnalystDateRangeBar({
           <button
             type="submit"
             disabled={isSubmitting || isNavigating}
-            className="min-h-10 rounded-lg bg-lf-accent px-4 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent"
+            className={
+              compact
+                ? "min-h-9 rounded-lg bg-lf-accent px-3 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent"
+                : "min-h-10 rounded-lg bg-lf-accent px-4 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent"
+            }
           >
             {isSubmitting || isNavigating ? "Applying..." : "Apply"}
           </button>
@@ -146,27 +165,50 @@ export default function AnalystDateRangeBar({
             type="button"
             onClick={onClear}
             disabled={isSubmitting || isNavigating}
-            className="min-h-10 rounded-lg border border-lf-border px-4 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50"
+            className={
+              compact
+                ? "min-h-9 rounded-lg border border-lf-border px-3 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50"
+                : "min-h-10 rounded-lg border border-lf-border px-4 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50"
+            }
           >
             Clear
           </button>
         ) : null}
       </div>
       {rangeSummary ? (
-        <p className="mt-3 rounded-lg border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text-secondary">
-          <span className="font-semibold text-lf-text">Active data range:</span>{" "}
+        <p
+          className={
+            compact
+              ? "mt-2 rounded-lg border border-lf-border bg-lf-surface px-2.5 py-1.5 text-xs text-lf-text-secondary"
+              : "mt-3 rounded-lg border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text-secondary"
+          }
+        >
+          <span className="font-semibold text-lf-text">
+            {compact ? "Range:" : "Active data range:"}
+          </span>{" "}
           {rangeSummary}
-          <span className="block pt-1 text-xs text-lf-muted">
-            Filters use each lead’s <span className="font-medium">creation date</span>{" "}
-            (<code className="rounded bg-lf-bg px-1 text-[11px]">createdAt</code>), not
-            last update or close date.
-          </span>
+          {compact ? (
+            <span className="text-lf-muted">
+              {" "}
+              · Lead{" "}
+              <code className="rounded bg-lf-bg px-1 text-[10px]">createdAt</code>
+            </span>
+          ) : (
+            <span className="block pt-1 text-xs text-lf-muted">
+              Filters use each lead’s{" "}
+              <span className="font-medium">creation date</span> (
+              <code className="rounded bg-lf-bg px-1 text-[11px]">createdAt</code>
+              ), not last update or close date.
+            </span>
+          )}
         </p>
       ) : null}
-      <p className="mt-2 text-[11px] leading-relaxed text-lf-subtle">
-        From only: that date through today. To only: from the beginning through that
-        date. Both: inclusive range (order is adjusted if From is after To).
-      </p>
+      {compact ? null : (
+        <p className="mt-2 text-[11px] leading-relaxed text-lf-subtle">
+          From only: that date through today. To only: from the beginning through that
+          date. Both: inclusive range (order is adjusted if From is after To).
+        </p>
+      )}
       {applyError ? (
         <p
           id="date-range-apply-error"

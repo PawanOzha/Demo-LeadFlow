@@ -67,9 +67,16 @@ export async function buildAtlTeamLeadDashboardViewModel(
           params,
         );
 
-  const teamCountRow = await dbQueryOne<{ c: string }>(
-    `SELECT COUNT(*)::text AS c FROM "Team"`,
-  );
+  const teamCountRow =
+    analystIds.length === 0
+      ? null
+      : await dbQueryOne<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM (
+             SELECT DISTINCT "teamId" FROM "Lead"
+             WHERE "createdById" = ANY($1::text[]) AND "teamId" IS NOT NULL
+           ) sub`,
+          [analystIds],
+        );
   const teamCount = Number(teamCountRow?.c ?? 0);
   const generatedAt = new Date().toISOString();
   const rangeLabel = analystRangeSummaryLabel(from, to);

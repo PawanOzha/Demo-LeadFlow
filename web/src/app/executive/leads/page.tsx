@@ -13,6 +13,7 @@ import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
 import type { PortalExecLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { coerceMoney } from "@/lib/deal-money";
+import { mergeLeadNamePhoneSearch } from "@/lib/lead-server-search";
 
 export default async function ExecutiveLeadsPage({
   searchParams,
@@ -34,7 +35,11 @@ export default async function ExecutiveLeadsPage({
     perPageRaw === 50 || perPageRaw === 100 ? perPageRaw : 25;
   const offset = (page - 1) * perPage;
   const rangeLabel = analystRangeSummaryLabel(from, to);
-  const { clause, params } = execLeadSql(session.id, from, to, "l");
+  const { clause, params } = mergeLeadNamePhoneSearch(
+    execLeadSql(session.id, from, to, "l"),
+    "l",
+    q,
+  );
 
   const execSelect = `SELECT l.*, cb.name AS cb_name
        FROM "Lead" l
@@ -129,7 +134,7 @@ export default async function ExecutiveLeadsPage({
   );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <header>
         
       </header>
@@ -157,8 +162,9 @@ export default async function ExecutiveLeadsPage({
       />
 
       <ExecLeadsTableClient
-        key={`${from ?? ""}|${to ?? ""}|${page}|${perPage}`}
+        key={`${from ?? ""}|${to ?? ""}|${q ?? ""}|${page}|${perPage}`}
         leads={rows}
+        page={page}
         initialQ={q}
         rangeLabel={rangeLabel}
         exportLeads={execExportLeads}

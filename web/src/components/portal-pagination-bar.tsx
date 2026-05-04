@@ -61,6 +61,7 @@ export function PortalPaginationBar({
         {[25, 50, 100].map((n) => (
           <Link
             key={n}
+            replace
             href={buildHref(pathname, query, {
               perPage: String(n),
               page: "1",
@@ -91,6 +92,7 @@ export function PortalPaginationBar({
         </span>
         {nextHref ? (
           <Link
+            replace
             href={nextHref}
             className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
           >

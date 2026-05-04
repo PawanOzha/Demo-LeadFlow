@@ -8,8 +8,8 @@ import AnalystNotesReadonly from "@/components/analyst-notes-readonly";
 import ExecLostNotesReadonly from "@/components/exec-lost-notes-readonly";
 import { PortalLeadSearchLiveField } from "@/components/portal-lead-search-live-field";
 import { QualificationStatus, SalesStage } from "@/lib/constants";
-import { filterLeadsByNameOrPhone } from "@/lib/lead-client-search";
 import { useDebouncedLeadSearchUrl } from "@/lib/use-debounced-lead-search-url";
+import { usePortalLeadTablePageScroll } from "@/lib/use-portal-lead-table-page-scroll";
 import { LeadSourcePill } from "@/components/lead-source-display";
 import { formatAnalystDate } from "@/lib/analyst-ui";
 import { analystFacingSalesLabel } from "@/lib/sales-stage-labels";
@@ -56,6 +56,7 @@ export type ExecOption = {
 
 export function AtlAllLeadsTableClient({
   leads,
+  page,
   initialQ,
   from,
   to,
@@ -69,6 +70,7 @@ export function AtlAllLeadsTableClient({
   hasServerFilters = false,
 }: {
   leads: AtlLeadRow[];
+  page: number;
   initialQ: string | null;
   from: string | null;
   to: string | null;
@@ -84,26 +86,17 @@ export function AtlAllLeadsTableClient({
 }) {
   const [query, setQuery] = useState(initialQ ?? "");
   useDebouncedLeadSearchUrl(query);
-
-  const filtered = useMemo(
-    () => filterLeadsByNameOrPhone(leads, query),
-    [leads, query],
-  );
-
-  const filteredExport = useMemo(
-    () => filterLeadsByNameOrPhone(exportLeads, query),
-    [exportLeads, query],
-  );
+  const tableScrollRef = usePortalLeadTablePageScroll(page);
 
   const exportPayload = useMemo(
     () =>
-      buildAtlLeadsExportPayload(filteredExport, {
+      buildAtlLeadsExportPayload(exportLeads, {
         rangeLabel,
-        searchQuery: query,
+        searchQuery: initialQ ?? "",
         rangeTotalCount,
         exportRowCount,
       }),
-    [filteredExport, rangeLabel, query, rangeTotalCount, exportRowCount],
+    [exportLeads, rangeLabel, initialQ, rangeTotalCount, exportRowCount],
   );
 
   const hasQuery = query.trim().length > 0;
@@ -142,6 +135,7 @@ export function AtlAllLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
+        ref={tableScrollRef}
         className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="Team leads table"
@@ -201,21 +195,6 @@ export function AtlAllLeadsTableClient({
                     colSpan={14}
                     className="px-4 py-16 text-center text-[13px] text-lf-muted"
                   >
-                    {from || to
-                      ? "No leads in this date range."
-                      : hasServerFilters
-                        ? "No leads match the selected filters (status, lead analyst, or source)."
-                        : analystIdsEmpty
-                          ? "Add lead analysts under Members."
-                          : "No leads yet from your team."}
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={14}
-                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
-                  >
                     {hasQuery
                       ? "No leads match this name or phone with the current filters."
                       : from || to
@@ -228,7 +207,7 @@ export function AtlAllLeadsTableClient({
                   </td>
                 </tr>
               ) : (
-                filtered.map((l) => {
+                leads.map((l) => {
                   const canAssign =
                     l.qualificationStatus === QualificationStatus.QUALIFIED &&
                     l.salesStage === SalesStage.PRE_SALES &&

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { dbQuery } from "@/lib/db/pool";
 import {
@@ -11,6 +10,7 @@ import { MtlLeadsTableClient } from "@/components/portal-leads/mtl-leads-table-c
 import { UserRole } from "@/lib/constants";
 import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import { mergeLeadNamePhoneSearch } from "@/lib/lead-server-search";
 import type { PortalMtlLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 
 export default async function TeamLeadLeadsPage({
@@ -30,7 +30,11 @@ export default async function TeamLeadLeadsPage({
     perPageRaw === 50 || perPageRaw === 100 ? perPageRaw : 25;
   const offset = (page - 1) * perPage;
   const rangeLabel = analystRangeSummaryLabel(null, null);
-  const { clause, params } = mtlLeadSql(session.id, null, null, "l");
+  const { clause, params } = mergeLeadNamePhoneSearch(
+    mtlLeadSql(session.id, null, null, "l"),
+    "l",
+    q,
+  );
 
   const mtlSelect = `SELECT l.*, cb.name AS cb_name, se.id AS se_id, se.name AS se_name
        FROM "Lead" l
@@ -132,7 +136,7 @@ export default async function TeamLeadLeadsPage({
   }));
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <header>
         
       </header>
@@ -149,8 +153,9 @@ export default async function TeamLeadLeadsPage({
       />
 
       <MtlLeadsTableClient
-        key={`${page}|${perPage}`}
+        key={`${q ?? ""}|${page}|${perPage}`}
         leads={rows}
+        page={page}
         initialQ={q}
         execs={execOptions}
         rangeLabel={rangeLabel}

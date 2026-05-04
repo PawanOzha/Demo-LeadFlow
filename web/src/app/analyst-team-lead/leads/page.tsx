@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/session";
 import { dbQuery } from "@/lib/db/pool";
@@ -20,6 +19,7 @@ import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
 import type { PortalAtlLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { timedServerBlock } from "@/lib/server/log";
+import { mergeLeadNamePhoneSearch } from "@/lib/lead-server-search";
 
 type AtlJoinedRow = {
   id: string;
@@ -156,9 +156,18 @@ export default async function AnalystTeamLeadLeadsPage({
     source: sourceFilter,
   };
 
-  const { clause, params } = atlLeadSql(analystIds, from, to, listFilters, "l");
+  const { clause, params } = mergeLeadNamePhoneSearch(
+    atlLeadSql(analystIds, from, to, listFilters, "l"),
+    "l",
+    q,
+  );
 
-  const { clause: sourceScopeClause, params: sourceScopeParams } = atlLeadSql(analystIds, from, to, null, "l");
+  const { clause: sourceScopeClause, params: sourceScopeParams } =
+    mergeLeadNamePhoneSearch(
+      atlLeadSql(analystIds, from, to, null, "l"),
+      "l",
+      q,
+    );
   const sourceOptionRows =
     analystIds.length === 0
       ? []
@@ -281,7 +290,7 @@ export default async function AnalystTeamLeadLeadsPage({
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           
@@ -305,8 +314,9 @@ export default async function AnalystTeamLeadLeadsPage({
       />
 
       <AtlAllLeadsTableClient
-        key={`${page}|${perPage}|${from ?? ""}|${to ?? ""}|${statusFilter ?? ""}|${analystIdFilter ?? ""}|${sourceFilter ?? ""}`}
+        key={`${page}|${perPage}|${from ?? ""}|${to ?? ""}|${q ?? ""}|${statusFilter ?? ""}|${analystIdFilter ?? ""}|${sourceFilter ?? ""}`}
         leads={rowsWithTimeline}
+        page={page}
         initialQ={q}
         from={from}
         to={to}

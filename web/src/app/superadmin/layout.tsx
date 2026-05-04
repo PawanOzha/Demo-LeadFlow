@@ -37,7 +37,7 @@ export default async function SuperadminLayout({
   );
 
   return (
-    <div className={inter.className}>
+    <div className={`${inter.className} h-full min-h-0`}>
       <SuperadminAppShell
         session={{ name: session.name, email: session.email }}
         avatarUrl={user?.image ?? null}

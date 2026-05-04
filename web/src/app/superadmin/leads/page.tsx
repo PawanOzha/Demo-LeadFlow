@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { SuperadminLeadsFiltersBar } from "@/components/superadmin/superadmin-leads-filters";
 import { SalesStage, UserRole } from "@/lib/constants";
 import { coerceMoney } from "@/lib/deal-money";
@@ -11,7 +10,7 @@ import {
 } from "@/lib/superadmin-leads-filters";
 import { dbQuery } from "@/lib/db/pool";
 import { SuperadminLeadsJourneyClient } from "@/components/superadmin/superadmin-leads-journey-client";
-import { PortalLeadsExportBar } from "@/components/portal-leads-export-bar";
+import { toRscSerializableDashboardExport } from "@/lib/dashboard-export-types";
 import { flattenSuperadminJourneyGroupsForExport } from "@/lib/superadmin-leads-export-map";
 import { buildSuperadminLeadsExportPayload } from "@/lib/portal-all-leads-export-payloads";
 import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
@@ -20,66 +19,6 @@ import { timedServerBlock } from "@/lib/server/log";
 export const metadata: Metadata = {
   title: "Leads · Superadmin",
 };
-
-function PaginationBar({
-  totalCount,
-  offset,
-  perPage,
-  page,
-  totalPages,
-  prevHref,
-  nextHref,
-}: {
-  totalCount: number;
-  offset: number;
-  perPage: number;
-  page: number;
-  totalPages: number;
-  prevHref: string | null;
-  nextHref: string | null;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
-      <p className="text-lf-subtle">
-        Showing{" "}
-        <span className="font-semibold text-lf-text">
-          {totalCount === 0 ? 0 : offset + 1}-
-          {Math.min(offset + perPage, totalCount)}
-        </span>{" "}
-        of <span className="font-semibold text-lf-text">{totalCount}</span> leads
-      </p>
-      <div className="flex items-center gap-2">
-        {prevHref ? (
-          <Link
-            href={prevHref}
-            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
-          >
-            Previous
-          </Link>
-        ) : (
-          <span className="rounded-lg border border-lf-border px-3 py-1.5 text-xs text-lf-subtle opacity-50">
-            Previous
-          </span>
-        )}
-        <span className="text-xs text-lf-subtle">
-          Page {Math.min(page, totalPages)} of {totalPages}
-        </span>
-        {nextHref ? (
-          <Link
-            href={nextHref}
-            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
-          >
-            Next
-          </Link>
-        ) : (
-          <span className="rounded-lg border border-lf-border px-3 py-1.5 text-xs text-lf-subtle opacity-50">
-            Next
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function RevenueSummaryCard({
   title,
@@ -226,6 +165,8 @@ export default async function SuperadminLeadsPage({
     irrelevant: Number(counts[0]?.irrelevant ?? 0),
   };
   const totalCount = Number(counts[0]?.total ?? 0);
+  const qualSumKnownStatuses =
+    qualTotals.qualified + qualTotals.notQualified + qualTotals.irrelevant;
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
   const analystGroups = paged.analystGroups;
   const filteredClosedRevenueTotal = Number(closedRevFiltered[0]?.s ?? 0);
@@ -317,12 +258,11 @@ export default async function SuperadminLeadsPage({
     })),
   }));
 
-  const filtersKey = `${parsed.from ?? ""}|${parsed.to ?? ""}|${parsed.q ?? ""}|${parsed.duplicatePhonesOnly ? "1" : "0"}|${parsed.status}|${parsed.analystId ?? ""}|${parsed.teamId ?? ""}|${parsed.execId ?? ""}|${parsed.perPage}|${parsed.page}`;
+  const filtersKey = `${parsed.from ?? ""}|${parsed.to ?? ""}|${parsed.q ?? ""}|${parsed.status}|${parsed.analystId ?? ""}|${parsed.teamId ?? ""}|${parsed.execId ?? ""}|${parsed.perPage}|${parsed.page}`;
   const qp = new URLSearchParams();
   if (parsed.from) qp.set("from", parsed.from);
   if (parsed.to) qp.set("to", parsed.to);
   if (parsed.q) qp.set("q", parsed.q);
-  if (parsed.duplicatePhonesOnly) qp.set("duplicatePhonesOnly", "1");
   if (parsed.status) qp.set("status", parsed.status);
   if (parsed.analystId) qp.set("analystId", parsed.analystId);
   if (parsed.teamId) qp.set("teamId", parsed.teamId);
@@ -352,6 +292,37 @@ export default async function SuperadminLeadsPage({
         teams={teams}
         execs={execs}
       />
+
+      <div className="space-y-2 rounded-xl border border-lf-border bg-lf-surface px-4 py-3 text-[13px] text-lf-muted shadow-sm sm:px-5">
+        <p className="font-medium text-lf-text-secondary">Current view</p>
+        <p>{filterSummary}</p>
+        <p className="tabular-nums text-lf-text">
+          <span className="font-semibold">{totalCount.toLocaleString()}</span>{" "}
+          lead{totalCount === 1 ? "" : "s"} match these filters (same scope as
+          the table and revenue totals).
+        </p>
+        {totalCount > 0 && qualSumKnownStatuses < totalCount ? (
+          <p className="text-[12px] text-lf-warning">
+            {(
+              totalCount - qualSumKnownStatuses
+            ).toLocaleString()}{" "}
+            lead(s) have a qualification status other than QUALIFIED /
+            NOT_QUALIFIED / IRRELEVANT — those appear in the total above but not
+            in the three breakdown cards.
+          </p>
+        ) : null}
+        {totalCount === 0 ? (
+          <p className="text-[12px] text-lf-muted">
+            If you expect data here, clear date/search/analyst/team/exec filters
+            or confirm this app&apos;s Supabase project matches the database
+            where you see rows (same{" "}
+            <code className="rounded bg-lf-bg px-1 text-[11px]">
+              NEXT_PUBLIC_SUPABASE_URL
+            </code>
+            ).
+          </p>
+        ) : null}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <QualSummaryCard
@@ -384,39 +355,20 @@ export default async function SuperadminLeadsPage({
         />
       </div>
 
-      <PortalLeadsExportBar
-        payload={superadminExportPayload}
-        description="PDF, Excel, or CSV for every lead matching the filters and date range above (up to the export row limit in the summary)."
+      <SuperadminLeadsJourneyClient
+        analystGroups={analystGroupsClient}
+        pagination={{
+          totalCount,
+          offset,
+          perPage,
+          page,
+          totalPages,
+          prevHref,
+          nextHref,
+        }}
+        exportPayload={toRscSerializableDashboardExport(superadminExportPayload)}
+        exportDescription="PDF, Excel, or CSV for filtered leads (subject to the export row limit in the download summary)."
       />
-
-      <PaginationBar
-        totalCount={totalCount}
-        offset={offset}
-        perPage={perPage}
-        page={page}
-        totalPages={totalPages}
-        prevHref={prevHref}
-        nextHref={nextHref}
-      />
-
-      {analystGroups.length === 0 ? (
-        <p className="text-[13px] font-normal text-lf-label">
-          No leads match these filters.
-        </p>
-      ) : (
-        <>
-          <SuperadminLeadsJourneyClient analystGroups={analystGroupsClient} />
-          <PaginationBar
-            totalCount={totalCount}
-            offset={offset}
-            perPage={perPage}
-            page={page}
-            totalPages={totalPages}
-            prevHref={prevHref}
-            nextHref={nextHref}
-          />
-        </>
-      )}
     </div>
   );
 }

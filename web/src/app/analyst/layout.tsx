@@ -10,7 +10,7 @@ import { timedServerBlock } from "@/lib/server/log";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
-/** Dashboard/leads/pipeline date filters use `searchParams`; avoid stale cached pages. */
+/** Dashboard/leads date filters use `searchParams`; avoid stale cached pages. */
 export const dynamic = "force-dynamic";
 
 export default async function AnalystLayout({
@@ -38,7 +38,7 @@ export default async function AnalystLayout({
     user?.analystTeamName?.trim() || "Lead Analyst";
 
   return (
-    <div className={inter.className}>
+    <div className={`${inter.className} h-full min-h-0`}>
       <AnalystAppShell
         session={{ name: session.name, email: session.email }}
         avatarUrl={user?.image ?? null}

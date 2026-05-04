@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         suppressHydrationWarning
-        className={`${dmSans.variable} ${jetbrainsMono.variable} min-h-screen bg-lf-bg font-sans antialiased text-lf-text`}
+        className={`${dmSans.variable} ${jetbrainsMono.variable} h-full min-h-0 overflow-hidden bg-lf-bg font-sans antialiased text-lf-text`}
       >
         {children}
       </body>

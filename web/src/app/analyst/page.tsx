@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { dbQuery } from "@/lib/db/pool";
 import { AnalystHeaderAddButton } from "@/components/analyst/add-lead-modal";
@@ -81,7 +80,7 @@ export default async function AnalystDashboard() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
         <div>
           

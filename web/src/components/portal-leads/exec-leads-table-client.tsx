@@ -8,8 +8,8 @@ import { ExecLostNotesEditor } from "@/components/exec/exec-lost-notes-editor";
 import { UpdateOutcomeForm } from "@/components/exec/update-outcome-form";
 import { PortalLeadSearchLiveField } from "@/components/portal-lead-search-live-field";
 import { SalesStage } from "@/lib/constants";
-import { filterLeadsByNameOrPhone } from "@/lib/lead-client-search";
 import { useDebouncedLeadSearchUrl } from "@/lib/use-debounced-lead-search-url";
+import { usePortalLeadTablePageScroll } from "@/lib/use-portal-lead-table-page-scroll";
 import { buildExecLeadsExportPayload } from "@/lib/portal-all-leads-export-payloads";
 import type { PortalExecLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { portalDataTableScrollClass } from "@/lib/app-shell-ui";
@@ -35,6 +35,7 @@ export type ExecLeadRow = {
 
 export function ExecLeadsTableClient({
   leads,
+  page,
   initialQ,
   rangeLabel,
   exportLeads,
@@ -42,6 +43,7 @@ export function ExecLeadsTableClient({
   exportRowCount,
 }: {
   leads: ExecLeadRow[];
+  page: number;
   initialQ: string | null;
   rangeLabel: string;
   exportLeads: PortalExecLeadExportRow[];
@@ -50,26 +52,17 @@ export function ExecLeadsTableClient({
 }) {
   const [query, setQuery] = useState(initialQ ?? "");
   useDebouncedLeadSearchUrl(query);
-
-  const filtered = useMemo(
-    () => filterLeadsByNameOrPhone(leads, query),
-    [leads, query],
-  );
-
-  const filteredExport = useMemo(
-    () => filterLeadsByNameOrPhone(exportLeads, query),
-    [exportLeads, query],
-  );
+  const tableScrollRef = usePortalLeadTablePageScroll(page);
 
   const exportPayload = useMemo(
     () =>
-      buildExecLeadsExportPayload(filteredExport, {
+      buildExecLeadsExportPayload(exportLeads, {
         rangeLabel,
-        searchQuery: query,
+        searchQuery: initialQ ?? "",
         rangeTotalCount,
         exportRowCount,
       }),
-    [filteredExport, rangeLabel, query, rangeTotalCount, exportRowCount],
+    [exportLeads, rangeLabel, initialQ, rangeTotalCount, exportRowCount],
   );
 
   const hasQuery = query.trim().length > 0;
@@ -87,6 +80,7 @@ export function ExecLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
+        ref={tableScrollRef}
         className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="My leads table"
@@ -119,22 +113,13 @@ export function ExecLeadsTableClient({
                   colSpan={13}
                   className="px-4 py-16 text-center text-[13px] text-lf-muted"
                 >
-                  No leads in this range.
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={13}
-                  className="px-4 py-16 text-center text-[13px] text-lf-muted"
-                >
                   {hasQuery
                     ? "No leads match this name or phone in the current filters."
                     : "No leads in this range."}
                 </td>
               </tr>
             ) : (
-              filtered.map((lead) => {
+              leads.map((lead) => {
                 const active = lead.salesStage === SalesStage.WITH_EXECUTIVE;
                 const isLost = lead.salesStage === SalesStage.CLOSED_LOST;
                 return (

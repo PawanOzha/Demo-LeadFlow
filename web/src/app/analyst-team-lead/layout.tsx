@@ -40,7 +40,7 @@ export default async function AnalystTeamLeadLayout({
     user?.analystTeamName?.trim() || "Analyst team lead";
 
   return (
-    <div className={inter.className}>
+    <div className={`${inter.className} h-full min-h-0`}>
       <AtlAppShell
         session={{ name: session.name, email: session.email }}
         avatarUrl={user?.image ?? null}

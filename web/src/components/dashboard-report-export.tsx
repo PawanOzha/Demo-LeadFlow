@@ -32,7 +32,7 @@ export function DashboardReportExport({
     try {
       return exportFileBase(payload);
     } catch {
-      return `export-${Date.now()}`;
+      return "export";
     }
   }, [payload]);
 

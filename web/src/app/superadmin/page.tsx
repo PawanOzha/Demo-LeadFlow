@@ -4,10 +4,6 @@ import SuperadminDashboardPage, {
 
 export { metadata };
 
-export default function SuperadminIndexPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  return <SuperadminDashboardPage searchParams={searchParams} />;
+export default function SuperadminIndexPage() {
+  return <SuperadminDashboardPage />;
 }

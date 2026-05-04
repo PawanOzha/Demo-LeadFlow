@@ -16,6 +16,12 @@ export const portalAppShellSidebarClass =
 export const appMainContentClass =
   "min-h-0 w-full min-w-0 flex-1 max-w-none overflow-y-auto px-4 py-4 sm:px-7 sm:py-6 lg:px-7 lg:py-6";
 
+/**
+ * Default wrapper for portal route pages — fills the main column (no artificial max-width centering).
+ * Prefer this over `mx-auto max-w-6xl` / `max-w-7xl` for dashboards and wide tables.
+ */
+export const portalPageInnerClass = "w-full min-w-0";
+
 /** Wide lead tables: reliable horizontal scroll (incl. iOS) + touch pan. */
 export const portalDataTableScrollClass =
   "w-full min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] touch-pan-x scroll-smooth";

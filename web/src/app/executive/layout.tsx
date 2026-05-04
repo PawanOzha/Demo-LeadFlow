@@ -40,7 +40,7 @@ export default async function ExecutiveLayout({
   const teamName = user?.teamName?.trim() || "Sales team";
 
   return (
-    <div className={inter.className}>
+    <div className={`${inter.className} h-full min-h-0`}>
       <ExecAppShell
         session={{ name: session.name, email: session.email }}
         avatarUrl={user?.image ?? null}

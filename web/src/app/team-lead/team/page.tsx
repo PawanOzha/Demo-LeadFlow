@@ -46,7 +46,7 @@ export default async function TeamLeadSalesTeamPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm text-lf-muted">

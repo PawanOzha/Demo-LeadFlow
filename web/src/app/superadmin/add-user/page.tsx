@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SuperadminAddUserCard } from "@/components/superadmin/superadmin-add-user-forms";
-import { SuperadminUsersExportBar } from "@/components/superadmin/superadmin-users-export-bar";
 import { SuperadminUsersTableClient } from "@/components/superadmin/superadmin-users-table-client";
 import { toRscSerializableDashboardExport } from "@/lib/dashboard-export-types";
 import { UserRole } from "@/lib/constants";
@@ -41,6 +39,7 @@ function PaginationBar({
       <div className="flex items-center gap-2">
         {prevHref ? (
           <Link
+            replace
             href={prevHref}
             className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
           >
@@ -56,6 +55,7 @@ function PaginationBar({
         </span>
         {nextHref ? (
           <Link
+            replace
             href={nextHref}
             className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
           >
@@ -209,13 +209,6 @@ export default async function SuperadminAddUserPage({
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          
-        </div>
-        <SuperadminAddUserCard atlas={atlas} />
-      </div>
-      <SuperadminUsersExportBar payload={exportPayload} />
       <PaginationBar
         totalCount={totalCount}
         offset={offset}
@@ -225,7 +218,11 @@ export default async function SuperadminAddUserPage({
         prevHref={prevHref}
         nextHref={nextHref}
       />
-      <SuperadminUsersTableClient users={users} />
+      <SuperadminUsersTableClient
+        users={users}
+        atlas={atlas}
+        exportPayload={exportPayload}
+      />
       <PaginationBar
         totalCount={totalCount}
         offset={offset}

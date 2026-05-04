@@ -37,7 +37,9 @@ export function UserSettingsForms({
     avatarUrl != null && avatarUrl !== "" ? avatarUrl : null,
   );
   useEffect(() => {
-    setPreviewAvatar(avatarUrl != null && avatarUrl !== "" ? avatarUrl : null);
+    queueMicrotask(() => {
+      setPreviewAvatar(avatarUrl != null && avatarUrl !== "" ? avatarUrl : null);
+    });
   }, [avatarUrl]);
 
   const [profileState, setProfileState] = useState<
@@ -127,7 +129,7 @@ export function UserSettingsForms({
   const [n4, setN4] = useState(false);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="w-full min-w-0">
       {teamName != null && teamName !== "" ? (
         <p className="mb-8 text-sm text-lf-muted">
           Team{" "}

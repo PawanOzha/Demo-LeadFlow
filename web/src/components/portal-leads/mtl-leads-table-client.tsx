@@ -8,10 +8,10 @@ import { LeadSourcePill } from "@/components/lead-source-display";
 import { PortalLeadSearchLiveField } from "@/components/portal-lead-search-live-field";
 import { PortalLeadsExportBar } from "@/components/portal-leads-export-bar";
 import { SalesStage } from "@/lib/constants";
-import { filterLeadsByNameOrPhone } from "@/lib/lead-client-search";
 import { buildMtlLeadsExportPayloadFromPortalRows } from "@/lib/portal-all-leads-export-payloads";
 import type { PortalMtlLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 import { useDebouncedLeadSearchUrl } from "@/lib/use-debounced-lead-search-url";
+import { usePortalLeadTablePageScroll } from "@/lib/use-portal-lead-table-page-scroll";
 import type { MtlLeadRow } from "@/lib/mtl-lead-row";
 import { portalDataTableScrollClass } from "@/lib/app-shell-ui";
 import { PortalLeadsTableScrollHint } from "@/components/portal-leads/portal-leads-table-scroll-hint";
@@ -20,6 +20,7 @@ export type { MtlLeadRow };
 
 export function MtlLeadsTableClient({
   leads,
+  page,
   initialQ,
   execs,
   rangeLabel,
@@ -28,6 +29,7 @@ export function MtlLeadsTableClient({
   exportRowCount,
 }: {
   leads: MtlLeadRow[];
+  page: number;
   initialQ: string | null;
   execs: { id: string; name: string }[];
   rangeLabel: string;
@@ -37,26 +39,17 @@ export function MtlLeadsTableClient({
 }) {
   const [query, setQuery] = useState(initialQ ?? "");
   useDebouncedLeadSearchUrl(query);
-
-  const filtered = useMemo(
-    () => filterLeadsByNameOrPhone(leads, query),
-    [leads, query],
-  );
-
-  const filteredExport = useMemo(
-    () => filterLeadsByNameOrPhone(exportLeads, query),
-    [exportLeads, query],
-  );
+  const tableScrollRef = usePortalLeadTablePageScroll(page);
 
   const exportPayload = useMemo(
     () =>
-      buildMtlLeadsExportPayloadFromPortalRows(filteredExport, {
+      buildMtlLeadsExportPayloadFromPortalRows(exportLeads, {
         rangeLabel,
-        searchQuery: query,
+        searchQuery: initialQ ?? "",
         rangeTotalCount,
         exportRowCount,
       }),
-    [filteredExport, rangeLabel, query, rangeTotalCount, exportRowCount],
+    [exportLeads, rangeLabel, initialQ, rangeTotalCount, exportRowCount],
   );
 
   const hasQuery = query.trim().length > 0;
@@ -74,6 +67,7 @@ export function MtlLeadsTableClient({
 
       <PortalLeadsTableScrollHint />
       <div
+        ref={tableScrollRef}
         className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
         role="region"
         aria-label="Team leads table"
@@ -105,22 +99,13 @@ export function MtlLeadsTableClient({
                   colSpan={12}
                   className="px-4 py-16 text-center text-[13px] text-lf-muted"
                 >
-                  No leads in this range.
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={12}
-                  className="px-4 py-16 text-center text-[13px] text-lf-muted"
-                >
                   {hasQuery
                     ? "No leads match this name or phone in the current filters."
                     : "No leads in this range."}
                 </td>
               </tr>
             ) : (
-              filtered.map((lead) => {
+              leads.map((lead) => {
                 const open =
                   lead.salesStage !== SalesStage.CLOSED_WON &&
                   lead.salesStage !== SalesStage.CLOSED_LOST;

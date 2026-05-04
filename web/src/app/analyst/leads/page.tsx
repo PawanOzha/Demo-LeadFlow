@@ -1,11 +1,9 @@
-import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
 import { dbQuery } from "@/lib/db/pool";
 import AnalystDateRangeBar from "@/components/analyst/analyst-date-range-bar";
 import {
   analystRangeParams,
   analystRangeSummaryLabel,
-  hrefWithDateRange,
   leadWhereSql,
   preservedSearchParamEntriesForDateBar,
   searchParamFirst,
@@ -16,6 +14,7 @@ import { AnalystAllLeadsTableClient } from "@/components/portal-leads/analyst-al
 import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import { timedServerBlock } from "@/lib/server/log";
 import { coerceMoney } from "@/lib/deal-money";
+import { mergeLeadNamePhoneSearch } from "@/lib/lead-server-search";
 
 export default async function AnalystAllLeadsPage({
   searchParams,
@@ -37,7 +36,11 @@ export default async function AnalystAllLeadsPage({
     perPageRaw === 50 || perPageRaw === 100 ? perPageRaw : 25;
   const offset = (page - 1) * perPage;
   const rangeLabel = analystRangeSummaryLabel(from, to);
-  const { clause, params } = leadWhereSql(session.id, from, to);
+  const { clause, params } = mergeLeadNamePhoneSearch(
+    leadWhereSql(session.id, from, to),
+    undefined,
+    q,
+  );
 
   const [countRows, leads, exportLeads] = await timedServerBlock(
     "route:/analyst/leads page:queries",
@@ -125,7 +128,7 @@ export default async function AnalystAllLeadsPage({
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           
@@ -155,8 +158,9 @@ export default async function AnalystAllLeadsPage({
       />
 
       <AnalystAllLeadsTableClient
-        key={`${from ?? ""}|${to ?? ""}|${page}|${perPage}`}
+        key={`${from ?? ""}|${to ?? ""}|${q ?? ""}|${page}|${perPage}`}
         leads={rows}
+        page={page}
         initialQ={q}
         from={from}
         to={to}

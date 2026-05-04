@@ -24,6 +24,7 @@ export function useDebouncedLeadSearchUrl(query: string, delayMs = 400) {
 
       if (tq) params.set("q", tq);
       else params.delete("q");
+      params.delete("page");
       const qs = params.toString();
       const href = qs ? `${pathname}?${qs}` : pathname;
       void router.replace(href);

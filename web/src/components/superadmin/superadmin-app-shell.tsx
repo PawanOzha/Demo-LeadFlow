@@ -7,6 +7,7 @@ const NAV = [
   { href: "/superadmin/dashboard", label: "Dashboard" },
   { href: "/superadmin/add-user", label: "Add user" },
   { href: "/superadmin/leads", label: "Leads" },
+  { href: "/superadmin/transfer-log", label: "Transfer log" },
   { href: "/superadmin/report", label: "Report" },
   { href: "/superadmin/settings", label: "Settings" },
 ] as const;

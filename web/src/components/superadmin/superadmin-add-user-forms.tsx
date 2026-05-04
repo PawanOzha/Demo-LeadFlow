@@ -111,7 +111,6 @@ function AddLeadAnalystForm({
   };
 
   /* Reset after successful server action — useActionState exposes no onSuccess callback. */
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (
       wasLaPending.current &&
@@ -119,12 +118,13 @@ function AddLeadAnalystForm({
       !laState?.error &&
       !laState?.temporaryPassword
     ) {
-      setManagerId("");
-      setAnalystTeamName("");
+      queueMicrotask(() => {
+        setManagerId("");
+        setAnalystTeamName("");
+      });
     }
     wasLaPending.current = laPending;
   }, [laPending, laState]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <form action={laAction} className="space-y-4" autoComplete="off">
@@ -312,12 +312,14 @@ function AddUserCardMenu({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="menu"
-      className="flex h-9 w-full min-w-[220px] max-w-[min(100vw-2rem,280px)] items-center justify-between gap-3 rounded-lg border border-lf-border bg-lf-surface px-4 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
+        className="inline-flex h-9 max-w-full shrink-0 items-center gap-2 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 sm:gap-2.5 sm:px-3.5"
       >
-        <div>
-          <span className="block text-sm font-semibold text-lf-text">Add user</span>
-          <span className="mt-0.5 block text-xs text-lf-muted">Analyst Team Lead or Lead Analyst</span>
-        </div>
+        <span className="whitespace-nowrap font-semibold text-lf-text">
+          Add user
+        </span>
+        <span className="hidden whitespace-nowrap text-xs font-normal text-lf-muted lg:inline">
+          · ATL or Lead Analyst
+        </span>
         <ChevronDown open={open} />
       </button>
       {open ? (

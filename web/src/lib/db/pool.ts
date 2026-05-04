@@ -40,6 +40,18 @@ function reviveRows<T>(rows: unknown[]): T[] {
   return rows.map((row) => reviveRowDates(row) as T);
 }
 
+/** Supabase `exec_sql` may return a JSON string of either `[...rows]` or `{ rows: [...] }`. */
+function rowsFromParsedRpcPayload<T>(parsed: unknown): T[] | null {
+  if (Array.isArray(parsed)) {
+    return reviveRows<T>(parsed);
+  }
+  if (parsed && typeof parsed === "object" && "rows" in parsed) {
+    const rows = (parsed as { rows?: unknown }).rows;
+    if (Array.isArray(rows)) return reviveRows<T>(rows);
+  }
+  return null;
+}
+
 function sqlRpcName(): string {
   return process.env.SUPABASE_SQL_RPC_NAME?.trim() || "exec_sql";
 }
@@ -73,15 +85,15 @@ async function runSql<T = Record<string, unknown>>(
   if (typeof data === "string") {
     try {
       const parsed = JSON.parse(data);
-      return Array.isArray(parsed) ? reviveRows<T>(parsed) : [];
+      const fromPayload = rowsFromParsedRpcPayload<T>(parsed);
+      if (fromPayload !== null) return fromPayload;
+      return [];
     } catch {
       return [];
     }
   }
-  if (data && typeof data === "object" && "rows" in data) {
-    const rows = (data as { rows?: unknown }).rows;
-    return Array.isArray(rows) ? reviveRows<T>(rows) : [];
-  }
+  const fromObject = rowsFromParsedRpcPayload<T>(data);
+  if (fromObject !== null) return fromObject;
   if (!Array.isArray(data)) {
     return [];
   }

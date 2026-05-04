@@ -7,11 +7,10 @@ export default async function AnalystTeamLeadDashboard() {
   const session = await getSession();
   if (!session) return null;
 
-  const { vm, analystsList, teamCount } =
-    await buildAtlTeamLeadDashboardViewModel(session, null, null);
+  const { vm } = await buildAtlTeamLeadDashboardViewModel(session, null, null);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           

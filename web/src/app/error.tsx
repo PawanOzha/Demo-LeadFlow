@@ -8,7 +8,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-lf-bg px-4 py-12 text-lf-text">
+    <div className="flex h-full min-h-full w-full flex-col items-center justify-center gap-4 overflow-y-auto bg-lf-bg px-4 py-12 text-lf-text">
       {error.digest ? (
         <>
           <p className="sr-only" suppressHydrationWarning>
