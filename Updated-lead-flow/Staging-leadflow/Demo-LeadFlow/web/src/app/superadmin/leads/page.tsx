@@ -1,0 +1,547 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { SuperadminLeadsToolbar } from "@/components/superadmin/superadmin-leads-toolbar";
+import { QualificationStatus, SalesStage, UserRole } from "@/lib/constants";
+import { coerceMoney } from "@/lib/deal-money";
+import { getSuperadminLeadsWithJourney } from "@/lib/superadmin-stats";
+import {
+  buildSuperadminLeadsWhereSql,
+  parseSuperadminLeadsSearchParams,
+  superadminLeadsFilterSummary,
+} from "@/lib/superadmin-leads-filters";
+import { dbQuery } from "@/lib/db/pool";
+import { SuperadminLeadsJourneyClient } from "@/components/superadmin/superadmin-leads-journey-client";
+import { toRscSerializableDashboardExport } from "@/lib/dashboard-export-types";
+import { flattenSuperadminJourneyGroupsForExport } from "@/lib/superadmin-leads-export-map";
+import { buildSuperadminLeadsExportPayload } from "@/lib/portal-all-leads-export-payloads";
+import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import { logLeadsAudit, timedServerBlock } from "@/lib/server/log";
+import { PortalSectionJumpTabs } from "@/components/portal-section-jump-tabs";
+
+export const metadata: Metadata = {
+  title: "Leads · Superadmin",
+};
+
+function first(sp: string | string[] | undefined): string | undefined {
+  if (Array.isArray(sp)) return sp[0];
+  return sp;
+}
+
+function sectionHref(
+  sp: Record<string, string | string[] | undefined>,
+  section: string,
+) {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    const fv = first(v);
+    if (!fv || k === "leadsSection") continue;
+    qs.set(k, fv);
+  }
+  qs.set("leadsSection", section);
+  return `/superadmin/leads?${qs.toString()}`;
+}
+
+function PaginationBar({
+  totalCount,
+  offset,
+  perPage,
+  page,
+  totalPages,
+  prevHref,
+  nextHref,
+}: {
+  totalCount: number;
+  offset: number;
+  perPage: number;
+  page: number;
+  totalPages: number;
+  prevHref: string | null;
+  nextHref: string | null;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
+      <p className="text-lf-subtle">
+        Showing{" "}
+        <span className="font-semibold text-lf-text">
+          {totalCount === 0 ? 0 : offset + 1}-
+          {Math.min(offset + perPage, totalCount)}
+        </span>{" "}
+        of <span className="font-semibold text-lf-text">{totalCount}</span> leads
+      </p>
+      <div className="flex items-center gap-2">
+        {prevHref ? (
+          <Link
+            href={prevHref}
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
+          >
+            Previous
+          </Link>
+        ) : (
+          <span className="rounded-lg border border-lf-border px-3 py-1.5 text-xs text-lf-subtle opacity-50">
+            Previous
+          </span>
+        )}
+        <span className="text-xs text-lf-subtle">
+          Page {Math.min(page, totalPages)} of {totalPages}
+        </span>
+        {nextHref ? (
+          <Link
+            href={nextHref}
+            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover"
+          >
+            Next
+          </Link>
+        ) : (
+          <span className="rounded-lg border border-lf-border px-3 py-1.5 text-xs text-lf-subtle opacity-50">
+            Next
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RevenueSummaryCard({
+  title,
+  amount,
+  hint,
+}: {
+  title: string;
+  amount: number;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-lf-border bg-lf-surface px-5 py-4 shadow-sm">
+      <p className="text-[12px] font-medium uppercase tracking-wide text-lf-muted">
+        {title}
+      </p>
+      <p className="mt-2 text-[22px] font-semibold tracking-tight text-lf-text tabular-nums">
+        {amount.toLocaleString(undefined, {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        })}
+      </p>
+      {hint ? (
+        <p className="mt-1 text-[11px] text-lf-muted">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function QualSummaryCard({
+  title,
+  count,
+  accent,
+}: {
+  title: string;
+  count: number;
+  accent: "positive" | "neutral" | "muted";
+}) {
+  const ring =
+    accent === "positive"
+      ? "border-lf-success/35 bg-lf-success/[0.07]"
+      : accent === "neutral"
+        ? "border-lf-warning/35 bg-lf-warning/[0.07]"
+        : "border-lf-border bg-lf-bg/80";
+  return (
+    <div className={`rounded-xl border px-5 py-4 ${ring}`}>
+      <p className="text-[12px] font-medium uppercase tracking-wide text-lf-muted">
+        {title}
+      </p>
+      <p className="mt-2 text-[22px] font-semibold tracking-tight text-lf-text tabular-nums">
+        {count}
+      </p>
+    </div>
+  );
+}
+
+export default async function SuperadminLeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const sectionRaw = first(sp.leadsSection);
+  const leadsSection =
+    sectionRaw === "journey-table" ? "journey-table" : "summary";
+  const parsedRaw = parseSuperadminLeadsSearchParams(sp);
+  const [teams, execs, analysts] = await timedServerBlock(
+    "route:/superadmin/leads page:filter-options",
+    () =>
+      Promise.all([
+        dbQuery<{ id: string; name: string }>(
+          `SELECT id, name FROM "Team" ORDER BY name ASC`,
+        ),
+        dbQuery<{ id: string; name: string; email: string }>(
+          `SELECT id, name, email FROM "User" WHERE role = $1 ORDER BY name ASC`,
+          [UserRole.SALES_EXECUTIVE],
+        ),
+        dbQuery<{ id: string; name: string; email: string }>(
+          `SELECT id, name, email FROM "User" WHERE role = $1 ORDER BY name ASC`,
+          [UserRole.LEAD_ANALYST],
+        ),
+      ]),
+  );
+  const parsed = {
+    ...parsedRaw,
+    analystId:
+      parsedRaw.analystId && analysts.some((a) => a.id === parsedRaw.analystId)
+        ? parsedRaw.analystId
+        : null,
+    teamId:
+      parsedRaw.teamId && teams.some((t) => t.id === parsedRaw.teamId)
+        ? parsedRaw.teamId
+        : null,
+    execId:
+      parsedRaw.execId && execs.some((e) => e.id === parsedRaw.execId)
+        ? parsedRaw.execId
+        : null,
+  };
+  const where = buildSuperadminLeadsWhereSql(parsed);
+  const page = Math.max(1, parsed.page);
+  const perPage = parsed.perPage;
+  const shouldRenderJourneyTable = leadsSection === "journey-table";
+  const offset = (page - 1) * perPage;
+  const emptyJourneyResult: Awaited<
+    ReturnType<typeof getSuperadminLeadsWithJourney>
+  > = {
+    qualTotals: { qualified: 0, notQualified: 0, irrelevant: 0 },
+    analystGroups: [],
+  };
+
+  const qualParam = (i: number) => `$${where.params.length + i}`;
+  const [
+    countTotalRows,
+    countQualifiedRows,
+    countNotQualifiedRows,
+    countIrrelevantRows,
+    paged,
+    exportPack,
+    duplicateRows,
+    closedRevFiltered,
+    pipelineEstFiltered,
+  ] = await timedServerBlock("route:/superadmin/leads page:queries", () =>
+      Promise.all([
+        // Separate singleton COUNT(*) queries: some exec_sql RPCs return [] for
+        // multi-aggregate SELECTs, which made totalCount 0 and broke the page.
+        dbQuery<{ total: string }>(
+          `SELECT COUNT(*)::text AS total FROM "Lead" WHERE ${where.clause}`,
+          where.params,
+        ),
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = ${qualParam(1)}`,
+          [...where.params, QualificationStatus.QUALIFIED],
+        ),
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = ${qualParam(1)}`,
+          [...where.params, QualificationStatus.NOT_QUALIFIED],
+        ),
+        dbQuery<{ c: string }>(
+          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = ${qualParam(1)}`,
+          [...where.params, QualificationStatus.IRRELEVANT],
+        ),
+        shouldRenderJourneyTable
+          ? getSuperadminLeadsWithJourney(where, { limit: perPage, offset })
+          : Promise.resolve(emptyJourneyResult),
+        shouldRenderJourneyTable
+          ? getSuperadminLeadsWithJourney(where, {
+              limit: PORTAL_LEADS_EXPORT_ROW_CAP,
+              offset: 0,
+            })
+          : Promise.resolve(emptyJourneyResult),
+        shouldRenderJourneyTable
+          ? dbQuery<{ lead_id: string; dup_count: string }>(
+              `WITH filtered AS (
+                 SELECT
+                   id,
+                   NULLIF(regexp_replace(COALESCE(phone, ''), '\\D', '', 'g'), '') AS phone_key
+                 FROM "Lead"
+                 WHERE ${where.clause}
+               ),
+               phone_dups AS (
+                 SELECT phone_key, COUNT(*)::int AS c
+                 FROM filtered
+                 WHERE phone_key IS NOT NULL
+                 GROUP BY phone_key
+                 HAVING COUNT(*) > 1
+               )
+               SELECT f.id AS lead_id, pd.c::text AS dup_count
+               FROM filtered f
+               JOIN phone_dups pd ON pd.phone_key = f.phone_key`,
+              where.params,
+            )
+          : Promise.resolve([]),
+        shouldRenderJourneyTable
+          ? Promise.resolve([] as { s: string | null }[])
+          : dbQuery<{ s: string | null }>(
+              `SELECT COALESCE(SUM("closedRevenue"), 0)::text AS s FROM "Lead" WHERE ${where.clause} AND "salesStage" = $${where.params.length + 1} AND "closedRevenue" IS NOT NULL`,
+              [...where.params, SalesStage.CLOSED_WON],
+            ),
+        shouldRenderJourneyTable
+          ? Promise.resolve([] as { s: string | null }[])
+          : dbQuery<{ s: string | null }>(
+              `SELECT COALESCE(SUM("estimatedDealValue"), 0)::text AS s FROM "Lead" WHERE ${where.clause} AND "estimatedDealValue" IS NOT NULL`,
+              where.params,
+            ),
+      ]),
+    );
+  const qualTotals = {
+    qualified: Number(countQualifiedRows[0]?.c ?? 0),
+    notQualified: Number(countNotQualifiedRows[0]?.c ?? 0),
+    irrelevant: Number(countIrrelevantRows[0]?.c ?? 0),
+  };
+  const totalCount = Number(countTotalRows[0]?.total ?? 0);
+  const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
+  if (page > totalPages) {
+    const qp = new URLSearchParams();
+    if (parsed.from) qp.set("from", parsed.from);
+    if (parsed.to) qp.set("to", parsed.to);
+    if (parsed.q) qp.set("q", parsed.q);
+    if (parsed.duplicatePhonesOnly) qp.set("duplicatePhonesOnly", "1");
+    if (parsed.status) qp.set("status", parsed.status);
+    if (parsed.analystId) qp.set("analystId", parsed.analystId);
+    if (parsed.teamId) qp.set("teamId", parsed.teamId);
+    if (parsed.execId) qp.set("execId", parsed.execId);
+    if (sp.leadsSection && first(sp.leadsSection)) {
+      qp.set("leadsSection", first(sp.leadsSection)!);
+    }
+    qp.set("perPage", String(perPage));
+    qp.set("page", "1");
+    redirect(`/superadmin/leads?${qp.toString()}`);
+  }
+  const safePage = page;
+  const safeOffset = (safePage - 1) * perPage;
+  const safePaged = paged;
+  const analystGroups = safePaged.analystGroups;
+  const filteredClosedRevenueTotal = Number(closedRevFiltered[0]?.s ?? 0);
+  const filteredPipelineEstimateTotal = Number(pipelineEstFiltered[0]?.s ?? 0);
+  logLeadsAudit("superadmin-leads", {
+    whereClause: where.clause,
+    whereParamCount: where.params.length,
+    page,
+    perPage,
+    totalCount,
+    leadsSection,
+    status: parsed.status,
+    hasSearch: Boolean(parsed.q),
+    hasDateRange: Boolean(parsed.from && parsed.to),
+  });
+
+  const teamMeta = parsed.teamId
+    ? teams.find((t) => t.id === parsed.teamId)
+    : null;
+  const teamName = teamMeta?.name ?? null;
+  const execUser = parsed.execId
+    ? execs.find((e) => e.id === parsed.execId)
+    : null;
+  const execLabel = execUser
+    ? `${execUser.name} (${execUser.email})`
+    : null;
+
+  const analystUser = parsed.analystId
+    ? analysts.find((a) => a.id === parsed.analystId)
+    : null;
+  const analystLabel = analystUser
+    ? `${analystUser.name} (${analystUser.email})`
+    : null;
+  const filterSummary = superadminLeadsFilterSummary(parsed, {
+    analystLabel,
+    teamName,
+    execLabel,
+  });
+  const superadminExportRows = flattenSuperadminJourneyGroupsForExport(
+    exportPack.analystGroups,
+  );
+  const superadminExportPayload = buildSuperadminLeadsExportPayload(
+    superadminExportRows,
+    {
+      filterSummary,
+      rangeTotalCount: totalCount,
+      exportRowCount: superadminExportRows.length,
+    },
+  );
+
+  const duplicateMap = new Map<
+    string,
+    { byPhone: boolean; maxGroupSize: number }
+  >();
+  for (const row of duplicateRows) {
+    const prev = duplicateMap.get(row.lead_id) ?? { byPhone: false, maxGroupSize: 0 };
+    duplicateMap.set(row.lead_id, {
+      byPhone: true,
+      maxGroupSize: Math.max(prev.maxGroupSize, Number(row.dup_count)),
+    });
+  }
+
+  const analystGroupsClient = analystGroups.map((group) => ({
+    analyst: group.analyst,
+    leads: group.leads.map((lead) => ({
+      id: lead.id,
+      leadName: lead.leadName,
+      phone: lead.phone,
+      leadEmail: lead.leadEmail,
+      country: lead.country,
+      city: lead.city,
+      createdAt: lead.createdAt.toISOString(),
+      updatedAt: lead.updatedAt.toISOString(),
+      qualificationStatus: lead.qualificationStatus,
+      source: lead.source,
+      sourceWebsiteName: lead.sourceWebsiteName,
+      sourceMetaProfileName: lead.sourceMetaProfileName,
+      notes: lead.notes,
+      lostNotes: lead.lostNotes,
+      leadScore: lead.leadScore,
+      salesStage: lead.salesStage,
+      execAssignedAt: lead.execAssignedAt?.toISOString() ?? null,
+      execDeadlineAt: lead.execDeadlineAt?.toISOString() ?? null,
+      closedAt: lead.closedAt?.toISOString() ?? null,
+      estimatedDealValue: coerceMoney(lead.estimatedDealValue),
+      closedRevenue: coerceMoney(lead.closedRevenue),
+      dealCurrency: lead.dealCurrency?.trim() || "USD",
+      internalReassignCount: lead.internalReassignCount,
+      assignedMainTeamLead: lead.assignedMainTeamLead,
+      team: lead.team,
+      assignedSalesExec: lead.assignedSalesExec,
+      duplicateMeta: duplicateMap.get(lead.id) ?? null,
+      handoffLogs: lead.handoffLogs.map((h) => ({
+        id: h.id,
+        createdAt: h.createdAt.toISOString(),
+        action: h.action,
+        detail: h.detail,
+        actor: h.actor,
+      })),
+    })),
+  }));
+
+  const filtersKey = `${parsed.from ?? ""}|${parsed.to ?? ""}|${parsed.q ?? ""}|${parsed.duplicatePhonesOnly ? "1" : "0"}|${parsed.status}|${parsed.analystId ?? ""}|${parsed.teamId ?? ""}|${parsed.execId ?? ""}|${parsed.perPage}|${parsed.page}`;
+  const qp = new URLSearchParams();
+  if (parsed.from) qp.set("from", parsed.from);
+  if (parsed.to) qp.set("to", parsed.to);
+  if (parsed.q) qp.set("q", parsed.q);
+  if (parsed.duplicatePhonesOnly) qp.set("duplicatePhonesOnly", "1");
+  if (parsed.status) qp.set("status", parsed.status);
+  if (parsed.analystId) qp.set("analystId", parsed.analystId);
+  if (parsed.teamId) qp.set("teamId", parsed.teamId);
+  if (parsed.execId) qp.set("execId", parsed.execId);
+  qp.set("perPage", String(perPage));
+  const prevHref =
+    safePage > 1
+      ? `/superadmin/leads?${new URLSearchParams({
+          ...Object.fromEntries(qp.entries()),
+          page: String(safePage - 1),
+        }).toString()}`
+      : null;
+  const nextHref =
+    safePage < totalPages
+      ? `/superadmin/leads?${new URLSearchParams({
+          ...Object.fromEntries(qp.entries()),
+          page: String(safePage + 1),
+        }).toString()}`
+      : null;
+  const tabs = [
+    { id: "summary", label: "Summary", href: sectionHref(sp, "summary") },
+    {
+      id: "journey-table",
+      label: "Journey table",
+      href: sectionHref(sp, "journey-table"),
+    },
+  ];
+
+  const exportForClient = toRscSerializableDashboardExport(
+    superadminExportPayload,
+  );
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-4 min-w-0">
+        <PortalSectionJumpTabs tabs={tabs} activeId={leadsSection} />
+        <SuperadminLeadsToolbar
+          key={filtersKey}
+          showExport={leadsSection === "journey-table"}
+          exportPayload={exportForClient}
+          filtersKey={filtersKey}
+          initial={parsed}
+          analysts={analysts}
+          teams={teams}
+          execs={execs}
+        />
+      </div>
+
+      <div className="space-y-8 min-w-0">
+          {leadsSection === "summary" ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <QualSummaryCard
+                  title="Total (current filters)"
+                  count={totalCount}
+                  accent="muted"
+                />
+                <QualSummaryCard
+                  title="Qualified"
+                  count={qualTotals.qualified}
+                  accent="positive"
+                />
+                <QualSummaryCard
+                  title="Not qualified"
+                  count={qualTotals.notQualified}
+                  accent="neutral"
+                />
+                <QualSummaryCard
+                  title="Irrelevant"
+                  count={qualTotals.irrelevant}
+                  accent="muted"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <RevenueSummaryCard
+                  title="Closed revenue (current filters)"
+                  amount={filteredClosedRevenueTotal}
+                  hint="Sum of closed revenue on won leads in this view. Amounts in different currencies are summed numerically."
+                />
+                <RevenueSummaryCard
+                  title="Pipeline estimate (current filters)"
+                  amount={filteredPipelineEstimateTotal}
+                  hint="Sum of analyst deal estimates for leads in this view."
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <PaginationBar
+                totalCount={totalCount}
+                offset={safeOffset}
+                perPage={perPage}
+                page={safePage}
+                totalPages={totalPages}
+                prevHref={prevHref}
+                nextHref={nextHref}
+              />
+
+              {analystGroups.length === 0 ? (
+                <p className="text-[13px] font-normal text-lf-label">
+                  {totalCount === 0
+                    ? "No leads match these filters."
+                    : "Leads match your filters (see count above), but rows failed to load. Try refreshing the page."}
+                </p>
+              ) : (
+                <>
+                  <SuperadminLeadsJourneyClient analystGroups={analystGroupsClient} />
+                  <PaginationBar
+                    totalCount={totalCount}
+                    offset={safeOffset}
+                    perPage={perPage}
+                    page={safePage}
+                    totalPages={totalPages}
+                    prevHref={prevHref}
+                    nextHref={nextHref}
+                  />
+                </>
+              )}
+            </>
+          )}
+      </div>
+    </div>
+  );
+}
