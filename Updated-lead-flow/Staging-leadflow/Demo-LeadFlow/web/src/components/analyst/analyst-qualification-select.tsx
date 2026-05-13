@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useTransition, useState } from "react";
+import { useTransition, useState } from "react";
 import { updateLeadQualificationAnalyst } from "@/app/actions/leads-analyst";
 import { QualificationStatus } from "@/lib/constants";
 
@@ -10,7 +10,7 @@ const OPTIONS: { value: string; label: string }[] = [
   { value: QualificationStatus.IRRELEVANT, label: "IRRELEVANT" },
 ];
 
-export default function AnalystQualificationSelect({
+function AnalystQualificationSelectInner({
   leadId,
   value,
 }: {
@@ -19,10 +19,6 @@ export default function AnalystQualificationSelect({
 }) {
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState(value);
-
-  useEffect(() => {
-    setSelected(value);
-  }, [value]);
 
   return (
     <select
@@ -49,4 +45,11 @@ export default function AnalystQualificationSelect({
       ))}
     </select>
   );
+}
+
+export default function AnalystQualificationSelect(props: {
+  leadId: string;
+  value: string;
+}) {
+  return <AnalystQualificationSelectInner key={props.value} {...props} />;
 }

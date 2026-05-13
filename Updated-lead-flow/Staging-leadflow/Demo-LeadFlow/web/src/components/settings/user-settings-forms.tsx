@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { logoutAction } from "@/app/actions/auth";
-import { normalizeAvatarSrc } from "@/lib/avatar-url";
+import { UserMiniAvatar } from "@/components/user-mini-avatar";
+import { PasswordInputWithToggle } from "@/components/ui/password-input-with-toggle";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Tab = "profile" | "password" | "notifications";
 
@@ -13,8 +12,8 @@ export type SettingsFormActionResult =
   | { ok: true; error?: undefined; image?: string | null };
 
 type UserSettingsFormsProps = {
+  userId: string;
   defaultName: string;
-  teamName?: string | null;
   avatarUrl?: string | null;
   fetchProfileUrl: string;
   fetchPasswordUrl: string;
@@ -22,9 +21,9 @@ type UserSettingsFormsProps = {
   onProfileSaved?: () => void | Promise<void>;
 };
 
-export function UserSettingsForms({
+function UserSettingsFormsInner({
+  userId,
   defaultName,
-  teamName,
   avatarUrl,
   fetchProfileUrl,
   fetchPasswordUrl,
@@ -33,12 +32,19 @@ export function UserSettingsForms({
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("profile");
 
-  const [previewAvatar, setPreviewAvatar] = useState<string | null>(() =>
-    avatarUrl != null && avatarUrl !== "" ? avatarUrl : null,
+  /**
+   * After save, mirrors server `image`. `undefined` means use `avatarUrl` prop from parent.
+   */
+  const [imageOverride, setImageOverride] = useState<string | null | undefined>(
+    undefined,
   );
-  useEffect(() => {
-    setPreviewAvatar(avatarUrl != null && avatarUrl !== "" ? avatarUrl : null);
-  }, [avatarUrl]);
+
+  const effectiveStored =
+    imageOverride === undefined ? avatarUrl ?? null : imageOverride;
+
+  const hasUploadedPhoto = Boolean(
+    effectiveStored != null && String(effectiveStored).trim() !== "",
+  );
 
   const [profileState, setProfileState] = useState<
     SettingsFormActionResult | undefined
@@ -99,7 +105,7 @@ export function UserSettingsForms({
       setProfileState(result);
       if ("ok" in result && result.ok) {
         if (result.image !== undefined) {
-          setPreviewAvatar(result.image);
+          setImageOverride(result.image);
         }
         await onProfileSaved?.();
         router.refresh();
@@ -126,93 +132,114 @@ export function UserSettingsForms({
   const [n3, setN3] = useState(true);
   const [n4, setN4] = useState(false);
 
+  const navBtn = (id: Tab, label: string) => (
+    <button
+      key={id}
+      type="button"
+      onClick={() => setTab(id)}
+      className={`rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-all duration-200 lg:w-full ${
+        tab === id
+          ? "bg-lf-sidebar-active font-semibold text-lf-cyan shadow-sm shadow-lf-brand/10"
+          : "text-lf-muted hover:bg-lf-row-hover hover:text-lf-text"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  const panelClass =
+    "rounded-2xl border border-lf-border/80 bg-lf-surface p-6 shadow-sm sm:p-8";
+
   return (
-    <div className="mx-auto max-w-4xl">
-      {teamName != null && teamName !== "" ? (
-        <p className="mb-8 text-sm text-lf-muted">
-          Team{" "}
-          <span className="font-medium text-lf-text-secondary">{teamName}</span>
-        </p>
-      ) : (
-        <div className="mb-6" aria-hidden />
-      )}
+    <div className="flex flex-col gap-10 lg:flex-row lg:gap-12">
+      <nav
+        className="flex shrink-0 flex-row gap-1 overflow-x-auto pb-1 lg:w-52 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
+        aria-label="Settings sections"
+      >
+        {navBtn("profile", "Profile")}
+        {navBtn("password", "Password")}
+        {navBtn("notifications", "Notifications")}
+      </nav>
 
-      <div className="flex flex-col gap-8 lg:flex-row">
-        <nav className="flex shrink-0 flex-row gap-2 lg:w-48 lg:flex-col lg:gap-1">
-          {(
-            [
-              ["profile", "Profile"],
-              ["password", "Password"],
-              ["notifications", "Notifications"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              className={`h-9 rounded-md px-3 text-left text-sm font-medium transition-colors duration-200 lg:w-full ${
-                tab === id
-                  ? "bg-lf-sidebar-active font-semibold text-lf-cyan"
-                  : "text-lf-muted hover:bg-lf-row-hover hover:text-lf-text"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="min-w-0 flex-1">
-          {tab === "profile" ? (
-            <div className="rounded-lg border border-lf-border bg-lf-surface p-6">
-              <h2 className="text-lg font-semibold text-lf-text">Profile</h2>
-              <p className="mt-1 text-sm text-lf-subtle">
-                Display name and profile photo
+      <div className="min-w-0 flex-1">
+        {tab === "profile" ? (
+          <div className={panelClass}>
+            <div className="border-b border-lf-border/60 pb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-lf-text">
+                Profile
+              </h2>
+              <p className="mt-1.5 text-sm text-lf-muted">
+                Your name and photo appear in the app header and exports.
               </p>
-              {previewAvatar ? (
-                <div className="mt-4 flex items-center gap-3">
-                  <Image
-                    src={normalizeAvatarSrc(previewAvatar) ?? previewAvatar}
-                    alt=""
-                    width={64}
-                    height={64}
-                    unoptimized
-                    className="h-16 w-16 rounded-full object-cover ring-1 ring-lf-border"
-                  />
-                  <p className="text-xs text-lf-subtle">
-                    Current photo (updates in the header after you save).
+            </div>
+
+            <div className="mt-8 flex flex-col gap-8 sm:flex-row sm:items-start">
+              <div className="flex flex-col items-center sm:items-start">
+                <UserMiniAvatar
+                  userId={userId}
+                  image={effectiveStored}
+                  name={defaultName}
+                  size={112}
+                />
+                {hasUploadedPhoto ? (
+                  <p className="mt-3 max-w-[12rem] text-center text-xs text-lf-subtle sm:text-left">
+                    Custom photo — shown everywhere in LeadFlow.
                   </p>
-                </div>
-              ) : null}
-              <form onSubmit={onProfileSubmit} className="mt-6 space-y-4">
+                ) : (
+                  <p className="mt-3 max-w-[12rem] text-center text-xs leading-relaxed text-lf-subtle sm:text-left">
+                    Upload a photo below to personalize your profile.
+                  </p>
+                )}
+              </div>
+
+              <form
+                onSubmit={onProfileSubmit}
+                className="min-w-0 flex-1 space-y-5"
+              >
                 <label className="block text-sm font-medium text-lf-text-secondary">
                   Display name
                   <input
                     name="name"
                     required
                     defaultValue={defaultName}
-                    className="mt-2 min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
+                    autoComplete="name"
+                    className="mt-2 min-h-11 w-full rounded-xl border border-lf-border bg-lf-bg px-4 py-2 text-sm text-lf-text outline-none transition-shadow focus:border-lf-brand/40 focus:ring-2 focus:ring-lf-brand/20"
                   />
                 </label>
-                <label className="block text-sm font-medium text-lf-text-secondary">
-                  Profile photo (JPEG or PNG)
-                  <input
-                    name="photo"
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    className="mt-2 w-full text-sm text-lf-muted file:mr-3 file:rounded-md file:border-0 file:bg-lf-bg file:px-3 file:py-2 file:text-lf-text-secondary"
-                  />
-                </label>
-                {previewAvatar || (avatarUrl != null && avatarUrl !== "") ? (
-                  <label className="flex cursor-pointer items-start gap-3 text-sm text-lf-muted">
+                <div>
+                  <span className="block text-sm font-medium text-lf-text-secondary">
+                    Profile photo
+                  </span>
+                  <p className="mt-1 text-xs text-lf-subtle">
+                    JPEG or PNG. Your company may apply size limits in the
+                    browser.
+                  </p>
+                  <label className="mt-3 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-lf-border/90 bg-lf-bg/40 px-4 py-8 transition-colors hover:border-lf-brand/35 hover:bg-lf-bg/70">
+                    <input
+                      name="photo"
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      className="sr-only"
+                    />
+                    <span className="text-sm font-medium text-lf-text-secondary">
+                      Drop or click to choose an image
+                    </span>
+                    <span className="mt-1 text-xs text-lf-muted">
+                      JPEG / PNG only
+                    </span>
+                  </label>
+                </div>
+                {hasUploadedPhoto ? (
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-lf-border/60 bg-lf-bg/30 px-4 py-3 text-sm text-lf-muted">
                     <input
                       name="removePhoto"
                       type="checkbox"
                       value="true"
-                    className="h-4 w-4 cursor-pointer rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-lf-border text-lf-text focus:ring-lf-brand focus:ring-offset-0"
                     />
                     <span>
-                      Remove current profile photo (saved when you click Save
-                      profile; ignored if you also choose a new file above)
+                      Remove my photo on save (the default avatar will show again
+                      until you upload a new image)
                     </span>
                   </label>
                 ) : null}
@@ -225,152 +252,156 @@ export function UserSettingsForms({
                 <button
                   type="submit"
                   disabled={profilePending}
-                  className="inline-flex min-h-10 items-center rounded-md bg-lf-accent px-4 text-sm font-semibold text-lf-on-accent transition-colors hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2 disabled:opacity-50"
+                  className="inline-flex min-h-11 items-center rounded-xl bg-lf-accent px-5 text-sm font-semibold text-lf-on-accent shadow-md shadow-lf-brand/15 transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2 disabled:opacity-50"
                 >
                   {profilePending ? "Saving…" : "Save profile"}
                 </button>
               </form>
             </div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {tab === "password" ? (
-            <div className="rounded-lg border border-lf-border bg-lf-surface p-6">
-              <h2 className="text-lg font-semibold text-lf-text">Password</h2>
-              <p className="mt-1 text-sm text-lf-subtle">
-                Change your sign-in password
-              </p>
-              <form
-                onSubmit={onPasswordSubmit}
-                className="mt-6 space-y-4 max-w-md"
-              >
-                <label className="block text-sm font-medium text-lf-text-secondary">
-                  Current password
-                  <input
-                    name="currentPassword"
-                    type="password"
-                    required
-                    autoComplete="current-password"
-                    className="mt-2 min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-lf-text-secondary">
-                  New password
-                  <input
-                    name="newPassword"
-                    type="password"
-                    required
-                    minLength={8}
-                    autoComplete="new-password"
-                    className="mt-2 min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
-                  />
-                </label>
-                {passState?.error ? (
-                  <p className="text-sm text-lf-danger">{passState.error}</p>
-                ) : null}
-                {passState?.ok ? (
-                  <p className="text-sm text-lf-success">Password updated.</p>
-                ) : null}
-                <button
-                  type="submit"
-                  disabled={passPending}
-                  className="inline-flex min-h-10 items-center rounded-md bg-lf-accent px-4 text-sm font-semibold text-lf-on-accent transition-colors hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2 disabled:opacity-50"
-                >
-                  {passPending ? "Updating…" : "Update password"}
-                </button>
-              </form>
-            </div>
-          ) : null}
-
-          {tab === "notifications" ? (
-            <div className="rounded-lg border border-lf-border bg-lf-surface p-6">
-              <h2 className="text-lg font-semibold text-lf-text">
-                Notification preferences
+        {tab === "password" ? (
+          <div className={panelClass}>
+            <div className="border-b border-lf-border/60 pb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-lf-text">
+                Password
               </h2>
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-lf-subtle">
-                Lead alerts
+              <p className="mt-1.5 text-sm text-lf-muted">
+                Choose a strong password you don’t use elsewhere.
               </p>
-              <ul className="mt-4 divide-y divide-lf-divide">
-                {(
-                  [
-                    [
-                      n1,
-                      setN1,
-                      "Lead assigned to team",
-                      "Get notified when your qualified lead is assigned to a main team.",
-                    ],
-                    [
-                      n2,
-                      setN2,
-                      "Lead closed won",
-                      "Notify when a lead you qualified is successfully closed.",
-                    ],
-                    [
-                      n3,
-                      setN3,
-                      "Lead closed lost",
-                      "Notify when a lead you qualified is lost.",
-                    ],
-                    [
-                      n4,
-                      setN4,
-                      "Pipeline status updates",
-                      "Weekly digest of all your leads pipeline movement.",
-                    ],
-                  ] as const
-                ).map(([on, setOn, title, desc], i) => (
-                  <li
-                    key={i}
-                    className="flex items-start justify-between gap-4 py-4 first:pt-0"
-                  >
-                    <div>
-                      <p className="font-medium text-lf-text">{title}</p>
-                      <p className="mt-1 text-sm text-lf-subtle">{desc}</p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={on}
-                      onClick={() => setOn(!on)}
-                      className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-                        on ? "bg-lf-accent" : "bg-lf-control-off"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 h-6 w-6 rounded-full bg-lf-surface shadow transition ${
-                          on ? "left-5" : "left-0.5"
-                        }`}
-                      />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  className="inline-flex min-h-10 items-center rounded-md bg-lf-accent px-4 text-sm font-semibold text-lf-on-accent transition-colors hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2"
-                >
-                  Save preferences
-                </button>
-              </div>
             </div>
-          ) : null}
-        </div>
-      </div>
+            <form
+              onSubmit={onPasswordSubmit}
+              className="mt-8 max-w-md space-y-5"
+            >
+              <label className="block text-sm font-medium text-lf-text-secondary">
+                Current password
+                <PasswordInputWithToggle
+                  name="currentPassword"
+                  required
+                  autoComplete="current-password"
+                  wrapperClassName="mt-2"
+                  className="min-h-11 w-full rounded-xl border border-lf-border bg-lf-bg px-4 py-2 text-sm text-lf-text outline-none focus:border-lf-brand/40 focus:ring-2 focus:ring-lf-brand/20"
+                />
+              </label>
+              <label className="block text-sm font-medium text-lf-text-secondary">
+                New password
+                <PasswordInputWithToggle
+                  name="newPassword"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  wrapperClassName="mt-2"
+                  className="min-h-11 w-full rounded-xl border border-lf-border bg-lf-bg px-4 py-2 text-sm text-lf-text outline-none focus:border-lf-brand/40 focus:ring-2 focus:ring-lf-brand/20"
+                />
+              </label>
+              {passState?.error ? (
+                <p className="text-sm text-lf-danger">{passState.error}</p>
+              ) : null}
+              {passState?.ok ? (
+                <p className="text-sm text-lf-success">Password updated.</p>
+              ) : null}
+              <button
+                type="submit"
+                disabled={passPending}
+                className="inline-flex min-h-11 items-center rounded-xl bg-lf-accent px-5 text-sm font-semibold text-lf-on-accent shadow-md shadow-lf-brand/15 transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2 disabled:opacity-50"
+              >
+                {passPending ? "Updating…" : "Update password"}
+              </button>
+            </form>
+          </div>
+        ) : null}
 
-      <div className="mt-10 rounded-lg border border-lf-border bg-lf-surface p-6">
-        <h2 className="text-lg font-semibold text-lf-text">Session</h2>
-        <p className="mt-1 text-sm text-lf-subtle">
-          Sign out of LeadFlow on this device.
-        </p>
-        <form action={logoutAction} className="mt-4">
-          <button
-            type="submit"
-            className="inline-flex min-h-10 items-center rounded-md border border-lf-border bg-lf-surface px-4 text-sm font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2"
-          >
-            Sign out
-          </button>
-        </form>
+        {tab === "notifications" ? (
+          <div className={panelClass}>
+            <div className="border-b border-lf-border/60 pb-6">
+              <h2 className="text-xl font-semibold tracking-tight text-lf-text">
+                Notifications
+              </h2>
+              <p className="mt-1.5 text-sm text-lf-muted">
+                Lead and pipeline alerts (preferences only — delivery may depend
+                on your rollout).
+              </p>
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-lf-subtle">
+              Lead alerts
+            </p>
+            <ul className="mt-4 divide-y divide-lf-divide rounded-xl border border-lf-border/50 bg-lf-bg/20">
+              {(
+                [
+                  [
+                    n1,
+                    setN1,
+                    "Lead assigned to team",
+                    "When your qualified lead is assigned to a main team.",
+                  ],
+                  [
+                    n2,
+                    setN2,
+                    "Lead closed won",
+                    "When a lead you qualified is closed won.",
+                  ],
+                  [
+                    n3,
+                    setN3,
+                    "Lead closed lost",
+                    "When a lead you qualified is lost.",
+                  ],
+                  [
+                    n4,
+                    setN4,
+                    "Pipeline status updates",
+                    "Periodic digest of pipeline movement.",
+                  ],
+                ] as const
+              ).map(([on, setOn, title, desc], i) => (
+                <li
+                  key={i}
+                  className="flex items-start justify-between gap-4 px-4 py-4 first:rounded-t-xl last:rounded-b-xl"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-lf-text">{title}</p>
+                    <p className="mt-1 text-sm text-lf-subtle">{desc}</p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={on}
+                    onClick={() => setOn(!on)}
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${
+                      on ? "bg-lf-accent" : "bg-lf-control-off"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-6 w-6 rounded-full bg-lf-surface shadow transition ${
+                        on ? "left-5" : "left-0.5"
+                      }`}
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex justify-end">
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center rounded-xl bg-lf-accent px-5 text-sm font-semibold text-lf-on-accent shadow-md shadow-lf-brand/15 transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 focus-visible:ring-offset-2"
+              >
+                Save preferences
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
+  );
+}
+
+export function UserSettingsForms(props: UserSettingsFormsProps) {
+  return (
+    <UserSettingsFormsInner
+      key={`${props.userId}-${props.avatarUrl ?? "none"}-${props.defaultName}`}
+      {...props}
+    />
   );
 }

@@ -6,15 +6,13 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { QualificationMixRadialStackedChart } from "@/components/dashboard/qualification-mix-radial-stacked-chart";
 
 type Point = {
   date: string;
@@ -32,14 +30,6 @@ type Rank = {
   name: string;
   value: number;
 };
-
-const DONUT_COLORS = [
-  "var(--color-primary-500)",
-  "var(--color-info-text)",
-  "var(--color-warning-text)",
-  "var(--color-danger-text)",
-  "var(--color-neutral-500)",
-];
 
 function TooltipCard({
   active,
@@ -84,6 +74,14 @@ export function RechartsAnalyticsPanels({
   statusData: Slice[];
   rankingData: Rank[];
 }) {
+  const qualified =
+    statusData.find((s) => s.name === "Qualified")?.value ?? 0;
+  const notQualified =
+    statusData.find((s) => s.name === "Not Qualified")?.value ?? 0;
+  const irrelevant =
+    statusData.find((s) => s.name === "Irrelevant")?.value ?? 0;
+  const statusTotal = qualified + notQualified + irrelevant;
+
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-lf-border/80 bg-lf-surface p-6">
@@ -166,37 +164,25 @@ export function RechartsAnalyticsPanels({
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-lf-border/80 bg-lf-surface p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-lf-text">Lead Distribution</h3>
-            <p className="text-sm text-lf-muted">By qualification status.</p>
+            <h3 className="text-lg font-semibold text-lf-text">Qualification mix</h3>
+            <p className="text-sm text-lf-muted">
+              Radial chart (stacked) — semicircle band thickness by
+              qualification status.
+            </p>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={72}
-                  outerRadius={100}
-                  paddingAngle={3}
-                  dataKey="value"
-                  strokeWidth={0}
-                >
-                  {statusData.map((_, index) => (
-                    <Cell key={`slice-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip content={<TooltipCard />} />
-                <Legend
-                  iconType="circle"
-                  iconSize={8}
-                  formatter={(value: string) => (
-                    <span className="text-xs text-lf-text-secondary">{value}</span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {statusTotal === 0 ? (
+            <p className="py-12 text-center text-sm text-lf-muted">
+              No status data in this range.
+            </p>
+          ) : (
+            <QualificationMixRadialStackedChart
+              qualified={qualified}
+              notQualified={notQualified}
+              irrelevant={irrelevant}
+              emptyMessage="No status data in this range."
+              chartClassName="mx-auto aspect-square h-64 w-full max-w-xs sm:h-72"
+            />
+          )}
         </div>
 
         <div className="rounded-xl border border-lf-border/80 bg-lf-surface p-6">

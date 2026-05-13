@@ -1,35 +1,37 @@
 import Image from "next/image";
-import { initialsFromName } from "@/lib/analyst-ui";
-import { normalizeAvatarSrc } from "@/lib/avatar-url";
+import { AvatarInitialsCircle } from "@/components/avatar-initials-circle";
+import { normalizeAvatarSrc, portalUserPhotoSrc } from "@/lib/avatar-url";
 
-/** Small profile image or initials for the shell header (next to the user name). */
+/** Header profile: circular photo or initials. */
 export function HeaderUserAvatar({
+  userId,
   name,
-  avatarUrl,
+  image,
 }: {
+  userId: string;
   name: string;
-  avatarUrl: string | null;
+  image: string | null | undefined;
 }) {
-  const initials = initialsFromName(name);
-  const src = normalizeAvatarSrc(avatarUrl);
-  if (src) {
-    return (
+  const src = portalUserPhotoSrc(image);
+  const imgSrc = src ? normalizeAvatarSrc(src) ?? src : null;
+
+  if (!imgSrc) {
+    return <AvatarInitialsCircle userId={userId} name={name} size={32} />;
+  }
+
+  return (
+    <span
+      className="inline-flex h-8 w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-lf-border/25"
+      title={name}
+    >
       <Image
-        src={src}
+        src={imgSrc}
         alt=""
         width={32}
         height={32}
         unoptimized
-        className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-lf-border"
+        className="h-full w-full object-cover"
       />
-    );
-  }
-  return (
-    <div
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-lf-control-off text-[10px] font-semibold uppercase text-lf-text ring-1 ring-lf-border"
-      aria-hidden
-    >
-      {initials}
-    </div>
+    </span>
   );
 }

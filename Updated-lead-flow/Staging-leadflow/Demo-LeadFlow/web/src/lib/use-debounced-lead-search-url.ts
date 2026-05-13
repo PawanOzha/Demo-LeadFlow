@@ -9,11 +9,20 @@ import { usePathname, useRouter } from "next/navigation";
  * inside the effect only. Avoid `router.refresh()` fallbacks — they can throw and
  * hit the root error boundary during concurrent updates.
  */
-export function useDebouncedLeadSearchUrl(query: string, delayMs = 400) {
+export function useDebouncedLeadSearchUrl(
+  query: string,
+  delayMs = 400,
+  /** When set, update this path’s query string (e.g. dashboard) instead of the current route. */
+  pathnameOverride?: string,
+  /** When false, skip URL updates (parent owns `q`, e.g. portal dashboard search bar). */
+  enabled = true,
+) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathnameFromRoute = usePathname();
+  const pathname = pathnameOverride ?? pathnameFromRoute;
 
   useEffect(() => {
+    if (!enabled) return;
     const t = setTimeout(() => {
       const tq = query.trim().slice(0, 200);
       const params = new URLSearchParams(
@@ -31,5 +40,5 @@ export function useDebouncedLeadSearchUrl(query: string, delayMs = 400) {
       void router.replace(href);
     }, delayMs);
     return () => clearTimeout(t);
-  }, [query, delayMs, pathname, router]);
+  }, [query, delayMs, pathname, router, enabled]);
 }

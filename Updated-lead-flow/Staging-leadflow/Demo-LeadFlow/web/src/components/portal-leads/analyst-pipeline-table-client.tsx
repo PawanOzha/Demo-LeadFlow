@@ -33,25 +33,30 @@ export function AnalystPipelineTableClient({
   initialQ,
   from,
   to,
+  hideClientSearch = false,
 }: {
   qualified: PipelineLeadRow[];
   initialQ: string | null;
   from: string | null;
   to: string | null;
+  /** When true, parent owns search URL (e.g. portal top panel). */
+  hideClientSearch?: boolean;
 }) {
   const [query, setQuery] = useState(initialQ ?? "");
-  useDebouncedLeadSearchUrl(query);
+  useDebouncedLeadSearchUrl(query, 400, undefined, !hideClientSearch);
 
   return (
     <>
-      <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm ring-1 ring-black/[0.03] sm:px-5 sm:py-5">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
-          Find a client
-        </p>
-        <PortalLeadSearchLiveField value={query} onChange={setQuery} />
-      </div>
+      {!hideClientSearch ? (
+        <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm ring-1 ring-black/[0.03] sm:px-5 sm:py-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
+            Find a client
+          </p>
+          <PortalLeadSearchLiveField value={query} onChange={setQuery} />
+        </div>
+      ) : null}
 
-      <div className="w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
+      <div className="w-full min-w-0 overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
         <div className="border-b border-lf-border bg-lf-bg/40 px-5 py-4">
           <h2 className="text-[15px] font-semibold text-lf-text">
             All qualified leads — pipeline view
@@ -67,8 +72,8 @@ export function AnalystPipelineTableClient({
           <table className="w-full min-w-[880px] border-collapse text-[13px]">
             <thead>
               <tr className="border-b border-lf-border bg-lf-bg/80">
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Lead</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Source</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Lead</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Notes</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Score</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Pipeline</th>
@@ -99,11 +104,11 @@ export function AnalystPipelineTableClient({
                       key={l.id}
                       className="border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"
                     >
-                      <td className="px-4 py-3 text-[13px] font-semibold text-lf-text-secondary">
-                        {l.leadName || "—"}
-                      </td>
                       <td className="min-w-0 max-w-[260px] px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                         <LeadSourcePill source={l.source} />
+                      </td>
+                      <td className="px-4 py-3 text-[13px] font-semibold text-lf-text-secondary">
+                        {l.leadName || "—"}
                       </td>
                       <td className="max-w-[28rem] min-w-0 px-4 py-3 align-top text-[13px] text-lf-text-secondary">
                         {l.salesStage === SalesStage.CLOSED_LOST ? (

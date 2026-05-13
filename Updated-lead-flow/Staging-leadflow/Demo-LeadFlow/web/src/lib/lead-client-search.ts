@@ -1,6 +1,6 @@
 const MAX_LEN = 200;
 
-/** Instant client-side filter: name/phone/email substring (case-insensitive); 2+ digits also match phone digits only. */
+/** Instant client-side filter: name/email substring; name tolerant of whitespace runs; digits match normalized phone digits. */
 export function filterLeadsByNameOrPhone<
   T extends { leadName: string; phone: string | null; leadEmail?: string | null },
 >(leads: T[], rawQuery: string): T[] {
@@ -10,13 +10,20 @@ export function filterLeadsByNameOrPhone<
   const qDigits = qRaw.replace(/\D/g, "");
   return leads.filter((l) => {
     const name = (l.leadName || "").toLowerCase();
+    const nameFold = name.replace(/\s+/g, "");
+    const qFold = qLower.replace(/\s+/g, "");
     const phoneStr = (l.phone || "").toLowerCase();
     const email = (l.leadEmail || "").toLowerCase();
-    if (name.includes(qLower) || phoneStr.includes(qLower) || email.includes(qLower)) {
+    if (
+      name.includes(qLower) ||
+      (qFold.length > 0 && nameFold.includes(qFold)) ||
+      phoneStr.includes(qLower) ||
+      email.includes(qLower)
+    ) {
       return true;
     }
 
-    if (qDigits.length >= 2 && l.phone) {
+    if (qDigits.length >= 1 && l.phone) {
       const phoneDigits = l.phone.replace(/\D/g, "");
       if (phoneDigits.includes(qDigits)) return true;
 

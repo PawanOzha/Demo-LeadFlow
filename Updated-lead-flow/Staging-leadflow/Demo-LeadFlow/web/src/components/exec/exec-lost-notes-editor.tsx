@@ -22,7 +22,7 @@ export function ExecLostNotesEditor({
     <form action={action} className="flex min-w-[12rem] max-w-[20rem] flex-col gap-1.5">
       <input type="hidden" name="leadId" value={leadId} />
       <label className="text-[10px] font-medium uppercase tracking-wide text-lf-subtle">
-        Lost-deal notes
+        Loss notes
       </label>
       <textarea
         name="lostNotes"

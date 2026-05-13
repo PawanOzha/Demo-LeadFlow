@@ -39,6 +39,7 @@ export function PortalPaginationBar({
   perPage,
   totalCount,
   countNoun = "leads",
+  variant = "card",
 }: {
   pathname: string;
   query: Record<string, QVal>;
@@ -47,6 +48,8 @@ export function PortalPaginationBar({
   totalCount: number;
   /** Plural label after total count, e.g. "events" for transfer log. */
   countNoun?: string;
+  /** `toolbar`: no card chrome — use inside `PortalLeadsListToolbar`. */
+  variant?: "card" | "toolbar";
 }) {
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
   const safePage = Math.min(Math.max(1, page), totalPages);
@@ -63,8 +66,13 @@ export function PortalPaginationBar({
       ? buildHref(pathname, query, { page: String(safePage + 1) })
       : null;
 
+  const wrapClass =
+    variant === "toolbar"
+      ? "flex w-full min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-2 text-[13px]"
+      : "flex flex-wrap items-center justify-between gap-3 rounded-lg border border-lf-border bg-lf-surface px-4 py-3 text-sm";
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-lf-border bg-lf-surface px-4 py-3 text-sm">
+    <div className={wrapClass}>
       <p className="text-lf-subtle">
         Showing{" "}
         <span className="font-semibold text-lf-text">

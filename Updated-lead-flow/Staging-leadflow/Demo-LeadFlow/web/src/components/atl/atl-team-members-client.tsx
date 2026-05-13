@@ -4,20 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AddAnalystForm, AddMainTeamForm } from "@/components/atl/member-forms";
+import { AtlPasswordForm } from "@/components/atl/atl-password-form";
+import { PersonWithMiniAvatar } from "@/components/user-mini-avatar";
 import { whatsappChatUrl } from "@/lib/whatsapp-url";
 
 export type AnalystRow = {
   id: string;
   name: string;
   email: string;
+  image: string | null;
   analystTeamName: string | null;
+  mustResetPassword: boolean;
 };
 export type TeamRow = {
   id: string;
   name: string;
   mainTeamLead: {
+    id: string;
     name: string;
     email: string;
+    image: string | null;
+    mustResetPassword: boolean;
   };
   whatsappLines: { id: string; phone: string; label: string | null }[];
 };
@@ -45,7 +52,7 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 pt-[10vh] backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex min-h-full items-center justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="atl-modal-title"
@@ -55,7 +62,7 @@ function Modal({
     >
       <div
         ref={panelRef}
-        className="relative w-full max-w-md rounded-2xl border border-lf-border bg-lf-surface p-6 shadow-2xl"
+        className="relative my-auto w-full max-w-md rounded-2xl border border-lf-border bg-lf-surface p-6 shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -173,11 +180,14 @@ export function AtlTeamMembersClient({
   analysts,
   teams,
   defaultAnalystTeamName,
+  teamsDirectoryNotice = null,
 }: {
   analysts: AnalystRow[];
   teams: TeamRow[];
   /** ATL's cohort label — prefills "Team name" when adding a lead analyst */
   defaultAnalystTeamName?: string | null;
+  /** Shown above tables when teams exist in DB but none are linked to this ATL */
+  teamsDirectoryNotice?: string | null;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"analyst" | "mtl">("analyst");
@@ -188,15 +198,20 @@ export function AtlTeamMembersClient({
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0 space-y-2">
+          {teamsDirectoryNotice ? (
+            <p className="max-w-2xl rounded-lg border border-lf-border bg-lf-bg px-3 py-2 text-xs text-lf-text-secondary">
+              {teamsDirectoryNotice}
+            </p>
+          ) : null}
           <p className="max-w-2xl text-sm text-lf-muted">
             Member directory for lead analysts and main team leads. Full
             pipeline metrics:{" "}
             <Link
-              href="/analyst-team-lead/reports"
+              href="/analyst-team-lead/qualified-pipeline"
               className="text-lf-link hover:underline"
             >
-              Report
+              Qualified Pipeline
             </Link>{" "}
             (sidebar) ·{" "}
             <Link
@@ -252,23 +267,30 @@ export function AtlTeamMembersClient({
 
         <div className="mt-6 overflow-hidden rounded-2xl border border-lf-border bg-lf-surface">
           {tab === "analyst" ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+            <div className="overflow-x-auto overflow-y-visible [-webkit-overflow-scrolling:touch]">
+              <table className="w-full min-w-[36rem] text-left text-sm sm:min-w-[42rem] md:min-w-[46rem] lg:min-w-0 lg:table-auto">
                 <thead>
                   <tr className="border-b border-lf-border bg-lf-bg/50 text-[10px] font-semibold uppercase tracking-wider text-lf-subtle">
-                    <th className="px-4 py-3 font-medium">Team</th>
-                    <th className="px-4 py-3 font-medium">Name</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
-                    <th className="px-4 py-3 font-medium">Password</th>
-                    <th className="px-4 py-3 font-medium">Role</th>
+                    <th className="w-[14%] min-w-[5.5rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Team
+                    </th>
+                    <th className="w-[18%] min-w-[6.5rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Name
+                    </th>
+                    <th className="w-[26%] min-w-[8rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Email
+                    </th>
+                    <th className="w-[1%] min-w-[7.5rem] whitespace-nowrap px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Password
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-lf-divide">
                   {analysts.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={5}
-                        className="px-4 py-12 text-center text-lf-subtle"
+                        colSpan={4}
+                        className="px-3 py-12 text-center text-lf-subtle sm:px-4"
                       >
                         No lead analysts yet. Use{" "}
                         <span className="text-lf-muted">Add member</span> →
@@ -278,18 +300,27 @@ export function AtlTeamMembersClient({
                   ) : (
                     analysts.map((a) => (
                       <tr key={a.id} className="text-lf-muted">
-                        <td className="px-4 py-3 font-medium text-lf-text-secondary">
-                          {a.analystTeamName ?? "—"}
+                        <td className="px-3 py-2.5 align-top font-medium text-lf-text-secondary sm:px-4 sm:py-3">
+                          <span className="line-clamp-2 md:line-clamp-none">
+                            {a.analystTeamName ?? "—"}
+                          </span>
                         </td>
-                        <td className="px-4 py-3 font-medium text-lf-text">
-                          {a.name}
+                        <td className="px-3 py-2.5 align-top font-medium text-lf-text sm:px-4 sm:py-3">
+                          <PersonWithMiniAvatar
+                            id={a.id}
+                            name={a.name}
+                            image={a.image}
+                          />
                         </td>
-                        <td className="px-4 py-3">{a.email}</td>
-                        <td className="px-4 py-3 text-xs text-lf-muted">
-                          Password shown at creation only
+                        <td className="min-w-0 px-3 py-2.5 align-top break-all sm:px-4 sm:py-3">
+                          {a.email}
                         </td>
-                        <td className="px-4 py-3 text-xs text-lf-text-secondary">
-                          Lead analyst
+                        <td className="min-w-0 whitespace-nowrap px-3 py-2.5 align-middle sm:px-4 sm:py-3">
+                          <AtlPasswordForm
+                            userId={a.id}
+                            memberName={a.name}
+                            mustResetPassword={a.mustResetPassword}
+                          />
                         </td>
                       </tr>
                     ))
@@ -298,15 +329,25 @@ export function AtlTeamMembersClient({
               </table>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+            <div className="overflow-x-auto overflow-y-visible [-webkit-overflow-scrolling:touch]">
+              <table className="w-full min-w-[44rem] text-left text-sm sm:min-w-[50rem] md:min-w-[56rem] lg:min-w-0 lg:table-auto">
                 <thead>
                   <tr className="border-b border-lf-border bg-lf-bg/50 text-[10px] font-semibold uppercase tracking-wider text-lf-subtle">
-                    <th className="px-4 py-3 font-medium">Team</th>
-                    <th className="px-4 py-3 font-medium">WhatsApp</th>
-                    <th className="px-4 py-3 font-medium">Main team lead</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
-                    <th className="px-4 py-3 font-medium">Password</th>
+                    <th className="w-[11%] min-w-[4.5rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Team
+                    </th>
+                    <th className="w-[14%] min-w-[5.5rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      WhatsApp
+                    </th>
+                    <th className="w-[16%] min-w-[6.5rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Main team lead
+                    </th>
+                    <th className="w-[18%] min-w-[8rem] px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Email
+                    </th>
+                    <th className="w-[1%] min-w-[7.5rem] whitespace-nowrap px-3 py-2.5 font-medium sm:px-4 sm:py-3">
+                      Password
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-lf-divide">
@@ -314,7 +355,7 @@ export function AtlTeamMembersClient({
                     <tr>
                       <td
                         colSpan={5}
-                        className="px-4 py-12 text-center text-lf-subtle"
+                        className="px-3 py-12 text-center text-lf-subtle sm:px-4"
                       >
                         No teams yet. Use{" "}
                         <span className="text-lf-muted">Add member</span> → Main
@@ -324,10 +365,12 @@ export function AtlTeamMembersClient({
                   ) : (
                     teams.map((t) => (
                       <tr key={t.id} className="text-lf-muted">
-                        <td className="px-4 py-3 font-medium text-lf-text">
-                          {t.name}
+                        <td className="px-3 py-2.5 align-top font-medium text-lf-text sm:px-4 sm:py-3">
+                          <span className="line-clamp-2 md:line-clamp-none">
+                            {t.name}
+                          </span>
                         </td>
-                        <td className="px-4 py-3 align-top text-xs">
+                        <td className="px-3 py-2.5 align-top text-xs sm:px-4 sm:py-3">
                           {t.whatsappLines.length === 0 ? (
                             <span className="text-lf-subtle">—</span>
                           ) : (
@@ -352,10 +395,24 @@ export function AtlTeamMembersClient({
                             </ul>
                           )}
                         </td>
-                        <td className="px-4 py-3">{t.mainTeamLead.name}</td>
-                        <td className="px-4 py-3">{t.mainTeamLead.email}</td>
-                        <td className="px-4 py-3 text-xs text-lf-muted">
-                          Password shown at creation only
+                        <td className="px-3 py-2.5 align-top sm:px-4 sm:py-3">
+                          <PersonWithMiniAvatar
+                            id={t.mainTeamLead.id}
+                            name={t.mainTeamLead.name}
+                            image={t.mainTeamLead.image}
+                          />
+                        </td>
+                        <td className="min-w-0 px-3 py-2.5 align-top break-all sm:px-4 sm:py-3">
+                          {t.mainTeamLead.email}
+                        </td>
+                        <td className="min-w-0 whitespace-nowrap px-3 py-2.5 align-middle sm:px-4 sm:py-3">
+                          <AtlPasswordForm
+                            userId={t.mainTeamLead.id}
+                            memberName={t.mainTeamLead.name}
+                            mustResetPassword={
+                              t.mainTeamLead.mustResetPassword
+                            }
+                          />
                         </td>
                       </tr>
                     ))

@@ -11,9 +11,11 @@ import {
 } from "@/lib/constants";
 import { countryNameFromPhone } from "@/lib/phone-location";
 import { isValidPhoneNumber } from "libphonenumber-js";
-import type { LeadSourceValue } from "@/lib/lead-sources";
 import {
-  buildStoredSource,
+  deriveLeadSourceFromImportExtras,
+  type LeadSourceValue,
+} from "@/lib/lead-sources";
+import {
   parseAnalystImportRow,
   resolveImportHeaderKey,
   type AnalystImportHeaderKey,
@@ -25,6 +27,14 @@ const MAX_ROWS = Math.min(
   Number(process.env.EXCEL_MAX_ROWS) || 1000,
   5000,
 );
+
+/** User-facing header hints for missing-column errors. */
+const REQUIRED_IMPORT_HEADER_HINT = {
+  full_name: "full_name",
+  phone: "phone",
+  lead_source: "leads_source or lead_source",
+  qualification: "qualification",
+} as const;
 
 export type ImportLeadsResult =
   | {
@@ -121,9 +131,13 @@ export async function importLeadsFromExcelAnalyst(
   ];
   for (const r of required) {
     if (!keySet.has(r)) {
+      const hint =
+        REQUIRED_IMPORT_HEADER_HINT[
+          r as keyof typeof REQUIRED_IMPORT_HEADER_HINT
+        ] ?? r;
       return {
         ok: false,
-        error: `Missing required column: "${r}". Copy the header row from the Import page sample.`,
+        error: `Missing required column (row 1): "${hint}" maps to ${r}. Use the Import page sample column order.`,
       };
     }
   }
@@ -185,7 +199,11 @@ export async function importLeadsFromExcelAnalyst(
   let created = 0;
   await withTransaction(async (c) => {
     for (const row of parsedRows) {
-      const source = buildStoredSource(
+      const {
+        source,
+        sourceWebsiteName,
+        sourceMetaProfileName,
+      } = deriveLeadSourceFromImportExtras(
         row.lead_source as LeadSourceValue,
         row.source_other,
       );
@@ -194,13 +212,13 @@ export async function importLeadsFromExcelAnalyst(
       const leadId = newId();
       const createdAt = row.date_added ?? new Date();
 
+      // Split: Supabase exec_sql_batch_tx allows at most 10 bound params per statement.
       await c.query(
         `INSERT INTO "Lead" (
-          id, "leadName", phone, "leadEmail", country, city, source, notes, "qualificationStatus", "leadScore",
-          "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount"
+          id, "leadName", phone, "leadEmail", country, source, "sourceWebsiteName", "sourceMetaProfileName",
+          "qualificationStatus", "createdById", "updatedAt", "internalReassignCount"
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          $11, $12, $13, CURRENT_TIMESTAMP, 0
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, 0
         )`,
         [
           leadId,
@@ -208,13 +226,30 @@ export async function importLeadsFromExcelAnalyst(
           row.phone,
           row.email,
           country,
-          row.city,
           source,
-          row.notes,
+          sourceWebsiteName,
+          sourceMetaProfileName,
           row.qualification,
+          session.id,
+        ],
+      );
+      await c.query(
+        `UPDATE "Lead" SET
+          "portalWebsite" = $2,
+          city = $3,
+          notes = $4,
+          "leadScore" = (NULLIF(trim($5::text), ''))::integer,
+          "salesStage" = $6,
+          "createdAt" = $7::timestamptz,
+          "updatedAt" = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [
+          leadId,
+          row.portal_website,
+          row.city,
+          row.notes,
           row.lead_score,
           SalesStage.PRE_SALES,
-          session.id,
           createdAt,
         ],
       );

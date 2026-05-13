@@ -16,7 +16,7 @@ export type TransferTeamOption = {
   mainTeamLeadName: string;
 };
 
-function Modal({
+function TransferModal({
   title,
   children,
   onClose,
@@ -43,7 +43,7 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/70 p-4 pt-[10vh] backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] grid place-items-center overflow-y-auto bg-black/65 p-4 py-12 backdrop-blur-[1px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="mtl-transfer-title"
@@ -52,37 +52,39 @@ function Modal({
       }}
     >
       <div
-        className="relative w-full max-w-lg rounded-2xl border border-lf-border bg-lf-surface p-6 shadow-lg"
+        className="relative w-full max-w-lg rounded-2xl border border-lf-border bg-lf-surface p-5 shadow-2xl sm:p-6"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-9 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text"
-          aria-label="Close"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            aria-hidden
+        <div className="flex items-start justify-between gap-3">
+          <h2
+            id="mtl-transfer-title"
+            className="min-w-0 pr-2 text-lg font-semibold tracking-tight text-lf-text"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-        <h2
-          id="mtl-transfer-title"
-          className="pr-10 text-lg font-semibold text-lf-text"
-        >
-          {title}
-        </h2>
-        {children}
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-1 -mt-1 shrink-0 rounded-lg p-2 text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text"
+            aria-label="Close"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="mt-5">{children}</div>
       </div>
     </div>
   );
@@ -113,28 +115,38 @@ function TransferExecForm({
   }, [state?.ok, onSuccess]);
 
   return (
-    <>
-      <p className="mt-2 text-sm text-lf-muted">
-        Move <span className="font-medium text-lf-text-secondary">{execName}</span> to a
-        different sales team. They will sign in as before; their new main team
-        lead will see them on the Sales team page.
-      </p>
-      <p className="mt-3 text-xs text-lf-subtle">
-        Any active leads still assigned to them on your pipeline (with rep) will
-        return to your queue without a rep so you can reassign.
-      </p>
-      <form action={action} className="mt-6 space-y-4">
+    <div className="space-y-5">
+      <div className="rounded-xl border border-lf-border bg-lf-bg/50 p-4">
+        <p className="text-sm leading-relaxed text-lf-text-secondary">
+          Move{" "}
+          <span className="font-semibold text-lf-text">{execName}</span> to
+          another sales team. They keep the same sign-in; their new main team
+          lead will see them on the Sales team page.
+        </p>
+        <p className="mt-3 border-t border-lf-border/80 pt-3 text-xs leading-relaxed text-lf-subtle">
+          Active leads on your pipeline that are still assigned to this rep
+          (with rep) return to your queue without a rep so you can reassign.
+        </p>
+      </div>
+
+      <form action={action} className="space-y-4">
         <input type="hidden" name="salesExecId" value={execId} />
-        <label className="block text-sm text-lf-muted">
-          Destination team
+        <div>
+          <label
+            htmlFor={`mtl-transfer-team-${execId}`}
+            className="block text-xs font-semibold uppercase tracking-wide text-lf-muted"
+          >
+            Destination team
+          </label>
           <select
+            id={`mtl-transfer-team-${execId}`}
             name="targetTeamId"
             required
-            className="mt-1 h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
+            className="mt-2 h-10 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-bg px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
             defaultValue=""
           >
             <option value="" disabled>
-              Select team
+              Select a team
             </option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
@@ -142,28 +154,30 @@ function TransferExecForm({
               </option>
             ))}
           </select>
-        </label>
+        </div>
         {state?.error ? (
-          <p className="text-sm text-lf-danger">{state.error}</p>
+          <p className="text-sm text-lf-danger" role="alert">
+            {state.error}
+          </p>
         ) : null}
-        <div className="flex flex-wrap gap-2 pt-2">
-          <button
-            type="submit"
-            disabled={pending}
-            className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
-          >
-            {pending ? "Transferring…" : "Confirm transfer"}
-          </button>
+        <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
+            className="h-10 rounded-lg border border-lf-border bg-lf-surface px-4 text-sm font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 focus:ring-offset-lf-surface"
           >
             Cancel
           </button>
+          <button
+            type="submit"
+            disabled={pending}
+            className="h-10 rounded-lg bg-lf-accent px-5 text-sm font-semibold text-white shadow-sm shadow-lf-brand/15 transition-colors hover:bg-lf-accent-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 focus:ring-offset-lf-surface disabled:opacity-40"
+          >
+            {pending ? "Transferring…" : "Confirm transfer"}
+          </button>
         </div>
       </form>
-    </>
+    </div>
   );
 }
 
@@ -188,22 +202,25 @@ export function MtlTransferExecButton({
 
   const closeModal = useCallback(() => setOpen(false), []);
 
-  const modal =
+  const overlay =
     open && typeof document !== "undefined" ? (
-      <Modal title="Transfer to another team" onClose={() => setOpen(false)}>
+      <TransferModal title="Transfer to another team" onClose={closeModal}>
         {noDestinations ? (
-          <>
-            <p className="mt-2 text-sm text-lf-muted">
-              There are no other teams in the system to transfer to.
+          <div className="space-y-6">
+            <p className="text-sm leading-relaxed text-lf-muted">
+              There are no other teams in the system to transfer this
+              representative to.
             </p>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="mt-6 h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
-            >
-              Close
-            </button>
-          </>
+            <div className="flex justify-end border-t border-lf-border pt-4">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="h-10 rounded-lg bg-lf-accent px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-lf-accent-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 focus:ring-offset-lf-surface"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         ) : (
           <TransferExecForm
             key={formMountKey}
@@ -214,7 +231,7 @@ export function MtlTransferExecButton({
             onCancel={closeModal}
           />
         )}
-      </Modal>
+      </TransferModal>
     ) : null;
 
   return (
@@ -232,7 +249,7 @@ export function MtlTransferExecButton({
       >
         Transfer
       </button>
-      {open && modal ? createPortal(modal, document.body) : null}
+      {overlay ? createPortal(overlay, document.body) : null}
     </>
   );
 }

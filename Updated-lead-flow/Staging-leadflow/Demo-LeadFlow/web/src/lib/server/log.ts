@@ -1,5 +1,16 @@
 import "server-only";
 
+/** Structured server logging; never log secrets. */
+export const logger = {
+  error(message: string, context?: Record<string, unknown>) {
+    if (context && Object.keys(context).length > 0) {
+      console.error(message, context);
+    } else {
+      console.error(message);
+    }
+  },
+};
+
 /** Safe server-side logging: never log secrets; keep messages short in production. */
 export function logSessionOrDataError(context: string, err: unknown) {
   const msg = err instanceof Error ? err.message : String(err);
@@ -46,4 +57,33 @@ export function logLeadsAudit(label: string, payload: Record<string, unknown>) {
   } catch {
     console.info(`[LeadFlow:leads-audit] ${label}`);
   }
+}
+
+/** Structured log when `exec_sql` returns an unexpected row shape (safe for prod: no secrets). */
+export function logExecSqlUnexpectedRowShape(
+  rpc: string,
+  raw: unknown,
+  detail?: string,
+) {
+  let rawPreview: string;
+  try {
+    rawPreview =
+      raw === undefined || raw === null
+        ? String(raw)
+        : JSON.stringify(raw).slice(0, 500);
+  } catch {
+    rawPreview = String(raw).slice(0, 500);
+  }
+  console.error("[LeadFlow:exec_sql] unexpected row shape", {
+    rpc,
+    rawType: typeof raw,
+    rawPreview,
+    detail,
+  });
+}
+
+export function logLeadDashboardStatsSchemaMismatch(issues: unknown) {
+  console.error("[LeadFlow:dashboard-stats] schema validation failed", {
+    issues,
+  });
 }

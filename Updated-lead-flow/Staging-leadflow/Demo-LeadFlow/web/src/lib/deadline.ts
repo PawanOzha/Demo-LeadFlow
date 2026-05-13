@@ -1,4 +1,4 @@
-import { dbQuery } from "@/lib/db/pool";
+import { dbQuery, rpcJsonParamTextArrayUnpack } from "@/lib/db/pool";
 import { EXEC_DEADLINE_DAYS, SalesStage, UserRole } from "@/lib/constants";
 
 function addDays(d: Date, days: number) {
@@ -31,6 +31,7 @@ export async function sweepOverdueLeadsForTeam(teamId: string) {
   );
   if (execs.length === 0) return;
 
+  const nextExecIds: string[] = [];
   for (const lead of overdue) {
     const currentId = lead.assignedSalesExecId;
     const others = execs.filter((e) => e.id !== currentId);
@@ -40,24 +41,29 @@ export async function sweepOverdueLeadsForTeam(teamId: string) {
         ? lead.internalReassignCount % pool.length
         : 0;
     const next = pool[idx];
-
-    await dbQuery(
-      `UPDATE "Lead" SET
-        "assignedSalesExecId" = $1,
-        "execAssignedAt" = $2,
-        "execDeadlineAt" = $3,
-        "internalReassignCount" = "internalReassignCount" + 1,
-        "updatedAt" = CURRENT_TIMESTAMP
-       WHERE id = $4`,
-      [next.id, now, addDays(now, EXEC_DEADLINE_DAYS), lead.id],
-    );
+    nextExecIds.push(next.id);
   }
+
+  const ids = overdue.map((l) => l.id);
+  const deadlineAt = addDays(now, EXEC_DEADLINE_DAYS);
+  await dbQuery(
+    `UPDATE "Lead" AS l SET
+      "assignedSalesExecId" = d.next_exec,
+      "execAssignedAt" = $2::timestamptz,
+      "execDeadlineAt" = $3::timestamptz,
+      "internalReassignCount" = "internalReassignCount" + 1,
+      "updatedAt" = CURRENT_TIMESTAMP
+     FROM (
+       SELECT unnest(${rpcJsonParamTextArrayUnpack(1)}) AS id,
+              unnest(${rpcJsonParamTextArrayUnpack(4)}) AS next_exec
+     ) AS d
+     WHERE l.id = d.id`,
+    [ids, now.toISOString(), deadlineAt.toISOString(), nextExecIds],
+  );
 }
 
 export async function sweepOverdueLeadsGlobal() {
-  const teams = await dbQuery<{ id: string }>(
-    `SELECT id FROM "Team"`,
-  );
+  const teams = await dbQuery<{ id: string }>(`SELECT id FROM "Team"`);
   for (const t of teams) {
     await sweepOverdueLeadsForTeam(t.id);
   }

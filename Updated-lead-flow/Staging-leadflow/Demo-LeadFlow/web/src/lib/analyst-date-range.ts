@@ -1,4 +1,6 @@
 import { normalizeClientSearchQuery } from "@/lib/lead-client-search";
+import { buildLeadWhereClause } from "@/lib/server/leads/where-builder";
+import type { LeadFilters } from "@/lib/server/leads/filter-parser";
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -105,39 +107,21 @@ export function leadCreatedAtRange(
   return { gte, lte };
 }
 
-/** SQL WHERE fragment + params for leads owned by `createdById` (optional date on `createdAt`). */
+/**
+ * SQL WHERE fragment + params for leads owned by `createdById`.
+ * Uses the same {@link LeadFilters} / `createdAt` rules as multi-role lead lists.
+ */
 export function leadWhereSql(
   createdById: string,
-  fromStr?: string | null,
-  toStr?: string | null,
-  qRaw?: string | null,
+  filters: LeadFilters,
 ): { clause: string; params: unknown[] } {
-  const q = normalizeClientSearchQuery(qRaw);
-  const range = leadCreatedAtRange(fromStr, toStr);
-  if (!range && !q) {
-    return { clause: `"createdById" = $1`, params: [createdById] };
-  }
-  const parts = [`"createdById" = $1`];
-  const params: unknown[] = [createdById];
-  let i = 2;
-
-  if (range) {
-    parts.push(`"createdAt" >= $${i}::timestamp`);
-    params.push(range.gte);
-    i += 1;
-    parts.push(`"createdAt" <= $${i}::timestamp`);
-    params.push(range.lte);
-    i += 1;
-  }
-
-  if (q) {
-    parts.push(
-      `(COALESCE("leadName", '') ILIKE $${i} OR COALESCE(phone, '') ILIKE $${i} OR COALESCE("leadEmail", '') ILIKE $${i})`,
-    );
-    params.push(`%${q}%`);
-  }
-
-  return { clause: parts.join(" AND "), params };
+  const scoped: LeadFilters = { ...filters };
+  delete scoped.analystId;
+  const where = buildLeadWhereClause(scoped, 2, "l");
+  return {
+    clause: `l."createdById" = $1${where.clause ? ` ${where.clause}` : ""}`,
+    params: [createdById, ...where.params],
+  };
 }
 
 export function analystRangeSummaryLabel(
@@ -160,15 +144,33 @@ export function hrefWithDateRange(
   fromStr?: string | null,
   toStr?: string | null,
   qStr?: string | null,
+  extra?: Partial<{
+    status: string | null;
+    salesStage: string | null;
+    source: string | null;
+    website: string | null;
+    analystId: string | null;
+  }>,
 ): string {
   const from = fromStr?.trim();
   const to = toStr?.trim();
   const q = normalizeClientSearchQuery(qStr ?? null);
-  if (!from && !to && !q) return path;
   const params = new URLSearchParams();
   if (from) params.set("from", from);
   if (to) params.set("to", to);
   if (q) params.set("q", q);
+  if (extra) {
+    const st = extra.status?.trim();
+    if (st) params.set("status", st);
+    const stage = extra.salesStage?.trim();
+    if (stage) params.set("salesStage", stage);
+    const src = extra.source?.trim();
+    if (src) params.set("source", src);
+    const web = extra.website?.trim();
+    if (web) params.set("website", web);
+    const aid = extra.analystId?.trim();
+    if (aid) params.set("analystId", aid);
+  }
   const qs = params.toString();
   return qs ? `${path}?${qs}` : path;
 }

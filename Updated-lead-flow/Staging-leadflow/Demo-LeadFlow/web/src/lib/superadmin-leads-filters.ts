@@ -3,6 +3,7 @@ import {
   leadCreatedAtRange,
   normalizeYmdOrNull,
 } from "@/lib/analyst-date-range";
+import { buildLeadSmartSearchOrClause } from "@/lib/server/leads/smart-q-sql";
 import { QualificationStatus } from "@/lib/constants";
 
 export type SuperadminLeadsStatus =
@@ -105,12 +106,12 @@ export function buildSuperadminLeadsWhereSql(
   }
 
   if (p.q) {
-    // Unified search across lead name, phone, and email.
-    parts.push(
-      `(COALESCE("leadName", '') ILIKE $${n} OR COALESCE(phone, '') ILIKE $${n} OR COALESCE("leadEmail", '') ILIKE $${n})`,
-    );
-    params.push(`%${p.q}%`);
-    n += 1;
+    const smart = buildLeadSmartSearchOrClause(p.q, n, null);
+    if (smart) {
+      parts.push(smart.clause);
+      params.push(...smart.params);
+      n = smart.nextIndex;
+    }
   }
 
   if (p.duplicatePhonesOnly) {

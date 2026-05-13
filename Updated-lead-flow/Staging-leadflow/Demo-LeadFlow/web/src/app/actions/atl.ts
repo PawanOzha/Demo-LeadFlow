@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { dbQuery, dbQueryOne, newId, withTransaction } from "@/lib/db/pool";
+import { dbQuery, dbQueryOne, newId, withTransaction, rpcJsonParamTextArrayUnpack } from "@/lib/db/pool";
 import { getSession } from "@/lib/auth/session";
 import {
   authAdminCreateUser,
@@ -15,6 +15,13 @@ import {
   UserRole,
 } from "@/lib/constants";
 import { logLeadHandoff } from "@/lib/lead-handoff-log";
+import { fetchAtlLeadsExportRows } from "@/lib/atl-lead-table-fetch";
+import { fetchAtlRoutingTimelines } from "@/lib/atl-routing-timeline";
+import { atlLeadSql } from "@/lib/atl-leads";
+import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import type { PortalAtlLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
+import { syncUserPasswordWithAuth } from "@/lib/sync-user-password";
+import { teamAnalystTeamLeadColumnExists, claimUnassignedTeamsForSessionIfSingleAtlOrg } from "@/lib/team-atl-column";
 
 function addDays(d: Date, days: number) {
   const x = new Date(d);
@@ -80,9 +87,10 @@ export async function createLeadAnalystMember(formData: FormData) {
 
   revalidatePath("/analyst-team-lead");
   revalidatePath("/analyst-team-lead/team");
-  revalidatePath("/analyst-team-lead/reports");
+  revalidatePath("/analyst-team-lead/qualified-pipeline");
   return {
     ok: true as const,
+    userId: uid,
     name,
     email,
     analystTeamName,
@@ -95,6 +103,8 @@ export async function createMainTeamLeadAndTeam(formData: FormData) {
   if (!session || session.role !== UserRole.ANALYST_TEAM_LEAD) {
     return { error: "Unauthorized." };
   }
+
+  await claimUnassignedTeamsForSessionIfSingleAtlOrg(session.id);
 
   const teamName = String(formData.get("teamName") ?? "").trim();
   const leadName = String(formData.get("leadName") ?? "").trim();
@@ -122,6 +132,7 @@ export async function createMainTeamLeadAndTeam(formData: FormData) {
 
   const mtlId = newId();
   const teamId = newId();
+  const teamCol = await teamAnalystTeamLeadColumnExists();
   try {
     await withTransaction(async (c) => {
       await c.query(
@@ -129,11 +140,19 @@ export async function createMainTeamLeadAndTeam(formData: FormData) {
          VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [mtlId, email, leadName, UserRole.MAIN_TEAM_LEAD, authUserId, null],
       );
-      await c.query(
-        `INSERT INTO "Team" (id, name, "mainTeamLeadId", "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        [teamId, teamName, mtlId],
-      );
+      if (teamCol) {
+        await c.query(
+          `INSERT INTO "Team" (id, name, "mainTeamLeadId", "analystTeamLeadId", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          [teamId, teamName, mtlId, session.id],
+        );
+      } else {
+        await c.query(
+          `INSERT INTO "Team" (id, name, "mainTeamLeadId", "createdAt", "updatedAt")
+           VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          [teamId, teamName, mtlId],
+        );
+      }
       await c.query(
         `UPDATE "User" SET "teamId" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $2`,
         [teamId, mtlId],
@@ -146,9 +165,10 @@ export async function createMainTeamLeadAndTeam(formData: FormData) {
 
   revalidatePath("/analyst-team-lead");
   revalidatePath("/analyst-team-lead/team");
-  revalidatePath("/analyst-team-lead/reports");
+  revalidatePath("/analyst-team-lead/qualified-pipeline");
   return {
     ok: true as const,
+    userId: mtlId,
     teamName,
     leadName,
     email,
@@ -156,11 +176,57 @@ export async function createMainTeamLeadAndTeam(formData: FormData) {
   };
 }
 
+/** ATL-only: update qualification for leads created by analysts on their team (mirrors analyst list scope). */
+export async function updateLeadQualificationAtl(
+  leadId: string,
+  qualificationStatus: string,
+) {
+  const session = await getSession();
+  if (!session || session.role !== UserRole.ANALYST_TEAM_LEAD) {
+    return { error: "Unauthorized." };
+  }
+
+  if (
+    qualificationStatus !== QualificationStatus.QUALIFIED &&
+    qualificationStatus !== QualificationStatus.NOT_QUALIFIED &&
+    qualificationStatus !== QualificationStatus.IRRELEVANT
+  ) {
+    return { error: "Invalid qualification." };
+  }
+
+  const analystRows = await dbQuery<{ id: string }>(
+    `SELECT id FROM "User" WHERE "managerId" = $1 AND role = $2`,
+    [session.id, UserRole.LEAD_ANALYST],
+  );
+  const analystIds = analystRows.map((a) => a.id);
+  if (analystIds.length === 0) {
+    return { error: "No lead analysts on your team yet." };
+  }
+
+  const lead = await dbQueryOne<{ id: string }>(
+    `SELECT l.id FROM "Lead" l WHERE l.id = $1 AND l."createdById" = ANY(${rpcJsonParamTextArrayUnpack(2)})`,
+    [leadId, analystIds],
+  );
+  if (!lead) return { error: "Lead not found." };
+
+  await dbQuery(
+    `UPDATE "Lead" SET "qualificationStatus" = $1, "updatedAt" = CURRENT_TIMESTAMP WHERE id = $2`,
+    [qualificationStatus, leadId],
+  );
+
+  revalidatePath("/analyst-team-lead", "layout");
+  revalidatePath("/analyst", "layout");
+  revalidatePath("/superadmin");
+  return { ok: true as const };
+}
+
 export async function assignLeadToMainTeamLead(formData: FormData) {
   const session = await getSession();
   if (!session || session.role !== UserRole.ANALYST_TEAM_LEAD) {
     return { error: "Unauthorized." };
   }
+
+  await claimUnassignedTeamsForSessionIfSingleAtlOrg(session.id);
 
   const leadId = String(formData.get("leadId") ?? "");
   const mainTeamLeadId = String(formData.get("mainTeamLeadId") ?? "");
@@ -202,20 +268,47 @@ export async function assignLeadToMainTeamLead(formData: FormData) {
     return { error: "You can only route leads from analysts on your team." };
   }
 
-  const mtl = await dbQueryOne<{
-    id: string;
-    name: string;
-    teamId: string;
-    teamName: string;
-  }>(
-    `SELECT u.id, u.name, t.id AS "teamId", t.name AS "teamName"
+  const teamCol = await teamAnalystTeamLeadColumnExists();
+
+  const mtl = teamCol
+    ? await dbQueryOne<{
+        id: string;
+        name: string;
+        teamId: string;
+        teamName: string;
+        analystTeamLeadId: string | null;
+      }>(
+        `SELECT u.id, u.name, t.id AS "teamId", t.name AS "teamName", t."analystTeamLeadId"
      FROM "User" u
      INNER JOIN "Team" t ON t."mainTeamLeadId" = u.id
      WHERE u.id = $1 AND u.role = $2`,
-    [mainTeamLeadId, UserRole.MAIN_TEAM_LEAD],
-  );
+        [mainTeamLeadId, UserRole.MAIN_TEAM_LEAD],
+      )
+    : await dbQueryOne<{
+        id: string;
+        name: string;
+        teamId: string;
+        teamName: string;
+      }>(
+        `SELECT u.id, u.name, t.id AS "teamId", t.name AS "teamName"
+     FROM "User" u
+     INNER JOIN "Team" t ON t."mainTeamLeadId" = u.id
+     WHERE u.id = $1 AND u.role = $2`,
+        [mainTeamLeadId, UserRole.MAIN_TEAM_LEAD],
+      );
   if (!mtl) {
     return { error: "Invalid main team lead." };
+  }
+  if (
+    teamCol &&
+    "analystTeamLeadId" in mtl &&
+    mtl.analystTeamLeadId != null &&
+    mtl.analystTeamLeadId !== session.id
+  ) {
+    return {
+      error:
+        "You can only route leads to main team leads that belong to your team directory.",
+    };
   }
 
   await dbQuery(
@@ -245,7 +338,7 @@ export async function assignLeadToMainTeamLead(formData: FormData) {
 
   revalidatePath("/analyst-team-lead");
   revalidatePath("/analyst-team-lead/leads");
-  revalidatePath("/analyst-team-lead/reports");
+  revalidatePath("/analyst-team-lead/qualified-pipeline");
   revalidatePath("/team-lead");
   revalidatePath("/team-lead/reports");
   revalidatePath("/analyst");
@@ -257,6 +350,8 @@ export async function assignLeadDirectToExecutiveByAtl(formData: FormData) {
   if (!session || session.role !== UserRole.ANALYST_TEAM_LEAD) {
     return { error: "Unauthorized." };
   }
+
+  await claimUnassignedTeamsForSessionIfSingleAtlOrg(session.id);
 
   const leadId = String(formData.get("leadId") ?? "").trim();
   const mainTeamLeadId = String(formData.get("mainTeamLeadId") ?? "").trim();
@@ -303,19 +398,46 @@ export async function assignLeadDirectToExecutiveByAtl(formData: FormData) {
     return { error: "You can only assign leads from analysts on your team." };
   }
 
-  const mtl = await dbQueryOne<{
-    id: string;
-    name: string;
-    teamId: string;
-    teamName: string;
-  }>(
-    `SELECT u.id, u.name, t.id AS "teamId", t.name AS "teamName"
+  const teamCol = await teamAnalystTeamLeadColumnExists();
+
+  const mtl = teamCol
+    ? await dbQueryOne<{
+        id: string;
+        name: string;
+        teamId: string;
+        teamName: string;
+        analystTeamLeadId: string | null;
+      }>(
+        `SELECT u.id, u.name, t.id AS "teamId", t.name AS "teamName", t."analystTeamLeadId"
      FROM "User" u
      INNER JOIN "Team" t ON t."mainTeamLeadId" = u.id
      WHERE u.id = $1 AND u.role = $2`,
-    [mainTeamLeadId, UserRole.MAIN_TEAM_LEAD],
-  );
+        [mainTeamLeadId, UserRole.MAIN_TEAM_LEAD],
+      )
+    : await dbQueryOne<{
+        id: string;
+        name: string;
+        teamId: string;
+        teamName: string;
+      }>(
+        `SELECT u.id, u.name, t.id AS "teamId", t.name AS "teamName"
+     FROM "User" u
+     INNER JOIN "Team" t ON t."mainTeamLeadId" = u.id
+     WHERE u.id = $1 AND u.role = $2`,
+        [mainTeamLeadId, UserRole.MAIN_TEAM_LEAD],
+      );
   if (!mtl) return { error: "Invalid main team lead." };
+  if (
+    teamCol &&
+    "analystTeamLeadId" in mtl &&
+    mtl.analystTeamLeadId != null &&
+    mtl.analystTeamLeadId !== session.id
+  ) {
+    return {
+      error:
+        "You can only assign via main team leads that belong to your team directory.",
+    };
+  }
 
   const exec = await dbQueryOne<{
     id: string;
@@ -363,11 +485,159 @@ export async function assignLeadDirectToExecutiveByAtl(formData: FormData) {
 
   revalidatePath("/analyst-team-lead");
   revalidatePath("/analyst-team-lead/leads");
-  revalidatePath("/analyst-team-lead/reports");
+  revalidatePath("/analyst-team-lead/qualified-pipeline");
   revalidatePath("/team-lead");
   revalidatePath("/team-lead/leads");
   revalidatePath("/team-lead/reports");
   revalidatePath("/executive");
   revalidatePath("/analyst");
   return { ok: true as const };
+}
+
+/** On-demand export: called from client when user clicks Export, not on every page load. */
+export async function fetchAtlLeadsExportAction(params: {
+  from: string | null;
+  to: string | null;
+  status: string | null;
+  analystId: string | null;
+  source: string | null;
+  website?: string | null;
+  q: string | null;
+}): Promise<{ ok: true; rows: PortalAtlLeadExportRow[] } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session || session.role !== UserRole.ANALYST_TEAM_LEAD) {
+    return { ok: false, error: "Unauthorized." };
+  }
+
+  const analysts = await dbQuery<{ id: string }>(
+    `SELECT id FROM "User" WHERE "managerId" = $1 AND role = $2`,
+    [session.id, UserRole.LEAD_ANALYST],
+  );
+  const analystIds = analysts.map((a) => a.id);
+  if (analystIds.length === 0) return { ok: true, rows: [] };
+
+  const statusFilter =
+    params.status === QualificationStatus.QUALIFIED ||
+    params.status === QualificationStatus.NOT_QUALIFIED ||
+    params.status === QualificationStatus.IRRELEVANT
+      ? params.status
+      : null;
+
+  const analystIdFilter =
+    params.analystId && analystIds.includes(params.analystId) ? params.analystId : null;
+
+  const sourceFilter =
+    params.source && params.source.length > 0 && params.source.length <= 256
+      ? params.source
+      : null;
+
+  const websiteFilter =
+    params.website &&
+    params.website.length > 0 &&
+    params.website.length <= 256
+      ? params.website
+      : null;
+
+  const { clause, params: sqlParams } = atlLeadSql(
+    analystIds,
+    params.from,
+    params.to,
+    {
+      qualificationStatus: statusFilter,
+      createdById: analystIdFilter,
+      source: sourceFilter,
+      sourceWebsiteName: websiteFilter,
+      q: params.q,
+    },
+    "l",
+  );
+
+  const exportLeadRows = await fetchAtlLeadsExportRows(clause, sqlParams, PORTAL_LEADS_EXPORT_ROW_CAP);
+  const timeline = await fetchAtlRoutingTimelines(exportLeadRows.map((l) => l.id));
+
+  const rows: PortalAtlLeadExportRow[] = exportLeadRows.map((l) => {
+    const t = timeline.get(l.id);
+    return {
+      leadName: l.leadName,
+      phone: l.phone,
+      leadEmail: l.leadEmail,
+      source: l.source,
+      portalWebsite: l.portalWebsite,
+      notes: l.notes,
+      lostNotes: l.lostNotes,
+      qualificationStatus: l.qualificationStatus,
+      leadScore: l.leadScore,
+      salesStage: l.salesStage,
+      createdAt: l.createdAt.toISOString(),
+      analystName: l.cb_name ?? "Unknown analyst",
+      teamName: l.team_name,
+      mtlName: l.mtl_name,
+      repName: l.se_name,
+      routedToMainTeamAt: t?.routedToMainTeamAt?.toISOString() ?? null,
+      assignedToExecutiveAt: t?.assignedToExecutiveAt?.toISOString() ?? null,
+      directAssignedToExecutiveByAtlAt: t?.directAssignedToExecutiveByAtlAt?.toISOString() ?? null,
+    };
+  });
+
+  return { ok: true, rows };
+}
+
+export async function atlSetManagedMemberPassword(formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== UserRole.ANALYST_TEAM_LEAD) {
+    return { error: "Unauthorized." };
+  }
+
+  await claimUnassignedTeamsForSessionIfSingleAtlOrg(session.id);
+
+  const userId = String(formData.get("userId") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!userId || !password) {
+    return { error: "User and password are required." };
+  }
+
+  const ownAnalyst = await dbQueryOne<{ one: number }>(
+    `SELECT 1 AS one FROM "User"
+     WHERE id = $1 AND role = $2 AND "managerId" = $3`,
+    [userId, UserRole.LEAD_ANALYST, session.id],
+  );
+
+  const teamCol = await teamAnalystTeamLeadColumnExists();
+
+  const ownMtl =
+    !ownAnalyst &&
+    (teamCol
+      ? await dbQueryOne<{ one: number }>(
+          `SELECT 1 AS one FROM "Team"
+       WHERE "mainTeamLeadId" = $1 AND "analystTeamLeadId" = $2`,
+          [userId, session.id],
+        )
+      : await dbQueryOne<{ one: number }>(
+          `SELECT 1 AS one FROM "Team" WHERE "mainTeamLeadId" = $1`,
+          [userId],
+        ));
+
+  if (!ownAnalyst && !ownMtl) {
+    return {
+      error:
+        "You can only set passwords for lead analysts you manage or main team leads in your directory.",
+    };
+  }
+
+  const synced = await syncUserPasswordWithAuth({ userId, password });
+  if ("error" in synced) return synced;
+
+  revalidatePath("/analyst-team-lead/team");
+  return { ok: true as const, password: synced.password };
+}
+
+export async function atlSetManagedMemberPasswordFormAction(
+  _prev: { error?: string; password?: string } | undefined,
+  formData: FormData,
+): Promise<{ error?: string; password?: string } | undefined> {
+  const r = await atlSetManagedMemberPassword(formData);
+  if (r && "error" in r) return { error: r.error };
+  if (r && "ok" in r && r.ok && "password" in r) return { password: r.password };
+  return undefined;
 }

@@ -1,4 +1,6 @@
-/** Preset lead sources (dropdown). */
+import { LEAD_WEBSITE_OPTIONS, normalizeLeadWebsiteLabel } from "@/lib/lead-websites";
+
+/** Preset lead sources (dropdown). Values are stored in DB-related payloads; labels are shown in UI. */
 export const LEAD_SOURCE_OPTIONS = [
   {
     value: "META_WHATSAPP",
@@ -14,28 +16,52 @@ export const LEAD_SOURCE_OPTIONS = [
   },
   {
     value: "META_LEAD_FORMS",
-    label: "Meta Lead Forms",
+    label: "Meta Lead Form",
   },
   {
     value: "WEBSITE_LEAD_FORMS",
-    label: "Website Lead Forms",
+    label: "Website Download Form",
   },
   {
     value: "SUPPORT_NUMBERS",
-    label: "Support Numbers (CAM/CWA/CRW)",
+    label: "G.WhatsApp(CAM/CWA/CRW)",
+  },
+  {
+    value: "GOOGLE_LEAD_FORM",
+    label: "Google LeadForm",
   },
 ] as const;
 
 export type LeadSourceValue = (typeof LEAD_SOURCE_OPTIONS)[number]["value"];
 
-const LABEL_BY_VALUE: Record<LeadSourceValue, string> = {
-  META_WHATSAPP: "Meta WhatsApp",
-  META_MESSENGER: "Meta Messenger",
-  WEBSITE_WHATSAPP: "Website WhatsApp",
-  META_LEAD_FORMS: "Meta Lead Forms",
-  WEBSITE_LEAD_FORMS: "Website Lead Forms",
-  SUPPORT_NUMBERS: "Support Numbers (CAM/CWA/CRW)",
-};
+const LABEL_BY_VALUE = Object.fromEntries(
+  LEAD_SOURCE_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<LeadSourceValue, string>;
+
+const WEBSITE_DETAIL_SOURCES = new Set<LeadSourceValue>([
+  "WEBSITE_WHATSAPP",
+  "WEBSITE_LEAD_FORMS",
+  "GOOGLE_LEAD_FORM",
+]);
+
+const META_DETAIL_SOURCES = new Set<LeadSourceValue>([
+  "META_WHATSAPP",
+  "META_MESSENGER",
+  "META_LEAD_FORMS",
+]);
+
+export function leadSourceUsesWebsiteDetail(
+  value: string,
+): value is LeadSourceValue {
+  return WEBSITE_DETAIL_SOURCES.has(value as LeadSourceValue);
+}
+
+export function leadSourceUsesMetaDetail(value: string): value is LeadSourceValue {
+  return META_DETAIL_SOURCES.has(value as LeadSourceValue);
+}
+
+/** Re-export website list for forms (single import path). */
+export const LEAD_WEBSITE_PRESETS = LEAD_WEBSITE_OPTIONS;
 
 export type LeadSourceChannelDetail = {
   websiteName?: string | null;
@@ -52,7 +78,12 @@ export function resolveLeadSourceLabel(
     let label = LABEL_BY_VALUE[value as LeadSourceValue];
     const web = channel?.websiteName?.trim();
     const meta = channel?.metaProfileName?.trim();
-    if ((value === "WEBSITE_WHATSAPP" || value === "WEBSITE_LEAD_FORMS") && web) {
+    if (
+      (value === "WEBSITE_WHATSAPP" ||
+        value === "WEBSITE_LEAD_FORMS" ||
+        value === "GOOGLE_LEAD_FORM") &&
+      web
+    ) {
       label += ` — ${web}`;
     }
     if (
@@ -69,6 +100,29 @@ export function resolveLeadSourceLabel(
     return `${value} — ${otherDetail.trim()}`;
   }
   return value || "—";
+}
+
+/** Excel `source_other` → stored source string + normalized channel columns (matches Add Lead). */
+export function deriveLeadSourceFromImportExtras(
+  lead_source: LeadSourceValue,
+  source_other: string | null,
+): {
+  source: string;
+  sourceWebsiteName: string | null;
+  sourceMetaProfileName: string | null;
+} {
+  const raw = source_other?.trim() || null;
+  const sourceWebsiteName = leadSourceUsesWebsiteDetail(lead_source)
+    ? normalizeLeadWebsiteLabel(raw)
+    : null;
+  const sourceMetaProfileName = leadSourceUsesMetaDetail(lead_source)
+    ? raw
+    : null;
+  const source = resolveLeadSourceLabel(lead_source, null, {
+    websiteName: sourceWebsiteName,
+    metaProfileName: sourceMetaProfileName,
+  });
+  return { source, sourceWebsiteName, sourceMetaProfileName };
 }
 
 /** Full stored source string for tables and exports (includes website / Meta detail). */

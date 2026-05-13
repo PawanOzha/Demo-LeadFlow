@@ -15,5 +15,11 @@ export default async function SuperadminSettingsPage() {
   if (!initialData) {
     redirect("/login");
   }
-  return <PortalSettingsPage initialData={initialData} />;
+  return (
+    <PortalSettingsPage
+      initialData={initialData}
+      eyebrow="Superadmin"
+      contentClassName="w-full min-w-0 py-2"
+    />
+  );
 }

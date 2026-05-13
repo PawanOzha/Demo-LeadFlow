@@ -2,11 +2,14 @@
 
 import { DashboardReportExport } from "@/components/dashboard-report-export";
 import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
+import type { PortalExportScope } from "@/lib/portal-export-scope";
 
 export function SuperadminReportExport({
   payload,
+  exportScope,
 }: {
   payload: DashboardExportPayload;
+  exportScope: PortalExportScope;
 }) {
   return (
     <div
@@ -17,7 +20,7 @@ export function SuperadminReportExport({
         "[&_[data-dashboard-export]_[role=menuitem]]:text-lf-text [&_[data-dashboard-export]_[role=menuitem]:hover]:bg-lf-bg/60"
       }
     >
-      <DashboardReportExport payload={payload} />
+      <DashboardReportExport payload={payload} exportScope={exportScope} />
     </div>
   );
 }

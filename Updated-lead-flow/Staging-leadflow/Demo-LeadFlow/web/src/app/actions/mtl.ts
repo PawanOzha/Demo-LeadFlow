@@ -14,6 +14,11 @@ import {
   UserRole,
 } from "@/lib/constants";
 import { logLeadHandoff } from "@/lib/lead-handoff-log";
+import { syncUserPasswordWithAuth } from "@/lib/sync-user-password";
+import { mtlLeadSql } from "@/lib/mtl-leads";
+import { normalizeClientSearchQuery } from "@/lib/lead-client-search";
+import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import type { PortalMtlLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 
 function addDays(d: Date, days: number) {
   const x = new Date(d);
@@ -80,10 +85,56 @@ export async function createSalesExecutive(formData: FormData) {
   revalidatePath("/team-lead/team");
   return {
     ok: true as const,
+    userId: uid,
     name,
     email,
     temporaryPassword: password,
   };
+}
+
+/** Main team leads set or rotate password for SEs on their sales team only. */
+export async function mtlSetSalesExecutivePassword(formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== UserRole.MAIN_TEAM_LEAD) {
+    return { error: "Unauthorized." };
+  }
+  if (!session.teamId) {
+    return { error: "Your account is not linked to a team." };
+  }
+
+  const userId = String(formData.get("userId") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!userId || !password) {
+    return { error: "Executive and password are required." };
+  }
+
+  const onTeam = await dbQueryOne<{ id: string }>(
+    `SELECT id FROM "User"
+     WHERE id = $1 AND role = $2 AND "teamId" = $3`,
+    [userId, UserRole.SALES_EXECUTIVE, session.teamId],
+  );
+  if (!onTeam) {
+    return {
+      error: "You can only set passwords for sales executives on your team.",
+    };
+  }
+
+  const synced = await syncUserPasswordWithAuth({ userId, password });
+  if ("error" in synced) return synced;
+
+  revalidatePath("/team-lead/team");
+  return { ok: true as const, password: synced.password };
+}
+
+export async function mtlSetSalesExecutivePasswordFormAction(
+  _prev: { error?: string; password?: string } | undefined,
+  formData: FormData,
+): Promise<{ error?: string; password?: string } | undefined> {
+  const r = await mtlSetSalesExecutivePassword(formData);
+  if (r && "error" in r) return { error: r.error };
+  if (r && "ok" in r && r.ok && "password" in r) return { password: r.password };
+  return undefined;
 }
 
 export async function assignLeadToExecutive(formData: FormData) {
@@ -238,4 +289,58 @@ export async function transferSalesExecutiveToTeam(formData: FormData) {
   revalidatePath("/analyst-team-lead");
   revalidatePath("/superadmin");
   return { ok: true as const };
+}
+
+export async function fetchMtlLeadsExportAction(params: {
+  q: string | null;
+}): Promise<{ ok: true; rows: PortalMtlLeadExportRow[] } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session || session.role !== UserRole.MAIN_TEAM_LEAD) {
+    return { ok: false, error: "Unauthorized." };
+  }
+  const { clause, params: sqlParams } = mtlLeadSql(session.id, {
+    q: normalizeClientSearchQuery(params.q) ?? undefined,
+  });
+  try {
+    const rows = await dbQuery<{
+      leadName: string;
+      phone: string | null;
+      leadEmail: string | null;
+      source: string;
+      notes: string | null;
+      lostNotes: string | null;
+      leadScore: number | null;
+      salesStage: string;
+      execDeadlineAt: Date | null;
+      cb_name: string | null;
+      se_id: string | null;
+      se_name: string | null;
+    }>(
+      `SELECT l."leadName", l.phone, l."leadEmail", l.source, l.notes, l."lostNotes", l."leadScore", l."salesStage", l."execDeadlineAt", cb.name AS cb_name, se.id AS se_id, se.name AS se_name
+       FROM "Lead" l
+       LEFT JOIN "User" cb ON cb.id = l."createdById"
+       LEFT JOIN "User" se ON se.id = l."assignedSalesExecId"
+       WHERE ${clause}
+       ORDER BY l."createdAt" DESC, l.id DESC LIMIT ($${sqlParams.length + 1})::bigint`,
+      [...sqlParams, PORTAL_LEADS_EXPORT_ROW_CAP],
+    );
+    return {
+      ok: true,
+      rows: rows.map((l) => ({
+        leadName: l.leadName,
+        phone: l.phone,
+        leadEmail: l.leadEmail,
+        source: l.source,
+        notes: l.notes,
+        lostNotes: l.lostNotes,
+        leadScore: l.leadScore,
+        salesStage: l.salesStage,
+        execDeadlineAt: l.execDeadlineAt?.toISOString() ?? null,
+        analystName: l.cb_name ?? "Unknown analyst",
+        repName: l.se_id && l.se_name ? l.se_name : null,
+      })),
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Export failed. Please try again." };
+  }
 }

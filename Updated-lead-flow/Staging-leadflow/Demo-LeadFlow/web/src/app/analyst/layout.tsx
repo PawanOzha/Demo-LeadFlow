@@ -22,14 +22,16 @@ export default async function AnalystLayout({
   }
   await redirectIfMustResetPassword();
 
-  const [user, notif] = await timedServerBlock("route:/analyst layout:data", () =>
-    Promise.all([
-      dbQueryOne<{ image: string | null; analystTeamName: string | null }>(
+  const { user, notif } = await timedServerBlock(
+    "route:/analyst layout:data",
+    async () => {
+      const userRow = await dbQueryOne<{ image: string | null; analystTeamName: string | null }>(
         `SELECT image, "analystTeamName" FROM "User" WHERE id = $1`,
         [session.id],
-      ),
-      getPortalNotificationsForUser(session.id),
-    ]),
+      );
+      const notif = await getPortalNotificationsForUser(session.id);
+      return { user: userRow, notif };
+    },
   );
 
   const teamName =
@@ -41,7 +43,8 @@ export default async function AnalystLayout({
   return (
     <AnalystAppShell
       session={{ name: session.name, email: session.email }}
-      avatarUrl={user?.image ?? null}
+      userId={session.id}
+      avatarImage={user?.image ?? null}
       teamName={teamName}
       notifications={notif.notifications}
       notificationUnreadCount={notif.unreadCount}

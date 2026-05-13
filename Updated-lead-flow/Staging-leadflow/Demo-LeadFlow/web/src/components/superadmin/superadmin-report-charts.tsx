@@ -1,4 +1,4 @@
-"use client";
+import { QualificationMixRadialStackedChart } from "@/components/dashboard/qualification-mix-radial-stacked-chart";
 
 type Props = {
   totalLeads: number;
@@ -76,36 +76,27 @@ export function SuperadminReportCharts({
           Qualification mix (all leads)
         </h3>
         <p className="mt-1 text-xs text-lf-subtle">
-          Qualified, not qualified, and irrelevant as a share of total leads.
+          Radial chart (stacked) by outcome. Percentages are share of all leads.
         </p>
         {totalLeads === 0 || qSum === 0 ? (
           <p className="mt-4 text-sm text-lf-subtle">No leads yet.</p>
         ) : (
           <>
-            <div className="mt-4 flex h-10 overflow-hidden rounded-lg ring-1 ring-lf-border">
-              <div
-                className="flex min-w-0 items-center justify-center bg-lf-success/85 text-[11px] font-medium text-lf-on-accent"
-                style={{ width: `${pct(qualified, totalLeads)}%` }}
-              >
-                {pct(qualified, totalLeads) >= 10 ? "Q" : ""}
-              </div>
-              <div
-                className="flex min-w-0 items-center justify-center bg-lf-warning/85 text-[11px] font-medium text-lf-on-accent"
-                style={{ width: `${pct(notQualified, totalLeads)}%` }}
-              >
-                {pct(notQualified, totalLeads) >= 10 ? "NQ" : ""}
-              </div>
-              <div
-                className="flex min-w-0 items-center justify-center bg-lf-muted text-[11px] font-medium text-lf-on-accent"
-                style={{ width: `${pct(irrelevant, totalLeads)}%` }}
-              >
-                {pct(irrelevant, totalLeads) >= 10 ? "I" : ""}
-              </div>
-            </div>
+            <QualificationMixRadialStackedChart
+              qualified={qualified}
+              notQualified={notQualified}
+              irrelevant={irrelevant}
+              emptyMessage="No leads yet."
+              chartClassName="mx-auto aspect-square h-[240px] w-full max-w-[300px] sm:h-[260px]"
+              showInlineLegend={false}
+            />
             <div className="mt-3 space-y-1 text-xs text-lf-muted">
               <div className="flex justify-between gap-2">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-lf-success" />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: "var(--color-primary-100)" }}
+                  />
                   Qualified
                 </span>
                 <span>
@@ -114,7 +105,10 @@ export function SuperadminReportCharts({
               </div>
               <div className="flex justify-between gap-2">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-lf-warning" />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: "var(--color-primary-500)" }}
+                  />
                   Not qualified
                 </span>
                 <span>
@@ -123,7 +117,10 @@ export function SuperadminReportCharts({
               </div>
               <div className="flex justify-between gap-2">
                 <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-lf-subtle" />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: "var(--color-primary-700)" }}
+                  />
                   Irrelevant
                 </span>
                 <span>

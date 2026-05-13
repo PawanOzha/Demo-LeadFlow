@@ -70,6 +70,7 @@ CREATE TABLE "Lead" (
     "source" TEXT NOT NULL,
     "sourceWebsiteName" TEXT,
     "sourceMetaProfileName" TEXT,
+    "portalWebsite" TEXT,
     "notes" TEXT,
     "lostNotes" TEXT,
     "qualificationStatus" TEXT NOT NULL,

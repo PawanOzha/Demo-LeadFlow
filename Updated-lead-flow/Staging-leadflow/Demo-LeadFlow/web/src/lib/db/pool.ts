@@ -1,4 +1,9 @@
+import "server-only";
+
 import { createSupabaseAdminClient } from "@/lib/auth/supabase-admin";
+import { ExecSqlShapeError } from "@/lib/db/exec-sql-errors";
+import { peelExecSqlRpcEnvelope } from "@/lib/db/normalize-exec-sql-row";
+import { logExecSqlUnexpectedRowShape } from "@/lib/server/log";
 
 type QueryResult<T = Record<string, unknown>> = {
   rows: T[];
@@ -36,8 +41,44 @@ function reviveRowDates(value: unknown): unknown {
   return out;
 }
 
+/**
+ * PostgREST / Supabase RPC `setof jsonb` payloads sometimes arrive as:
+ * - decoded objects (preferred)
+ * - JSON strings containing an object/array (still needs `JSON.parse` on each row)
+ * - a `{ rows: [...] }` envelope (handled earlier in {@link runSql})
+ */
 function reviveRows<T>(rows: unknown[]): T[] {
-  return rows.map((row) => reviveRowDates(row) as T);
+  const rpc = sqlRpcName();
+  return rows.map((row, index) => {
+    const peeled = peelExecSqlRpcEnvelope(rpc, row);
+    if (peeled === null) {
+      logExecSqlUnexpectedRowShape(rpc, row, `row index ${index}`);
+      throw new ExecSqlShapeError(
+        `exec_sql returned an unexpected row shape (rpc=${rpc}, index=${index})`,
+      );
+    }
+    return reviveRowDates(peeled) as T;
+  });
+}
+
+function coerceRpcPayloadToRowArray(payload: unknown): unknown[] | null {
+  if (payload == null) return null;
+  if (typeof payload === "string") {
+    try {
+      const trimmed = payload.trim();
+      const parsed =
+        trimmed.startsWith("{") || trimmed.startsWith("[")
+          ? JSON.parse(trimmed)
+          : null;
+      if (parsed != null)
+        return coerceRpcPayloadToRowArray(parsed);
+    } catch {
+      return null;
+    }
+    return null;
+  }
+  if (!Array.isArray(payload)) return null;
+  return payload;
 }
 
 function sqlRpcName(): string {
@@ -50,11 +91,17 @@ function sqlTxRpcName(): string {
 
 function normalizeParam(value: unknown): unknown {
   if (value instanceof Date) return value.toISOString();
-  if (Array.isArray(value)) {
-    const items = value.map((v) => String(v).replace(/"/g, '\\"'));
-    return `{${items.map((v) => `"${v}"`).join(",")}}`;
-  }
+  /** Keep native JSON arrays so each `$n` binds JSON text parsed as `::jsonb` in SQL (`ARRAY(SELECT jsonb_array_elements_text(...))` for `ANY()`). */
+  if (Array.isArray(value))
+    return value.map((entry) =>
+      typeof entry === "undefined" ? null : entry,
+    );
   return value;
+}
+
+/** Unpack `$n::jsonb` params from RPC `query_params` for `WHERE col = ANY(...)`. */
+export function rpcJsonParamTextArrayUnpack(n: number): string {
+  return `ARRAY(SELECT jsonb_array_elements_text(($${n})::jsonb))`;
 }
 
 /** True only for a single-column COUNT(*) … FROM (what /api/health/db uses). */
@@ -92,14 +139,29 @@ function finalizeRpcRows<T>(
   return rows;
 }
 
+function extractRpcRowsPayload(payload: unknown): unknown[] | null {
+  const directArray = coerceRpcPayloadToRowArray(payload);
+  if (directArray) return directArray;
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    !("rows" in (payload as object))
+  ) {
+    return [payload];
+  }
+  return null;
+}
+
 async function runSql<T = Record<string, unknown>>(
   text: string,
   params?: unknown[],
 ): Promise<T[]> {
   const admin = createSupabaseAdminClient();
   const normalizedParams = (params ?? []).map(normalizeParam);
+  const rpcText = text.replace(/\r/g, "").trimStart();
   const { data, error } = await admin.rpc(sqlRpcName(), {
-    query_text: text,
+    query_text: rpcText,
     query_params: normalizedParams,
   });
   if (error) {
@@ -107,13 +169,20 @@ async function runSql<T = Record<string, unknown>>(
   }
   if (typeof data === "string") {
     try {
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        return finalizeRpcRows(text, reviveRows<T>(parsed));
+      const trimmed = data.trim();
+      if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+        throw new Error(`Supabase SQL RPC returned non-object string. rpc=${sqlRpcName()}`);
       }
-      throw new Error(
-        `Supabase SQL RPC returned string payload that was not an array. rpc=${sqlRpcName()}`,
-      );
+      const parsed = JSON.parse(trimmed) as unknown;
+      const extracted = extractRpcRowsPayload(parsed);
+      if (!extracted) {
+        throw new Error(
+          `Supabase SQL RPC returned string payload with unexpected shape. rpc=${sqlRpcName()}`,
+        );
+      }
+      const rows = extracted;
+      const normalizedRows = reviveRows<T>(rows);
+      return finalizeRpcRows(rpcText, normalizedRows);
     } catch (parseError) {
       throw new Error(
         `Supabase SQL RPC returned invalid JSON string payload. rpc=${sqlRpcName()} error=${parseError instanceof Error ? parseError.message : "unknown"}`,
@@ -123,18 +192,31 @@ async function runSql<T = Record<string, unknown>>(
   if (data && typeof data === "object" && "rows" in data) {
     const rows = (data as { rows?: unknown }).rows;
     if (Array.isArray(rows)) {
-      return finalizeRpcRows(text, reviveRows<T>(rows));
+      const normalizedRows = reviveRows<T>(rows);
+      return finalizeRpcRows(rpcText, normalizedRows);
     }
     throw new Error(
       `Supabase SQL RPC returned object payload without array rows. rpc=${sqlRpcName()}`,
     );
   }
-  if (!Array.isArray(data)) {
+  const extractedNonString = extractRpcRowsPayload(data);
+  if (!extractedNonString) {
+    if (
+      data &&
+      typeof data === "object" &&
+      !Array.isArray(data) &&
+      !("rows" in data)
+    ) {
+      const normalizedRows = reviveRows<T>([data as Record<string, unknown>]);
+      return finalizeRpcRows(rpcText, normalizedRows);
+    }
     throw new Error(
       `Supabase SQL RPC returned unsupported payload type (${typeof data}). rpc=${sqlRpcName()}`,
     );
   }
-  return finalizeRpcRows(text, reviveRows<T>(data));
+  const rows = extractedNonString;
+  const normalizedRows = reviveRows<T>(rows);
+  return finalizeRpcRows(rpcText, normalizedRows);
 }
 
 async function runSqlBatchTransaction(
@@ -142,7 +224,11 @@ async function runSqlBatchTransaction(
 ): Promise<void> {
   if (statements.length === 0) return;
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.rpc(sqlTxRpcName(), { statements });
+  const normalized = statements.map((s) => ({
+    query_text: s.query_text.replace(/\r/g, "").trimStart(),
+    query_params: s.query_params,
+  }));
+  const { error } = await admin.rpc(sqlTxRpcName(), { statements: normalized });
   if (error) {
     throw new Error(`Supabase SQL TX RPC failed: ${error.message}`);
   }
@@ -188,3 +274,5 @@ export async function withTransaction<T>(
 export function newId(): string {
   return crypto.randomUUID();
 }
+
+export { ExecSqlShapeError } from "@/lib/db/exec-sql-errors";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SuperadminLeadsToolbar } from "@/components/superadmin/superadmin-leads-toolbar";
-import { QualificationStatus, SalesStage, UserRole } from "@/lib/constants";
+import { UserRole } from "@/lib/constants";
 import { coerceMoney } from "@/lib/deal-money";
 import { getSuperadminLeadsWithJourney } from "@/lib/superadmin-stats";
 import {
@@ -12,11 +12,8 @@ import {
 } from "@/lib/superadmin-leads-filters";
 import { dbQuery } from "@/lib/db/pool";
 import { SuperadminLeadsJourneyClient } from "@/components/superadmin/superadmin-leads-journey-client";
-import { toRscSerializableDashboardExport } from "@/lib/dashboard-export-types";
-import { flattenSuperadminJourneyGroupsForExport } from "@/lib/superadmin-leads-export-map";
-import { buildSuperadminLeadsExportPayload } from "@/lib/portal-all-leads-export-payloads";
-import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
 import { logLeadsAudit, timedServerBlock } from "@/lib/server/log";
+import { superadminLeadsParsedExportScope } from "@/lib/portal-export-scope";
 import { PortalSectionJumpTabs } from "@/components/portal-section-jump-tabs";
 
 export const metadata: Metadata = {
@@ -60,7 +57,7 @@ function PaginationBar({
   nextHref: string | null;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lf-border bg-lf-surface p-5 shadow-sm">
+    <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-lf-border bg-lf-bg/90 px-3 py-2.5 text-[13px]">
       <p className="text-lf-subtle">
         Showing{" "}
         <span className="font-semibold text-lf-text">
@@ -208,48 +205,32 @@ export default async function SuperadminLeadsPage({
   > = {
     qualTotals: { qualified: 0, notQualified: 0, irrelevant: 0 },
     analystGroups: [],
+    flatLeads: [],
   };
 
-  const qualParam = (i: number) => `$${where.params.length + i}`;
-  const [
-    countTotalRows,
-    countQualifiedRows,
-    countNotQualifiedRows,
-    countIrrelevantRows,
-    paged,
-    exportPack,
-    duplicateRows,
-    closedRevFiltered,
-    pipelineEstFiltered,
-  ] = await timedServerBlock("route:/superadmin/leads page:queries", () =>
-      Promise.all([
-        // Separate singleton COUNT(*) queries: some exec_sql RPCs return [] for
-        // multi-aggregate SELECTs, which made totalCount 0 and broke the page.
-        dbQuery<{ total: string }>(
-          `SELECT COUNT(*)::text AS total FROM "Lead" WHERE ${where.clause}`,
-          where.params,
-        ),
-        dbQuery<{ c: string }>(
-          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = ${qualParam(1)}`,
-          [...where.params, QualificationStatus.QUALIFIED],
-        ),
-        dbQuery<{ c: string }>(
-          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = ${qualParam(1)}`,
-          [...where.params, QualificationStatus.NOT_QUALIFIED],
-        ),
-        dbQuery<{ c: string }>(
-          `SELECT COUNT(*)::text AS c FROM "Lead" WHERE ${where.clause} AND "qualificationStatus" = ${qualParam(1)}`,
-          [...where.params, QualificationStatus.IRRELEVANT],
-        ),
-        shouldRenderJourneyTable
-          ? getSuperadminLeadsWithJourney(where, { limit: perPage, offset })
-          : Promise.resolve(emptyJourneyResult),
-        shouldRenderJourneyTable
-          ? getSuperadminLeadsWithJourney(where, {
-              limit: PORTAL_LEADS_EXPORT_ROW_CAP,
-              offset: 0,
-            })
-          : Promise.resolve(emptyJourneyResult),
+  // Aggregated stats row first: parallel `exec_sql` with multi-row selects can mix responses.
+  const [statsRows, duplicateRows, paged] = await timedServerBlock(
+    "route:/superadmin/leads page:queries",
+    async () => {
+      const statsRows = await dbQuery<{
+        total: string;
+        qualified: string;
+        not_qualified: string;
+        irrelevant: string;
+        closed_rev: string;
+        pipeline_est: string;
+      }>(
+        `SELECT
+            COUNT(*)::text AS total,
+            COUNT(*) FILTER (WHERE "qualificationStatus" = 'QUALIFIED')::text AS qualified,
+            COUNT(*) FILTER (WHERE "qualificationStatus" = 'NOT_QUALIFIED')::text AS not_qualified,
+            COUNT(*) FILTER (WHERE "qualificationStatus" = 'IRRELEVANT')::text AS irrelevant,
+            COALESCE(SUM(CASE WHEN "salesStage" = 'CLOSED_WON' AND "closedRevenue" IS NOT NULL THEN "closedRevenue" ELSE 0 END), 0)::text AS closed_rev,
+            COALESCE(SUM(CASE WHEN "estimatedDealValue" IS NOT NULL THEN "estimatedDealValue" ELSE 0 END), 0)::text AS pipeline_est
+           FROM "Lead" WHERE ${where.clause}`,
+        where.params,
+      );
+      const [duplicateRows, paged] = await Promise.all([
         shouldRenderJourneyTable
           ? dbQuery<{ lead_id: string; dup_count: string }>(
               `WITH filtered AS (
@@ -271,27 +252,24 @@ export default async function SuperadminLeadsPage({
                JOIN phone_dups pd ON pd.phone_key = f.phone_key`,
               where.params,
             )
-          : Promise.resolve([]),
+          : Promise.resolve([] as { lead_id: string; dup_count: string }[]),
         shouldRenderJourneyTable
-          ? Promise.resolve([] as { s: string | null }[])
-          : dbQuery<{ s: string | null }>(
-              `SELECT COALESCE(SUM("closedRevenue"), 0)::text AS s FROM "Lead" WHERE ${where.clause} AND "salesStage" = $${where.params.length + 1} AND "closedRevenue" IS NOT NULL`,
-              [...where.params, SalesStage.CLOSED_WON],
-            ),
-        shouldRenderJourneyTable
-          ? Promise.resolve([] as { s: string | null }[])
-          : dbQuery<{ s: string | null }>(
-              `SELECT COALESCE(SUM("estimatedDealValue"), 0)::text AS s FROM "Lead" WHERE ${where.clause} AND "estimatedDealValue" IS NOT NULL`,
-              where.params,
-            ),
-      ]),
-    );
+          ? getSuperadminLeadsWithJourney(where, { limit: perPage, offset })
+          : Promise.resolve(emptyJourneyResult),
+      ]);
+      return [statsRows, duplicateRows, paged] as const;
+    },
+  );
+
+  const stats = statsRows[0] ?? { total: "0", qualified: "0", not_qualified: "0", irrelevant: "0", closed_rev: "0", pipeline_est: "0" };
+  const totalCount = Number(stats.total);
   const qualTotals = {
-    qualified: Number(countQualifiedRows[0]?.c ?? 0),
-    notQualified: Number(countNotQualifiedRows[0]?.c ?? 0),
-    irrelevant: Number(countIrrelevantRows[0]?.c ?? 0),
+    qualified: Number(stats.qualified),
+    notQualified: Number(stats.not_qualified),
+    irrelevant: Number(stats.irrelevant),
   };
-  const totalCount = Number(countTotalRows[0]?.total ?? 0);
+  const filteredClosedRevenueTotal = Number(stats.closed_rev);
+  const filteredPipelineEstimateTotal = Number(stats.pipeline_est);
   const totalPages = Math.max(1, Math.ceil(totalCount / perPage));
   if (page > totalPages) {
     const qp = new URLSearchParams();
@@ -312,10 +290,7 @@ export default async function SuperadminLeadsPage({
   }
   const safePage = page;
   const safeOffset = (safePage - 1) * perPage;
-  const safePaged = paged;
-  const analystGroups = safePaged.analystGroups;
-  const filteredClosedRevenueTotal = Number(closedRevFiltered[0]?.s ?? 0);
-  const filteredPipelineEstimateTotal = Number(pipelineEstFiltered[0]?.s ?? 0);
+  const analystGroups = paged.analystGroups;
   logLeadsAudit("superadmin-leads", {
     whereClause: where.clause,
     whereParamCount: where.params.length,
@@ -350,17 +325,6 @@ export default async function SuperadminLeadsPage({
     teamName,
     execLabel,
   });
-  const superadminExportRows = flattenSuperadminJourneyGroupsForExport(
-    exportPack.analystGroups,
-  );
-  const superadminExportPayload = buildSuperadminLeadsExportPayload(
-    superadminExportRows,
-    {
-      filterSummary,
-      rangeTotalCount: totalCount,
-      exportRowCount: superadminExportRows.length,
-    },
-  );
 
   const duplicateMap = new Map<
     string,
@@ -448,23 +412,21 @@ export default async function SuperadminLeadsPage({
     },
   ];
 
-  const exportForClient = toRscSerializableDashboardExport(
-    superadminExportPayload,
-  );
-
   return (
-    <div className="space-y-8">
-      <div className="space-y-4 min-w-0">
+    <div className="w-full min-w-0 space-y-8">
+      <div className="min-w-0 space-y-4">
         <PortalSectionJumpTabs tabs={tabs} activeId={leadsSection} />
         <SuperadminLeadsToolbar
           key={filtersKey}
           showExport={leadsSection === "journey-table"}
-          exportPayload={exportForClient}
+          totalCount={totalCount}
+          filterSummary={filterSummary}
           filtersKey={filtersKey}
           initial={parsed}
           analysts={analysts}
           teams={teams}
           execs={execs}
+          exportScope={superadminLeadsParsedExportScope(parsed)}
         />
       </div>
 
@@ -526,18 +488,7 @@ export default async function SuperadminLeadsPage({
                     : "Leads match your filters (see count above), but rows failed to load. Try refreshing the page."}
                 </p>
               ) : (
-                <>
-                  <SuperadminLeadsJourneyClient analystGroups={analystGroupsClient} />
-                  <PaginationBar
-                    totalCount={totalCount}
-                    offset={safeOffset}
-                    perPage={perPage}
-                    page={safePage}
-                    totalPages={totalPages}
-                    prevHref={prevHref}
-                    nextHref={nextHref}
-                  />
-                </>
+                <SuperadminLeadsJourneyClient analystGroups={analystGroupsClient} />
               )}
             </>
           )}

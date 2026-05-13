@@ -13,7 +13,8 @@ const NAV = [
 
 export function MtlAppShell({
   session,
-  avatarUrl,
+  userId,
+  avatarImage,
   teamName,
   notifications,
   notificationUnreadCount,
@@ -21,7 +22,8 @@ export function MtlAppShell({
   children,
 }: {
   session: { name: string; email: string };
-  avatarUrl: string | null;
+  userId: string;
+  avatarImage: string | null;
   teamName: string | null;
   notifications: AtlNotificationItem[];
   notificationUnreadCount: number;
@@ -33,7 +35,8 @@ export function MtlAppShell({
       homeHref="/team-lead"
       navItems={NAV}
       session={session}
-      avatarUrl={avatarUrl}
+      userId={userId}
+      avatarImage={avatarImage}
       teamName={teamName}
       notifications={notifications}
       notificationUnreadCount={notificationUnreadCount}

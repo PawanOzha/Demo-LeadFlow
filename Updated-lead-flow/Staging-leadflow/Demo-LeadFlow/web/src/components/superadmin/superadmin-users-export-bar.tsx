@@ -2,12 +2,15 @@
 
 import { DashboardReportExport } from "@/components/dashboard-report-export";
 import type { DashboardExportPayload } from "@/lib/dashboard-export-types";
+import type { PortalExportScope } from "@/lib/portal-export-scope";
 
 export function SuperadminUsersExportBar({
   payload,
+  exportScope,
   description = "PDF, Excel, or CSV for every user listed in this table.",
 }: {
   payload: DashboardExportPayload;
+  exportScope: PortalExportScope;
   description?: string;
 }) {
   return (
@@ -19,7 +22,7 @@ export function SuperadminUsersExportBar({
         <p className="mt-1 text-sm text-lf-muted">{description}</p>
       </div>
       <div className="shrink-0">
-        <DashboardReportExport payload={payload} />
+        <DashboardReportExport payload={payload} exportScope={exportScope} />
       </div>
     </div>
   );

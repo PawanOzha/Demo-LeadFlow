@@ -287,9 +287,9 @@ export function SuperadminLeadsJourneyClient({
                     <th className="w-[44px] px-4 py-3 font-semibold">
                       <span className="sr-only">Select</span>
                     </th>
+                    <th className="w-[240px] px-4 py-3 font-semibold">Source</th>
                     <th className="w-[240px] px-4 py-3 font-semibold">Lead</th>
                     <th className="w-[210px] px-4 py-3 font-semibold">Contact</th>
-                    <th className="w-[240px] px-4 py-3 font-semibold">Source</th>
                     <th className="w-[170px] px-4 py-3 font-semibold">Duplicate check</th>
                     <th className="w-[120px] px-4 py-3 font-semibold">Status</th>
                     <th className="w-[150px] px-4 py-3 font-semibold">Stage</th>
@@ -340,6 +340,9 @@ export function SuperadminLeadsJourneyClient({
                         />
                       </td>
                       <td className="px-4 py-3">
+                        <LeadSourcePill source={lead.source} />
+                      </td>
+                      <td className="px-4 py-3">
                         <p className="font-semibold text-lf-text">
                           {lead.leadName || "Unnamed lead"}
                         </p>
@@ -353,9 +356,6 @@ export function SuperadminLeadsJourneyClient({
                         <p className="mt-1 text-lf-subtle">
                           {lead.city || "—"}, {lead.country || "—"}
                         </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <LeadSourcePill source={lead.source} />
                       </td>
                       <td className="px-4 py-3">
                         {duplicateLabel(lead.duplicateMeta) ? (

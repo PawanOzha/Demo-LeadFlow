@@ -2,11 +2,14 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createSalesExecutive } from "@/app/actions/mtl";
+import { rememberManagedMemberPassword } from "@/lib/managed-member-password-session";
+import { PasswordInputWithToggle } from "@/components/ui/password-input-with-toggle";
 
 type Result =
   | { error: string }
   | {
       ok: true;
+      userId: string;
       name: string;
       email: string;
       temporaryPassword: string;
@@ -123,6 +126,11 @@ export default function AddExecForm({
     onCreated();
   }, [success, onCreated]);
 
+  useEffect(() => {
+    if (!success?.userId || !success.temporaryPassword) return;
+    rememberManagedMemberPassword(success.userId, success.temporaryPassword);
+  }, [success]);
+
   const shell =
     variant === "modal"
       ? "space-y-0"
@@ -189,13 +197,13 @@ export default function AddExecForm({
           <label htmlFor="mtl-exec-password" className={labelClass}>
             Password
           </label>
-          <input
+          <PasswordInputWithToggle
             id="mtl-exec-password"
             name="password"
-            type="password"
             required
             placeholder="Temporary password (min. 8 characters)"
             autoComplete="new-password"
+            wrapperClassName="mt-1"
             className={inputClass}
           />
         </div>

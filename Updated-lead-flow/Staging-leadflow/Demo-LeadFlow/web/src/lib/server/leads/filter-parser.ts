@@ -10,6 +10,8 @@ export interface LeadFilters {
   status?: string;
   salesStage?: string;
   source?: string;
+  /** `Lead.sourceWebsiteName` — URL param `website`. */
+  sourceWebsiteName?: string;
   country?: string;
   dateFrom?: string;
   dateTo?: string;
@@ -70,6 +72,10 @@ export function parseLeadFilters(searchParams: SearchParamsLike): LeadFilters {
     status: parseStatus(getParam(searchParams, "status")),
     salesStage: parseStage(getParam(searchParams, "salesStage")),
     source: parseText(getParam(searchParams, "source"), 256),
+    sourceWebsiteName: parseText(
+      getParam(searchParams, "website"),
+      256,
+    ),
     country: parseText(getParam(searchParams, "country"), 128),
     dateFrom: parseIsoDate(getParam(searchParams, "from")),
     dateTo: parseIsoDate(getParam(searchParams, "to")),
@@ -77,6 +83,28 @@ export function parseLeadFilters(searchParams: SearchParamsLike): LeadFilters {
     assignedMtlId: parseText(getParam(searchParams, "assignedMtlId"), 64),
     teamId: parseText(getParam(searchParams, "teamId"), 64),
     analystId: parseText(getParam(searchParams, "analystId"), 64),
+  };
+}
+
+/**
+ * Merge URL filter params with canonically parsed date range + search from
+ * {@link analystRangeParams} so list and dashboard SQL stay aligned.
+ * @param opts.omitSearch When true (e.g. main dashboard without search UI), ignore `q` from the URL and range.
+ */
+export function mergedPortalLeadFilters(
+  searchParams: SearchParamsLike,
+  range: { from: string | null; to: string | null; q: string | null },
+  opts?: { omitSearch?: boolean },
+): LeadFilters {
+  const base = parseLeadFilters(searchParams);
+  const qNorm = opts?.omitSearch
+    ? undefined
+    : normalizeClientSearchQuery(range.q) ?? base.q;
+  return {
+    ...base,
+    q: qNorm ?? undefined,
+    dateFrom: range.from ?? undefined,
+    dateTo: range.to ?? undefined,
   };
 }
 

@@ -2,11 +2,12 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { superadminDeleteUsersBulkFormAction } from "@/app/actions/superadmin";
+import { superadminDeleteUsersBulkFormAction, superadminSetPasswordFormAction } from "@/app/actions/superadmin";
 import { SuperadminDeleteForm } from "@/components/superadmin/superadmin-delete-form";
-import { SuperadminPasswordForm } from "@/components/superadmin/superadmin-password-form";
+import { ManagedMemberPasswordModalTrigger } from "@/components/portal-managed-member-password-modal";
 import { UserRole } from "@/lib/constants";
 import { superadminRoleLabel } from "@/lib/superadmin-ui";
+import { PersonWithMiniAvatar, UserMiniAvatar } from "@/components/user-mini-avatar";
 
 const PROTECTED_SUPERADMIN_EMAIL = "superadmin@demo.local";
 
@@ -15,9 +16,16 @@ type UserRow = {
   email: string;
   name: string;
   role: string;
+  image: string | null;
   analystTeamName: string | null;
-  manager: { name: string; email: string } | null;
+  manager: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+  } | null;
   team: { name: string } | null;
+  mustResetPassword: boolean;
 };
 
 export function SuperadminUsersTableClient({
@@ -127,7 +135,7 @@ export function SuperadminUsersTableClient({
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Role</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Manager / team</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Analyst team</th>
-              <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Password</th>
+              <th className="w-[1%] min-w-[7.5rem] whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Password</th>
               <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted"> </th>
             </tr>
           </thead>
@@ -157,16 +165,31 @@ export function SuperadminUsersTableClient({
                 <td className="px-4 py-3 font-mono text-xs text-lf-text-secondary">
                   {u.email}
                 </td>
-                <td className="px-4 py-3 text-lf-text-secondary">{u.name}</td>
+                <td className="px-4 py-3 text-lf-text-secondary">
+                  <PersonWithMiniAvatar
+                    id={u.id}
+                    name={u.name}
+                    image={u.image}
+                  />
+                </td>
                 <td className="px-4 py-3 text-lf-muted">
                   {superadminRoleLabel(u.role)}
                 </td>
                 <td className="px-4 py-3 text-lf-text-secondary">
                   {u.manager ? (
-                    <span className="text-xs">
-                      {u.manager.name}
-                      <br />
-                      <span className="text-lf-subtle">{u.manager.email}</span>
+                    <span className="inline-flex items-start gap-2 text-xs">
+                      <UserMiniAvatar
+                        userId={u.manager.id}
+                        image={u.manager.image}
+                        name={u.manager.name}
+                        size={26}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        {u.manager.name}
+                        <br />
+                        <span className="text-lf-subtle">{u.manager.email}</span>
+                      </span>
                     </span>
                   ) : u.team ? (
                     <span className="text-xs text-lf-muted">{u.team.name}</span>
@@ -177,11 +200,16 @@ export function SuperadminUsersTableClient({
                 <td className="px-4 py-3 text-xs text-lf-muted">
                   {u.analystTeamName ?? "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td className="w-[1%] min-w-[7.5rem] whitespace-nowrap px-4 py-3 align-middle">
                   {u.role === UserRole.SUPERADMIN ? (
                     <span className="text-xs text-lf-subtle">—</span>
                   ) : (
-                    <SuperadminPasswordForm userId={u.id} />
+                    <ManagedMemberPasswordModalTrigger
+                      userId={u.id}
+                      memberLabel={u.name || u.email}
+                      mustResetPassword={u.mustResetPassword}
+                      formAction={superadminSetPasswordFormAction}
+                    />
                   )}
                 </td>
                 <td className="px-4 py-3">

@@ -41,27 +41,87 @@ export function leadPhoneCountryIso(phone: string | null): string {
   }
 }
 
+/**
+ * Stable bucket for geography / conversion: prefer phone-derived ISO, else stored `Lead.country`,
+ * then invalid / no-signal buckets (matches `resolveLeadCountry` intent in city rollups).
+ */
+export function countryQualGroupKey(
+  phone: string | null | undefined,
+  storedCountry: string | null | undefined,
+): string {
+  const rawPhone = phone?.trim();
+  if (rawPhone) {
+    try {
+      const parsed = parsePhoneNumber(rawPhone);
+      if (parsed.country) return `iso:${parsed.country}`;
+    } catch {
+      /* fall through */
+    }
+  }
+  const st = storedCountry?.trim();
+  if (st) return `txt:${st.toLowerCase()}`;
+  if (rawPhone) return `iso:__invalid__`;
+  return `iso:__none__`;
+}
+
+function textBucketFallbackLabel(lowerKey: string): string {
+  return lowerKey
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/** Single display label for dashboards / conversion rows (same bucketing as {@link buildCountryQualRows}). */
+export function countryDimLabelForLead(l: {
+  phone: string | null;
+  country?: string | null;
+}): string {
+  const key = countryQualGroupKey(l.phone, l.country ?? null);
+  if (key.startsWith("iso:")) return countryLabelForIso(key.slice(4));
+  if (key.startsWith("txt:")) {
+    const trimmed = l.country?.trim();
+    if (trimmed) return trimmed;
+    return textBucketFallbackLabel(key.slice(4));
+  }
+  return countryLabelForIso("__none__");
+}
+
 function bumpCountryQual(row: CountryQual, status: string) {
   if (status === QualificationStatus.QUALIFIED) row.q += 1;
   else if (status === QualificationStatus.NOT_QUALIFIED) row.nq += 1;
   else if (status === QualificationStatus.IRRELEVANT) row.ir += 1;
 }
 
-/** Aggregate leads by phone country with qualified / not qualified / irrelevant counts (sorted by total). */
+/** Aggregate leads by country (phone ISO when possible, else stored country) with Q/NQ/IR counts. */
 export function buildCountryQualRows(
-  leads: { phone: string | null; qualificationStatus: string }[],
+  leads: {
+    phone: string | null;
+    country?: string | null;
+    qualificationStatus: string;
+  }[],
 ): CountryQualRow[] {
-  const byCountryQual = new Map<string, CountryQual>();
+  const byKey = new Map<string, { label: string } & CountryQual>();
   for (const l of leads) {
-    const iso = leadPhoneCountryIso(l.phone);
-    const row = byCountryQual.get(iso) ?? { q: 0, nq: 0, ir: 0 };
+    const key = countryQualGroupKey(l.phone, l.country ?? null);
+    if (!byKey.has(key)) {
+      let label: string;
+      if (key.startsWith("iso:")) {
+        label = countryLabelForIso(key.slice(4));
+      } else if (key.startsWith("txt:")) {
+        label = l.country?.trim() || textBucketFallbackLabel(key.slice(4));
+      } else {
+        label = countryLabelForIso("__none__");
+      }
+      byKey.set(key, { label, q: 0, nq: 0, ir: 0 });
+    }
+    const row = byKey.get(key)!;
     bumpCountryQual(row, l.qualificationStatus);
-    byCountryQual.set(iso, row);
   }
-  return [...byCountryQual.entries()]
-    .map(([iso, v]) => ({
-      iso,
-      label: countryLabelForIso(iso),
+  return [...byKey.entries()]
+    .map(([groupKey, v]) => ({
+      iso: groupKey,
+      label: v.label,
       q: v.q,
       nq: v.nq,
       ir: v.ir,

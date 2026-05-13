@@ -8,6 +8,7 @@ export type PortalAnalystLeadExportRow = {
   phone: string | null;
   leadEmail: string | null;
   source: string;
+  portalWebsite: string | null;
   notes: string | null;
   lostNotes: string | null;
   qualificationStatus: string;
@@ -24,6 +25,7 @@ export type PortalAtlLeadExportRow = {
   phone: string | null;
   leadEmail: string | null;
   source: string;
+  portalWebsite: string | null;
   notes: string | null;
   lostNotes: string | null;
   qualificationStatus: string;
@@ -140,10 +142,11 @@ export function buildAnalystLeadsExportPayload(
   if (q) summaryRows.splice(2, 0, { label: "Name or phone search", value: q });
 
   const headers = [
+    "Source",
+    "Portal website",
     "Name",
     "Phone",
     "Email",
-    "Source",
     "Qualification",
     "Score",
     "Sales stage",
@@ -156,10 +159,11 @@ export function buildAnalystLeadsExportPayload(
   ];
 
   const tableRows = rows.map((l) => [
+    l.source || "—",
+    l.portalWebsite ?? "—",
     l.leadName || "—",
     l.phone || "—",
     l.leadEmail || "—",
-    l.source || "—",
     String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—",
     l.leadScore ?? "—",
     analystFacingSalesLabel(l.salesStage),
@@ -205,10 +209,11 @@ export function buildAtlLeadsExportPayload(
   if (q) summaryRows.splice(2, 0, { label: "Name or phone search", value: q });
 
   const headers = [
+    "Source",
+    "Portal website",
     "Name",
     "Phone",
     "Email",
-    "Source",
     "Qualification",
     "Score",
     "Sales stage",
@@ -228,10 +233,11 @@ export function buildAtlLeadsExportPayload(
     iso ? new Date(iso).toLocaleString() : "—";
 
   const tableRows = rows.map((l) => [
+    l.source || "—",
+    l.portalWebsite ?? "—",
     l.leadName || "—",
     l.phone || "—",
     l.leadEmail || "—",
-    l.source || "—",
     String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—",
     l.leadScore ?? "—",
     analystFacingSalesLabel(l.salesStage),
@@ -281,10 +287,10 @@ export function buildExecLeadsExportPayload(
   if (q) summaryRows.splice(2, 0, { label: "Name or phone search", value: q });
 
   const headers = [
+    "Source",
     "Name",
     "Phone",
     "Email",
-    "Source",
     "Lead analyst",
     "Score",
     "Deadline",
@@ -298,10 +304,10 @@ export function buildExecLeadsExportPayload(
   ];
 
   const tableRows = rows.map((l) => [
+    l.source || "—",
     l.leadName || "—",
     l.phone || "—",
     l.leadEmail || "—",
-    l.source || "—",
     l.analystName,
     l.leadScore ?? "—",
     l.execDeadlineAt ? new Date(l.execDeadlineAt).toLocaleString() : "—",
@@ -348,10 +354,10 @@ export function buildMtlLeadsExportPayloadFromPortalRows(
   if (q) summaryRows.splice(2, 0, { label: "Name or phone search", value: q });
 
   const headers = [
+    "Source",
     "Name",
     "Phone",
     "Email",
-    "Source",
     "Analyst",
     "Score",
     "Stage",
@@ -362,10 +368,10 @@ export function buildMtlLeadsExportPayloadFromPortalRows(
   ];
 
   const tableRows = rows.map((lead) => [
+    lead.source || "—",
     lead.leadName || "—",
     lead.phone || "—",
     lead.leadEmail || "—",
-    lead.source || "—",
     lead.analystName,
     lead.leadScore ?? "—",
     lead.salesStage.replaceAll("_", " "),
@@ -406,12 +412,12 @@ export function buildSuperadminLeadsExportPayload(
   ];
 
   const headers = [
+    "Source",
     "Name",
     "Phone",
     "Email",
     "Country",
     "City",
-    "Source",
     "Qualification",
     "Score",
     "Sales stage",
@@ -429,12 +435,12 @@ export function buildSuperadminLeadsExportPayload(
   ];
 
   const tableRows = rows.map((l) => [
+    l.source || "—",
     l.leadName || "—",
     l.phone || "—",
     l.leadEmail || "—",
     l.country ?? "—",
     l.city ?? "—",
-    l.source || "—",
     String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—",
     l.leadScore ?? "—",
     analystFacingSalesLabel(l.salesStage),

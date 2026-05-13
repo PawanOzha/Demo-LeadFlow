@@ -5,11 +5,14 @@ import {
   createLeadAnalystMember,
   createMainTeamLeadAndTeam,
 } from "@/app/actions/atl";
+import { PasswordInputWithToggle } from "@/components/ui/password-input-with-toggle";
+import { rememberManagedMemberPassword } from "@/lib/managed-member-password-session";
 
 type AnalystResult =
   | { error: string }
   | {
       ok: true;
+      userId: string;
       name: string;
       email: string;
       analystTeamName: string;
@@ -20,6 +23,7 @@ type MtlResult =
   | { error: string }
   | {
       ok: true;
+      userId: string;
       teamName: string;
       leadName: string;
       email: string;
@@ -124,6 +128,7 @@ export function AddAnalystForm({
         result.email !== lastHandledOkEmail.current
       ) {
         lastHandledOkEmail.current = result.email;
+        rememberManagedMemberPassword(result.userId, result.temporaryPassword);
         if (variant === "page") {
           setFormKey((k) => k + 1);
         }
@@ -166,12 +171,12 @@ export function AddAnalystForm({
         className={inputClass}
         autoComplete="off"
       />
-      <input
+      <PasswordInputWithToggle
         name="password"
-        type="password"
         required
         placeholder="Temporary password"
-        className={inputClass}
+        wrapperClassName="w-full"
+        className={`${inputClass} w-full`}
         autoComplete="new-password"
         minLength={8}
       />
@@ -223,6 +228,7 @@ export function AddMainTeamForm({
         result.email !== lastHandledOkEmail.current
       ) {
         lastHandledOkEmail.current = result.email;
+        rememberManagedMemberPassword(result.userId, result.temporaryPassword);
         if (variant === "page") {
           setFormKey((k) => k + 1);
         }
@@ -265,12 +271,12 @@ export function AddMainTeamForm({
         className={inputClass}
         autoComplete="off"
       />
-      <input
+      <PasswordInputWithToggle
         name="password"
-        type="password"
         required
         placeholder="Temporary password"
-        className={inputClass}
+        wrapperClassName="w-full"
+        className={`${inputClass} w-full`}
         autoComplete="new-password"
         minLength={8}
       />

@@ -8,7 +8,8 @@ import {
 
 export type PortalShellUserClusterProps = {
   session: { name: string; email: string };
-  avatarUrl: string | null;
+  userId: string;
+  avatarImage: string | null;
   teamName: string | null;
   notifications: AtlNotificationItem[];
   notificationUnreadCount: number;
@@ -19,7 +20,8 @@ export type PortalShellUserClusterProps = {
 
 export function PortalShellUserCluster({
   session,
-  avatarUrl,
+  userId,
+  avatarImage,
   teamName,
   notifications,
   notificationUnreadCount,
@@ -45,7 +47,11 @@ export function PortalShellUserCluster({
           {teamName?.trim() ? teamName.trim() : "—"}
         </span>
       </div>
-      <HeaderUserAvatar name={session.name} avatarUrl={avatarUrl} />
+      <HeaderUserAvatar
+        userId={userId}
+        name={session.name}
+        image={avatarImage}
+      />
     </div>
   );
 }
@@ -53,7 +59,8 @@ export function PortalShellUserCluster({
 export function PortalShellHeader({
   homeHref,
   session,
-  avatarUrl,
+  userId,
+  avatarImage,
   teamName,
   notifications,
   notificationUnreadCount,
@@ -75,7 +82,8 @@ export function PortalShellHeader({
   const userCluster = (
     <PortalShellUserCluster
       session={session}
-      avatarUrl={avatarUrl}
+      userId={userId}
+      avatarImage={avatarImage}
       teamName={teamName}
       notifications={notifications}
       notificationUnreadCount={notificationUnreadCount}
@@ -96,7 +104,7 @@ export function PortalShellHeader({
 
   if (!showBrand) {
     return (
-      <header className="sticky top-0 z-20 flex h-16 min-h-16 w-full shrink-0 items-center border-b border-lf-border/60 bg-lf-header/95 px-4 backdrop-blur-sm sm:px-6">
+      <header className="flex h-16 min-h-16 w-full shrink-0 items-center border-b border-lf-border/60 bg-lf-header/95 px-4 backdrop-blur-sm sm:px-6">
         <div className="flex min-w-0 w-full items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-2">
             {leftSlot ? <div className="shrink-0">{leftSlot}</div> : null}

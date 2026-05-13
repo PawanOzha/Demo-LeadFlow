@@ -100,9 +100,9 @@ export async function seedDemoWithAuthIds(pool: SeedDbPool, ids: DemoAuthIds) {
   );
 
   await pool.query(
-    `INSERT INTO "Team" (id, name, "mainTeamLeadId", "createdAt", "updatedAt")
-     VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-    [teamId, "Team Alpha", mtlId],
+    `INSERT INTO "Team" (id, name, "mainTeamLeadId", "analystTeamLeadId", "createdAt", "updatedAt")
+     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+    [teamId, "Team Alpha", mtlId, atlId],
   );
 
   await pool.query(

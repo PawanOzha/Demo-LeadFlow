@@ -2,7 +2,7 @@ import { getSession } from "@/lib/auth/session";
 import { dbQuery, dbQueryOne } from "@/lib/db/pool";
 import { UserRole } from "@/lib/constants";
 import { MtlSalesTeamActionsEntry } from "@/components/mtl/mtl-sales-team-actions-entry";
-import { MtlProvisionedPasswordCell } from "@/components/mtl/mtl-provisioned-password-cell";
+import { MtlSalesExecPasswordForm } from "@/components/mtl/mtl-sales-exec-password-form";
 import { MtlTransferExecButton } from "@/components/mtl/mtl-transfer-exec-button";
 export default async function TeamLeadSalesTeamPage() {
   const session = await getSession();
@@ -18,8 +18,15 @@ export default async function TeamLeadSalesTeamPage() {
   const execs =
     session.teamId == null
       ? []
-      : await dbQuery<{ id: string; name: string; email: string }>(
-          `SELECT id, name, email FROM "User" WHERE "teamId" = $1 AND role = $2 ORDER BY name ASC`,
+      : await dbQuery<{
+          id: string;
+          name: string;
+          email: string;
+          must_reset: boolean;
+        }>(
+          `SELECT id, name, email,
+            COALESCE("mustResetPassword", false) AS must_reset
+           FROM "User" WHERE "teamId" = $1 AND role = $2 ORDER BY name ASC`,
           [session.teamId, UserRole.SALES_EXECUTIVE],
         );
 
@@ -46,7 +53,7 @@ export default async function TeamLeadSalesTeamPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm text-lf-muted">
@@ -64,10 +71,10 @@ export default async function TeamLeadSalesTeamPage() {
           Sales executives ({execs.length})
         </h2>
         <p className="mt-1 text-sm text-lf-muted">
-          The temporary password is shown only once when you create the account.
-          New users must set a new password on first sign-in. Use Transfer to
-          move a rep to another sales team when your organisation reassigns
-          them.
+          You can reveal the password here for this browser tab after you invite
+          a rep or tap Update below (stored in tab session only—we never reload it from the
+          server). Invitees may still have to reset on first login. Transfer moves a rep to
+          another sales team when your org reassigned them.
         </p>
         <div className="mt-6 w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
           <table className="w-full border-collapse text-[13px]">
@@ -75,7 +82,7 @@ export default async function TeamLeadSalesTeamPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Name</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Email</th>
-                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Temp. password</th>
+                <th className="w-[1%] min-w-[7.5rem] whitespace-nowrap px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Password</th>
                 <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wide text-lf-muted">Actions</th>
               </tr>
             </thead>
@@ -97,8 +104,12 @@ export default async function TeamLeadSalesTeamPage() {
                       {e.name}
                     </td>
                     <td className="px-4 py-3 text-[13px] text-lf-text-secondary">{e.email}</td>
-                    <td className="px-4 py-3 text-[13px] text-lf-text-secondary">
-                      <MtlProvisionedPasswordCell />
+                    <td className="w-[1%] min-w-[7.5rem] whitespace-nowrap px-3 py-3 align-middle text-lf-text-secondary">
+                      <MtlSalesExecPasswordForm
+                        execId={e.id}
+                        execName={e.name}
+                        mustResetPassword={e.must_reset}
+                      />
                     </td>
                     <td className="px-4 py-3 text-right text-[13px] text-lf-text-secondary">
                       <MtlTransferExecButton

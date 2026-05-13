@@ -38,6 +38,24 @@ export function PortalNavIcon({ href }: { href: string }) {
       </svg>
     );
   }
+  /* Qualified pipeline (ATL) — must run before generic `/pipeline` (href contains that substring). */
+  if (h.includes("qualified-pipeline")) {
+    return (
+      <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M5 5h14l-5.5 6.5h-3L5 5Z"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M12 11.5V19.5"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
   if (h.includes("/pipeline")) {
     return (
       <svg className={cls} viewBox="0 0 24 24" fill="none" aria-hidden>

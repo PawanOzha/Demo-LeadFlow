@@ -46,6 +46,7 @@ export async function getPortalSettingsPayload(
   );
   if (!user) return null;
   return {
+    id: userId,
     name: user.name,
     image: user.image,
     teamName: user.teamName,

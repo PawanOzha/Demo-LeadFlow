@@ -1,14 +1,22 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { dbQuery, dbQueryOne, newId, withTransaction } from "@/lib/db/pool";
+import { dbQuery, dbQueryOne, newId, withTransaction, rpcJsonParamTextArrayUnpack } from "@/lib/db/pool";
 import { getSession } from "@/lib/auth/session";
 import {
   authAdminCreateUser,
   authAdminDeleteUser,
-  authAdminUpdatePassword,
 } from "@/lib/auth/supabase-admin";
 import { UserRole } from "@/lib/constants";
+import { getSuperadminLeadsWithJourney } from "@/lib/superadmin-stats";
+import {
+  buildSuperadminLeadsWhereSql,
+  type SuperadminLeadsParsed,
+} from "@/lib/superadmin-leads-filters";
+import { flattenSuperadminJourneyGroupsForExport } from "@/lib/superadmin-leads-export-map";
+import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import type { PortalSuperadminLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
+import { syncUserPasswordWithAuth } from "@/lib/sync-user-password";
 
 const PROTECTED_SUPERADMIN_EMAIL = "superadmin@demo.local";
 const UUID_RE =
@@ -144,94 +152,13 @@ export async function superadminSetUserPassword(formData: FormData) {
   if (!userId || !password) {
     return { error: "User and password are required." };
   }
-  if (password.length < 8) return { error: "Password must be at least 8 characters." };
 
-  const user = await dbQueryOne<{
-    role: string;
-    authUserId: string | null;
-    email: string;
-  }>(
-    `SELECT role, "authUserId", email FROM "User" WHERE id = $1`,
-    [userId],
-  );
-  if (!user || user.role === UserRole.SUPERADMIN) {
-    return { error: "Cannot change password for this account." };
-  }
-
-  function isAuthUserNotFound(err: unknown): boolean {
-    return (
-      err instanceof Error &&
-      /user not found|not found/i.test(err.message)
-    );
-  }
-
-  async function findAuthUserIdByEmail(email: string): Promise<string | null> {
-    try {
-      const row = await dbQueryOne<{ id: string }>(
-        `SELECT id::text AS id
-         FROM auth.users
-         WHERE lower(email) = lower($1)
-         ORDER BY created_at DESC
-         LIMIT 1`,
-        [email],
-      );
-      return row?.id ?? null;
-    } catch (e) {
-      console.error("[superadminSetUserPassword:findAuthUserIdByEmail]", e);
-      return null;
-    }
-  }
-
-  let authUserId = user.authUserId;
-
-  if (authUserId) {
-    try {
-      await authAdminUpdatePassword(authUserId, password);
-    } catch (e) {
-      if (!isAuthUserNotFound(e)) {
-        console.error("[superadminSetUserPassword:updateExistingAuth]", e);
-        return { error: "Something went wrong. Please try again." };
-      }
-      // Stale link from migration / old auth tenant.
-      authUserId = null;
-    }
-  }
-
-  if (!authUserId) {
-    const discovered = await findAuthUserIdByEmail(user.email);
-    if (discovered) {
-      authUserId = discovered;
-      try {
-        await authAdminUpdatePassword(authUserId, password);
-      } catch (e) {
-        console.error("[superadminSetUserPassword:updateDiscoveredAuth]", e);
-        return { error: "Could not update password in Supabase Auth." };
-      }
-    } else {
-      try {
-        authUserId = await authAdminCreateUser(user.email, password);
-      } catch (e) {
-        console.error("[superadminSetUserPassword:createAuthUser]", e);
-        return {
-          error:
-            "Could not create/link Supabase Auth user for this account. Verify the email is valid and unique in auth.users.",
-        };
-      }
-    }
-  }
-
-  await dbQuery(
-    `UPDATE "User"
-     SET "passwordHash" = $1,
-         "mustResetPassword" = false,
-         "authUserId" = $2,
-         "updatedAt" = CURRENT_TIMESTAMP
-     WHERE id = $3`,
-    [null, authUserId, userId],
-  );
+  const synced = await syncUserPasswordWithAuth({ userId, password });
+  if ("error" in synced) return synced;
 
   revalidatePath("/superadmin");
-  return { ok: true as const, password };
+  revalidatePath("/superadmin/add-user");
+  return { ok: true as const, password: synced.password };
 }
 
 export async function superadminSetPasswordFormAction(
@@ -355,14 +282,14 @@ export async function superadminDeleteLeadsBulk(formData: FormData) {
   try {
     await withTransaction(async (client) => {
       await client.query(
-        `DELETE FROM "Notification" WHERE "leadId" = ANY($1::text[])`,
+        `DELETE FROM "Notification" WHERE "leadId" = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
         [uniqueIds],
       );
       await client.query(
-        `DELETE FROM "LeadHandoffLog" WHERE "leadId" = ANY($1::text[])`,
+        `DELETE FROM "LeadHandoffLog" WHERE "leadId" = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
         [uniqueIds],
       );
-      await client.query(`DELETE FROM "Lead" WHERE id = ANY($1::text[])`, [
+      await client.query(`DELETE FROM "Lead" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`, [
         uniqueIds,
       ]);
     });
@@ -410,7 +337,7 @@ export async function superadminDeleteUsersBulk(formData: FormData) {
     authUserId: string | null;
     email: string;
   }>(
-    `SELECT id, role, "authUserId", email FROM "User" WHERE id = ANY($1::text[])`,
+    `SELECT id, role, "authUserId", email FROM "User" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
     [uniqueIds],
   );
   if (users.length !== uniqueIds.length) {
@@ -428,7 +355,9 @@ export async function superadminDeleteUsersBulk(formData: FormData) {
   }
 
   try {
-    await dbQuery(`DELETE FROM "User" WHERE id = ANY($1::text[])`, [uniqueIds]);
+    await dbQuery(`DELETE FROM "User" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`, [
+      uniqueIds,
+    ]);
     for (const u of users) {
       if (!u.authUserId) continue;
       await authAdminDeleteUser(u.authUserId).catch(() => {
@@ -456,3 +385,31 @@ export async function superadminDeleteUsersBulkFormAction(
   if (r && "ok" in r && r.ok) return { deletedCount: r.deletedCount };
   return undefined;
 }
+
+/** On-demand export: called from client when user clicks Export, not on every page load. */
+export async function fetchSuperadminLeadsExportAction(params: {
+  filters: Omit<SuperadminLeadsParsed, "page" | "perPage">;
+  filterSummary: string;
+}): Promise<
+  | { ok: true; rows: PortalSuperadminLeadExportRow[]; filterSummary: string }
+  | { ok: false; error: string }
+> {
+  const session = await requireSuperAdmin();
+  if (!session) return { ok: false, error: "Unauthorized." };
+
+  const parsed: SuperadminLeadsParsed = {
+    ...params.filters,
+    page: 1,
+    perPage: 25,
+  };
+  const where = buildSuperadminLeadsWhereSql(parsed);
+
+  const result = await getSuperadminLeadsWithJourney(where, {
+    limit: PORTAL_LEADS_EXPORT_ROW_CAP,
+    offset: 0,
+  });
+
+  const rows = flattenSuperadminJourneyGroupsForExport(result.analystGroups);
+  return { ok: true, rows, filterSummary: params.filterSummary };
+}
+

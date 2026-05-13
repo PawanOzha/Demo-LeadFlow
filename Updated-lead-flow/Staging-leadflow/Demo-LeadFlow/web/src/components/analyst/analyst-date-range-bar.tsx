@@ -9,7 +9,7 @@ import {
 } from "@/lib/analyst-date-range";
 
 export type AnalystDateRangeBarProps = {
-  /** Current route pathname, e.g. `/analyst-team-lead/reports` */
+  /** Current route pathname, e.g. `/analyst-team-lead/qualified-pipeline` */
   pathname: string;
   defaultFrom: string;
   defaultTo: string;
@@ -21,6 +21,8 @@ export type AnalystDateRangeBarProps = {
    */
   rangeSummary?: string;
   compact?: boolean;
+  /** No outer card; use inside {@link PortalDashboardTopPanel}. */
+  embedded?: boolean;
 };
 
 /**
@@ -40,6 +42,7 @@ export default function AnalystDateRangeBar({
   preservedEntries,
   rangeSummary,
   compact = false,
+  embedded = false,
 }: AnalystDateRangeBarProps) {
   const router = useRouter();
   const [isNavigating, startTransition] = useTransition();
@@ -47,6 +50,9 @@ export default function AnalystDateRangeBar({
   const fromInputRef = useRef<HTMLInputElement>(null);
   const toInputRef = useRef<HTMLInputElement>(null);
   const isBusy = isNavigating;
+
+  const isEmbedded = embedded;
+  const effectiveCompact = compact || isEmbedded;
 
   const hasActiveRange = Boolean(
     (defaultFrom ?? "").trim() || (defaultTo ?? "").trim(),
@@ -88,15 +94,19 @@ export default function AnalystDateRangeBar({
   return (
     <div
       className={
-        compact
-          ? "rounded-xl border border-lf-border bg-lf-surface/80 px-2.5 py-2 shadow-sm"
-          : "rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm sm:px-5 sm:py-5"
+        isEmbedded
+          ? "min-w-0"
+          : effectiveCompact
+            ? "rounded-xl border border-lf-border bg-lf-surface/80 px-2.5 py-2 shadow-sm"
+            : "rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm sm:px-5 sm:py-5"
       }
     >
-      <div className={`flex flex-wrap items-end ${compact ? "gap-2" : "gap-3"}`}>
+      <div
+        className={`flex flex-wrap items-end ${effectiveCompact ? "gap-2" : "gap-3"}`}
+      >
         <form
           onSubmit={onSubmit}
-          className={`flex flex-wrap items-end ${compact ? "gap-2" : "gap-3"}`}
+          className={`flex flex-wrap items-end ${effectiveCompact ? "gap-2" : "gap-3"}`}
           noValidate
         >
           {preservedEntries.map(([k, v], i) => (
@@ -109,26 +119,42 @@ export default function AnalystDateRangeBar({
             />
           ))}
           <input type="hidden" name="page" value="1" aria-hidden />
-          <label className={compact ? "sr-only" : "text-xs font-medium text-lf-muted"}>
-            From
+          <label
+            className={
+              effectiveCompact
+                ? "flex min-w-[8.5rem] flex-col gap-1"
+                : "text-xs font-medium text-lf-muted"
+            }
+          >
+            <span className={effectiveCompact ? "text-[11px] font-medium text-lf-muted" : undefined}>
+              From
+            </span>
             <input
               ref={fromInputRef}
               type="date"
               name="from"
               defaultValue={defaultFrom}
-              className={`mt-1.5 block w-full rounded-lg border border-lf-border bg-lf-bg px-3 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light] ${compact ? "min-h-9 min-w-[8.5rem] py-1.5" : "min-h-10 min-w-[10rem] py-2"}`}
+              className={`block w-full rounded-lg border border-lf-border bg-lf-bg px-3 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light] ${effectiveCompact ? "min-h-9 min-w-[8.5rem] py-1.5" : "mt-1.5 min-h-10 min-w-[10rem] py-2"}`}
               aria-invalid={applyError ? true : undefined}
               aria-describedby={applyError ? "date-range-apply-error" : undefined}
             />
           </label>
-          <label className={compact ? "sr-only" : "text-xs font-medium text-lf-muted"}>
-            To
+          <label
+            className={
+              effectiveCompact
+                ? "flex min-w-[8.5rem] flex-col gap-1"
+                : "text-xs font-medium text-lf-muted"
+            }
+          >
+            <span className={effectiveCompact ? "text-[11px] font-medium text-lf-muted" : undefined}>
+              To
+            </span>
             <input
               ref={toInputRef}
               type="date"
               name="to"
               defaultValue={defaultTo}
-              className={`mt-1.5 block w-full rounded-lg border border-lf-border bg-lf-bg px-3 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light] ${compact ? "min-h-9 min-w-[8.5rem] py-1.5" : "min-h-10 min-w-[10rem] py-2"}`}
+              className={`block w-full rounded-lg border border-lf-border bg-lf-bg px-3 text-sm text-lf-text outline-none ring-lf-brand/35 focus:border-lf-brand/50 focus:ring-2 focus:ring-lf-brand/25 [color-scheme:light] ${effectiveCompact ? "min-h-9 min-w-[8.5rem] py-1.5" : "mt-1.5 min-h-10 min-w-[10rem] py-2"}`}
               aria-invalid={applyError ? true : undefined}
               aria-describedby={applyError ? "date-range-apply-error" : undefined}
             />
@@ -136,7 +162,7 @@ export default function AnalystDateRangeBar({
           <button
             type="submit"
             disabled={isBusy}
-            className={`rounded-lg bg-lf-accent px-4 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent ${compact ? "min-h-9" : "min-h-10"}`}
+            className={`rounded-lg bg-lf-accent px-4 text-xs font-semibold text-lf-on-accent shadow-sm transition hover:bg-lf-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-on-accent focus-visible:ring-offset-2 focus-visible:ring-offset-lf-accent ${effectiveCompact ? "min-h-9" : "min-h-10"}`}
           >
             {isBusy ? "Applying..." : "Apply"}
           </button>
@@ -146,28 +172,16 @@ export default function AnalystDateRangeBar({
             type="button"
             onClick={onClear}
             disabled={isBusy}
-            className={`rounded-lg border border-lf-border px-4 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50 ${compact ? "min-h-9" : "min-h-10"}`}
+            className={`rounded-lg border border-lf-border px-4 text-xs font-medium text-lf-text-secondary hover:bg-lf-bg/50 ${effectiveCompact ? "min-h-9" : "min-h-10"}`}
           >
             Clear
           </button>
         ) : null}
       </div>
-      {!compact && rangeSummary ? (
-        <p className="mt-3 rounded-lg border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text-secondary">
-          <span className="font-semibold text-lf-text">Active data range:</span>{" "}
-          {rangeSummary}
-          <span className="block pt-1 text-xs text-lf-muted">
-            Filters use each lead’s <span className="font-medium">creation date</span>{" "}
-            (<code className="rounded bg-lf-bg px-1 text-[11px]">createdAt</code>), not
-            last update or close date.
-          </span>
-        </p>
-      ) : null}
-      {!compact ? (
-      <p className="mt-2 text-[11px] leading-relaxed text-lf-subtle">
-        From only: that date through today. To only: from the beginning through that
-        date. Both: inclusive range (order is adjusted if From is after To).
-      </p>
+      {rangeSummary ? (
+        <span className="sr-only">
+          Date filter scope: {rangeSummary}. Applies to lead creation date.
+        </span>
       ) : null}
       {applyError ? (
         <p

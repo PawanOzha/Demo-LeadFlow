@@ -15,8 +15,14 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import {
   type LeadSourceValue,
   LEAD_SOURCE_OPTIONS,
+  leadSourceUsesMetaDetail,
+  leadSourceUsesWebsiteDetail,
   resolveLeadSourceLabel,
 } from "@/lib/lead-sources";
+import {
+  normalizeLeadWebsiteLabel,
+  requirePortalWebsiteSelection,
+} from "@/lib/lead-websites";
 import {
   isAllowedQualificationReason,
   joinNotesWithQualificationReason,
@@ -24,7 +30,12 @@ import {
 import {
   normalizeDealCurrency,
   parseOptionalMoney,
+  coerceMoney,
 } from "@/lib/deal-money";
+import { leadWhereSql } from "@/lib/analyst-date-range";
+import { parseLeadFilters } from "@/lib/server/leads/filter-parser";
+import { PORTAL_LEADS_EXPORT_ROW_CAP } from "@/lib/portal-leads-export-cap";
+import type { PortalAnalystLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
 
 const SOURCE_VALUES = new Set(
   LEAD_SOURCE_OPTIONS.map((o) => o.value as LeadSourceValue),
@@ -71,21 +82,37 @@ export async function createLeadAnalyst(formData: FormData) {
   const leadEmail = leadEmailRaw || null;
   const leadSource = String(formData.get("leadSource") ?? "").trim();
   const sourceOther = String(formData.get("sourceOther") ?? "").trim() || null;
-  let sourceWebsiteName =
-    String(formData.get("sourceWebsiteName") ?? "").trim() || null;
+
+  const portalSel = String(formData.get("portalWebsite") ?? "").trim();
+  const portalOtherRaw = String(formData.get("portalWebsiteOther") ?? "").trim();
+
+  let portalWebsite: string | null = null;
+  if (!portalSel) {
+    return {
+      error:
+        'Choose a portal website from the list, or pick "Other — not in list".',
+    };
+  }
+  if (portalSel === "__other__") {
+    portalWebsite = portalOtherRaw || null;
+  } else {
+    const preset = requirePortalWebsiteSelection(portalSel);
+    if (!preset) {
+      return { error: "Invalid portal website selection." };
+    }
+    portalWebsite = preset;
+  }
+
+  let sourceWebsiteName: string | null = null;
+  if (leadSourceUsesWebsiteDetail(leadSource)) {
+    sourceWebsiteName = portalWebsite
+      ? normalizeLeadWebsiteLabel(portalWebsite) ?? portalWebsite
+      : null;
+  }
+
   let sourceMetaProfileName =
     String(formData.get("sourceMetaProfileName") ?? "").trim() || null;
-  if (
-    leadSource !== "WEBSITE_WHATSAPP" &&
-    leadSource !== "WEBSITE_LEAD_FORMS"
-  ) {
-    sourceWebsiteName = null;
-  }
-  if (
-    leadSource !== "META_WHATSAPP" &&
-    leadSource !== "META_MESSENGER" &&
-    leadSource !== "META_LEAD_FORMS"
-  ) {
+  if (!leadSourceUsesMetaDetail(leadSource)) {
     sourceMetaProfileName = null;
   }
   const notes = String(formData.get("notes") ?? "").trim() || null;
@@ -182,32 +209,47 @@ export async function createLeadAnalyst(formData: FormData) {
 
   const leadId = newId();
 
+  // Split insert + update: Supabase exec_sql allows at most 10 bound params per statement.
+  await dbQuery(
+    `INSERT INTO "Lead" (
+      id, "leadName", phone, "leadEmail", country, source, "sourceWebsiteName", "sourceMetaProfileName",
+      "qualificationStatus", "createdById", "updatedAt", "internalReassignCount"
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP, 0
+    )`,
+    [
+      leadId,
+      leadName,
+      phone,
+      leadEmail,
+      country,
+      source,
+      sourceWebsiteName,
+      sourceMetaProfileName,
+      qualificationStatus,
+      session.id,
+    ],
+  );
   if (createdAt) {
     await dbQuery(
-      `INSERT INTO "Lead" (
-        id, "leadName", phone, "leadEmail", country, city, source, "sourceWebsiteName", "sourceMetaProfileName",
-        notes, "qualificationStatus", "leadScore", "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount",
-        "estimatedDealValue", "dealCurrency"
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, $15, CURRENT_TIMESTAMP, 0,
-        $16, $17
-      )`,
+      `UPDATE "Lead" SET
+        "portalWebsite" = $2,
+        city = $3,
+        notes = $4,
+        "leadScore" = (NULLIF(trim($5::text), ''))::integer,
+        "salesStage" = $6,
+        "createdAt" = $7::timestamptz,
+        "estimatedDealValue" = $8::numeric,
+        "dealCurrency" = $9,
+        "updatedAt" = CURRENT_TIMESTAMP
+       WHERE id = $1`,
       [
         leadId,
-        leadName,
-        phone,
-        leadEmail,
-        country,
+        portalWebsite,
         city,
-        source,
-        sourceWebsiteName,
-        sourceMetaProfileName,
         storedNotes,
-        qualificationStatus,
         leadScore,
         SalesStage.PRE_SALES,
-        session.id,
         createdAt,
         estimatedDealValue,
         dealCurrency,
@@ -215,30 +257,23 @@ export async function createLeadAnalyst(formData: FormData) {
     );
   } else {
     await dbQuery(
-      `INSERT INTO "Lead" (
-        id, "leadName", phone, "leadEmail", country, city, source, "sourceWebsiteName", "sourceMetaProfileName",
-        notes, "qualificationStatus", "leadScore", "salesStage", "createdById", "createdAt", "updatedAt", "internalReassignCount",
-        "estimatedDealValue", "dealCurrency"
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0,
-        $15, $16
-      )`,
+      `UPDATE "Lead" SET
+        "portalWebsite" = $2,
+        city = $3,
+        notes = $4,
+        "leadScore" = (NULLIF(trim($5::text), ''))::integer,
+        "salesStage" = $6,
+        "estimatedDealValue" = $7::numeric,
+        "dealCurrency" = $8,
+        "updatedAt" = CURRENT_TIMESTAMP
+       WHERE id = $1`,
       [
         leadId,
-        leadName,
-        phone,
-        leadEmail,
-        country,
+        portalWebsite,
         city,
-        source,
-        sourceWebsiteName,
-        sourceMetaProfileName,
         storedNotes,
-        qualificationStatus,
         leadScore,
         SalesStage.PRE_SALES,
-        session.id,
         estimatedDealValue,
         dealCurrency,
       ],
@@ -253,6 +288,8 @@ export async function createLeadAnalyst(formData: FormData) {
   });
 
   revalidatePath("/analyst", "layout");
+  revalidatePath("/analyst-team-lead", "layout");
+  revalidatePath("/superadmin");
   return { ok: true as const };
 }
 
@@ -324,5 +361,74 @@ export async function updateLeadQualificationAnalyst(
 
   revalidatePath("/analyst", "layout");
   revalidatePath("/analyst-team-lead", "layout");
+  revalidatePath("/superadmin");
   return { ok: true as const };
+}
+
+export async function fetchAnalystLeadsExportAction(params: {
+  from: string | null;
+  to: string | null;
+  q: string | null;
+  status?: string | null;
+  salesStage?: string | null;
+  source?: string | null;
+  website?: string | null;
+}): Promise<{ ok: true; rows: PortalAnalystLeadExportRow[] } | { ok: false; error: string }> {
+  const session = await getSession();
+  if (!session || session.role !== UserRole.LEAD_ANALYST) {
+    return { ok: false, error: "Unauthorized." };
+  }
+  const filters = parseLeadFilters({
+    from: params.from ?? undefined,
+    to: params.to ?? undefined,
+    q: params.q ?? undefined,
+    status: params.status ?? undefined,
+    salesStage: params.salesStage ?? undefined,
+    source: params.source ?? undefined,
+    website: params.website ?? undefined,
+  } as Record<string, string | undefined>);
+  const { clause, params: sqlParams } = leadWhereSql(session.id, filters);
+  try {
+    const rows = await dbQuery<{
+      leadName: string;
+      phone: string | null;
+      leadEmail: string | null;
+      source: string;
+      portalWebsite: string | null;
+      notes: string | null;
+      lostNotes: string | null;
+      qualificationStatus: string;
+      leadScore: number | null;
+      salesStage: string;
+      createdAt: Date;
+      estimatedDealValue: unknown;
+      closedRevenue: unknown;
+      dealCurrency: string;
+    }>(
+      `SELECT l."leadName", l.phone, l."leadEmail", l.source, l."portalWebsite", l.notes, l."lostNotes", l."qualificationStatus", l."leadScore", l."salesStage", l."createdAt", l."estimatedDealValue", l."closedRevenue", l."dealCurrency"
+       FROM "Lead" l WHERE ${clause} ORDER BY l."createdAt" DESC, l.id DESC LIMIT ($${sqlParams.length + 1})::bigint`,
+      [...sqlParams, PORTAL_LEADS_EXPORT_ROW_CAP],
+    );
+    return {
+      ok: true,
+      rows: rows.map((l) => ({
+        leadName: l.leadName,
+        phone: l.phone,
+        leadEmail: l.leadEmail,
+        source: l.source,
+        portalWebsite: l.portalWebsite,
+        notes: l.notes,
+        lostNotes: l.lostNotes,
+        qualificationStatus: l.qualificationStatus,
+        leadScore: l.leadScore,
+        salesStage: l.salesStage,
+        createdAt: l.createdAt.toISOString(),
+        estimatedDealValue: coerceMoney(l.estimatedDealValue),
+        closedRevenue: coerceMoney(l.closedRevenue),
+        dealCurrency: l.dealCurrency?.trim() || "USD",
+      })),
+    };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Export failed. Please try again." };
+  }
 }

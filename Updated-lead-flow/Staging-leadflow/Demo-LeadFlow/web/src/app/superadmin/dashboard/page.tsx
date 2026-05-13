@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { dbQuery } from "@/lib/db/pool";
 import { PortalPaginationBar } from "@/components/portal-pagination-bar";
 import {
@@ -7,7 +9,18 @@ import {
   superadminRoleLabel,
 } from "@/lib/superadmin-ui";
 import { getSuperadminDashboardMetrics } from "@/lib/superadmin-stats";
+import { logger } from "@/lib/server/log";
 import { PortalSectionJumpTabs } from "@/components/portal-section-jump-tabs";
+import {
+  Ban,
+  BadgeCheck,
+  DollarSign,
+  Layers,
+  Users,
+  XCircle,
+} from "lucide-react";
+import { PremiumMetricCard } from "@/components/dashboard/premium-metric-card";
+import { SuperadminOverviewCharts } from "@/components/dashboard/superadmin-overview-charts";
 
 function first(sp: string | string[] | undefined): string | undefined {
   if (Array.isArray(sp)) return sp[0];
@@ -44,30 +57,6 @@ export const metadata: Metadata = {
   title: "Dashboard · Superadmin",
 };
 
-function StatCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string | number;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-lf-border bg-lf-surface/90 px-5 py-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-lf-subtle">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-lf-text">
-        {value}
-      </p>
-      {hint ? (
-        <p className="mt-2 text-xs leading-relaxed text-lf-subtle">{hint}</p>
-      ) : null}
-    </div>
-  );
-}
-
 type HandoffRow = {
   id: string;
   createdAt: Date;
@@ -91,11 +80,9 @@ type TransferRow = {
   tb_email: string;
 };
 
-export default async function SuperadminDashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+async function renderSuperadminDashboard(
+  searchParams: Promise<Record<string, string | string[] | undefined>>,
+) {
   const sp = await searchParams;
   const sectionRaw = first(sp.section);
   const section =
@@ -200,25 +187,49 @@ export default async function SuperadminDashboardPage({
   paginationQuery.section = section;
 
   return (
-    <div className="space-y-12">
+    <div className="w-full min-w-0 space-y-8">
       <PortalSectionJumpTabs tabs={dashboardTabs} activeId={section} />
 
       {section === "overview" ? (
       <section id="overview" className="space-y-12 scroll-mt-20">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          <StatCard
+          <PremiumMetricCard
+            icon={Users}
+            accent="violet"
             label="Active users"
             value={metrics.activeUsers}
             hint="Analysts, TLs, main TLs, sales execs"
           />
-          <StatCard label="Total leads" value={metrics.totalLeads} />
-          <StatCard label="Qualified leads" value={metrics.qualified} />
-          <StatCard label="Not qualified" value={metrics.notQualified} />
-          <StatCard label="Irrelevant leads" value={metrics.irrelevant} />
+          <PremiumMetricCard
+            icon={Layers}
+            accent="cyan"
+            label="Total leads"
+            value={metrics.totalLeads}
+          />
+          <PremiumMetricCard
+            icon={BadgeCheck}
+            accent="blue"
+            label="Qualified leads"
+            value={metrics.qualified}
+          />
+          <PremiumMetricCard
+            icon={XCircle}
+            accent="amber"
+            label="Not qualified"
+            value={metrics.notQualified}
+          />
+          <PremiumMetricCard
+            icon={Ban}
+            accent="slate"
+            label="Irrelevant leads"
+            value={metrics.irrelevant}
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <StatCard
+          <PremiumMetricCard
+            icon={DollarSign}
+            accent="emerald"
             label="Total closed revenue"
             value={metrics.totalClosedRevenue.toLocaleString(undefined, {
               minimumFractionDigits: 0,
@@ -226,7 +237,9 @@ export default async function SuperadminDashboardPage({
             })}
             hint="Sum of closed revenue on won deals (numeric sum — align currency across deals for reporting)."
           />
-          <StatCard
+          <PremiumMetricCard
+            icon={DollarSign}
+            accent="blue"
             label="Total pipeline estimate"
             value={metrics.totalPipelineEstimate.toLocaleString(undefined, {
               minimumFractionDigits: 0,
@@ -235,6 +248,14 @@ export default async function SuperadminDashboardPage({
             hint="Sum of optional analyst estimates at lead creation."
           />
         </div>
+
+        <SuperadminOverviewCharts
+          qualified={metrics.qualified}
+          notQualified={metrics.notQualified}
+          irrelevant={metrics.irrelevant}
+          leadsByTeam={metrics.leadsByTeam}
+          leadsBySalesExec={metrics.leadsBySalesExec}
+        />
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div>
@@ -464,4 +485,26 @@ export default async function SuperadminDashboardPage({
       ) : null}
     </div>
   );
+}
+
+export default async function SuperadminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  let content: ReactNode;
+  try {
+    content = await renderSuperadminDashboard(searchParams);
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    logger.error("[SuperadminDashboardPage] failed to load page data", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return (
+      <div className="p-8 text-red-500">
+        Failed to load dashboard data. Please refresh or contact support.
+      </div>
+    );
+  }
+  return content;
 }

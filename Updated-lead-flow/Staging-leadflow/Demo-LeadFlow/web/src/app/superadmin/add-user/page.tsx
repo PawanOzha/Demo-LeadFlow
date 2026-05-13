@@ -4,6 +4,7 @@ import { SuperadminAddUserCard } from "@/components/superadmin/superadmin-add-us
 import { SuperadminUsersExportBar } from "@/components/superadmin/superadmin-users-export-bar";
 import { SuperadminUsersTableClient } from "@/components/superadmin/superadmin-users-table-client";
 import { toRscSerializableDashboardExport } from "@/lib/dashboard-export-types";
+import { superadminUsersExportScope } from "@/lib/portal-export-scope";
 import { UserRole } from "@/lib/constants";
 import { dbQuery, dbQueryOne } from "@/lib/db/pool";
 
@@ -123,25 +124,31 @@ export default async function SuperadminAddUserPage({
     qFilter ? `%${qFilter}%` : null,
   ];
 
-  const [totalRow, pagedUserRows, exportRows, atlas] = await Promise.all([
-    dbQueryOne<{ total: string }>(
-      `SELECT COUNT(*)::text AS total
-       FROM "User" u
-       ${whereSql}`,
-      whereParams,
-    ),
+  const totalRow = await dbQueryOne<{ total: string }>(
+    `SELECT COUNT(*)::text AS total
+     FROM "User" u
+     ${whereSql}`,
+    whereParams,
+  );
+  const [pagedUserRows, exportRows, atlas] = await Promise.all([
     dbQuery<{
       id: string;
       email: string;
       name: string;
       role: string;
+      image: string | null;
       analystTeamName: string | null;
+      mgr_id: string | null;
       mgr_name: string | null;
       mgr_email: string | null;
+      mgr_image: string | null;
       team_name: string | null;
+      must_reset: boolean;
     }>(
-      `SELECT u.id, u.email, u.name, u.role, u."analystTeamName",
-        mgr.name AS mgr_name, mgr.email AS mgr_email, tm.name AS team_name
+      `SELECT u.id, u.email, u.name, u.role, u.image, u."analystTeamName",
+        mgr.id AS mgr_id, mgr.name AS mgr_name, mgr.email AS mgr_email,
+        mgr.image AS mgr_image, tm.name AS team_name,
+        COALESCE(u."mustResetPassword", false) AS must_reset
        FROM "User" u
        LEFT JOIN "User" mgr ON mgr.id = u."managerId"
        LEFT JOIN "Team" tm ON tm.id = u."teamId"
@@ -209,12 +216,19 @@ export default async function SuperadminAddUserPage({
     email: u.email,
     name: u.name,
     role: u.role,
+    image: u.image,
     analystTeamName: u.analystTeamName,
     manager:
-      u.mgr_name && u.mgr_email
-        ? { name: u.mgr_name, email: u.mgr_email }
+      u.mgr_id && u.mgr_name && u.mgr_email
+        ? {
+            id: u.mgr_id,
+            name: u.mgr_name,
+            email: u.mgr_email,
+            image: u.mgr_image,
+          }
         : null,
     team: u.team_name ? { name: u.team_name } : null,
+    mustResetPassword: Boolean(u.must_reset),
   }));
 
   const exportPayload = toRscSerializableDashboardExport({
@@ -257,7 +271,7 @@ export default async function SuperadminAddUserPage({
   });
 
   return (
-    <div className="space-y-10">
+    <div className="w-full min-w-0 space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <form
@@ -309,7 +323,10 @@ export default async function SuperadminAddUserPage({
         </div>
         <SuperadminAddUserCard atlas={atlas} />
       </div>
-      <SuperadminUsersExportBar payload={exportPayload} />
+      <SuperadminUsersExportBar
+        payload={exportPayload}
+        exportScope={superadminUsersExportScope(roleFilter, qFilter)}
+      />
       <PaginationBar
         totalCount={totalCount}
         offset={offset}

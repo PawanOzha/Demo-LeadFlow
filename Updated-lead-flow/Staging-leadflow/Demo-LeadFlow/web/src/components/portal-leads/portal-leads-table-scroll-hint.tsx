@@ -8,7 +8,10 @@ export function PortalLeadsTableScrollHint() {
       >
         ← →
       </span>
-      <span>Scroll or swipe sideways to see every column.</span>
+      <span>
+        Scroll sideways over the table (trackpad, Shift+mouse wheel, or touch) to
+        see every column.
+      </span>
     </p>
   );
 }

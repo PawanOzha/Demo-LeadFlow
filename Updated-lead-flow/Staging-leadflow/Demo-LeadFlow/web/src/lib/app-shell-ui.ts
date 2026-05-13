@@ -12,13 +12,13 @@ export const portalAppShellContentRowClass =
 export const portalAppShellSidebarClass =
   "hidden min-h-0 w-[240px] shrink-0 flex-col border-r border-lf-border bg-lf-surface md:flex";
 
-/** Main scroll region inside the column to the right of the sidebar. */
+/** Main scroll region (below fixed top bar; see `PortalAppShellLayout`). */
 export const appMainContentClass =
-  "min-h-0 w-full min-w-0 flex-1 overflow-y-auto px-4 py-5 md:px-4 md:py-6 lg:px-6 lg:py-8";
+  "min-h-0 w-full min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain px-4 pb-5 pt-20 md:px-4 md:pb-6 md:pt-20 lg:px-6 lg:pb-8 lg:pt-20";
 
-/** Wide lead tables: reliable horizontal scroll (incl. iOS) + touch pan. */
+/** Wide lead tables: reliable horizontal scroll (incl. iOS). `overflow-x-hidden` on main keeps x-scroll on this layer. */
 export const portalDataTableScrollClass =
-  "w-full min-w-0 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] touch-pan-x scroll-smooth";
+  "w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] scroll-smooth pb-1";
 
 /** Keyboard focus ring — accent blue halo (~accent 22%). */
 export function navFocusRing() {

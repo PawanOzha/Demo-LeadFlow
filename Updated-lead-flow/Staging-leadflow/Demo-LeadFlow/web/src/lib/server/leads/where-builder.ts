@@ -1,4 +1,5 @@
 import type { LeadFilters } from "@/lib/server/leads/filter-parser";
+import { buildLeadSmartSearchOrClause } from "@/lib/server/leads/smart-q-sql";
 
 export interface WhereClauseResult {
   clause: string;
@@ -17,11 +18,12 @@ export function buildLeadWhereClause(
   let idx = startIndex;
 
   if (filters.q) {
-    conditions.push(
-      `(COALESCE(${qcol("leadName")}, '') ILIKE $${idx} OR COALESCE(${qcol("leadEmail")}, '') ILIKE $${idx} OR COALESCE(${qcol("phone")}, '') ILIKE $${idx})`,
-    );
-    params.push(`%${filters.q}%`);
-    idx += 1;
+    const smart = buildLeadSmartSearchOrClause(filters.q, idx, tableAlias);
+    if (smart) {
+      conditions.push(smart.clause);
+      params.push(...smart.params);
+      idx = smart.nextIndex;
+    }
   }
 
   if (filters.status) {
@@ -37,8 +39,16 @@ export function buildLeadWhereClause(
   }
 
   if (filters.source) {
-    conditions.push(`${qcol("source")} = $${idx}`);
+    conditions.push(`btrim(${qcol("source")}) = btrim($${idx}::text)`);
     params.push(filters.source);
+    idx += 1;
+  }
+
+  if (filters.sourceWebsiteName) {
+    conditions.push(
+      `btrim(${qcol("sourceWebsiteName")}) = btrim($${idx}::text)`,
+    );
+    params.push(filters.sourceWebsiteName);
     idx += 1;
   }
 

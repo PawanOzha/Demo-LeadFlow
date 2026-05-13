@@ -1,21 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { PortalLeadsExportBar } from "@/components/portal-leads-export-bar";
+import { useCallback, useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 import { AssignToMtlForm } from "@/components/atl/assign-to-mtl-form";
 import { AssignDirectToExecForm } from "@/components/atl/assign-direct-to-exec-form";
+import { AtlQualificationSelect } from "@/components/atl/atl-qualification-select";
 import AnalystNotesReadonly from "@/components/analyst-notes-readonly";
 import ExecLostNotesReadonly from "@/components/exec-lost-notes-readonly";
 import { PortalLeadSearchLiveField } from "@/components/portal-lead-search-live-field";
+import { PortalLeadsListToolbar } from "@/components/portal-leads-list-toolbar";
 import { QualificationStatus, SalesStage } from "@/lib/constants";
 import { useDebouncedLeadSearchUrl } from "@/lib/use-debounced-lead-search-url";
 import { LeadSourcePill } from "@/components/lead-source-display";
 import { formatAnalystDate } from "@/lib/analyst-ui";
 import { analystFacingSalesLabel } from "@/lib/sales-stage-labels";
 import { buildAtlLeadsExportPayload } from "@/lib/portal-all-leads-export-payloads";
-import type { PortalAtlLeadExportRow } from "@/lib/portal-all-leads-export-payloads";
+import { exportFileBase } from "@/lib/dashboard-export-csv";
 import { portalDataTableScrollClass } from "@/lib/app-shell-ui";
 import { PortalLeadsTableScrollHint } from "@/components/portal-leads/portal-leads-table-scroll-hint";
+import { PersonWithMiniAvatar } from "@/components/user-mini-avatar";
+import { fetchAtlLeadsExportAction } from "@/app/actions/atl";
+import { PortalExportConfirmDialog } from "@/components/portal-export-confirm-dialog";
+import {
+  formatPortalExportKindLabel,
+  type PortalExportScope,
+} from "@/lib/portal-export-scope";
 
 export type AtlLeadRow = {
   id: string;
@@ -23,6 +32,7 @@ export type AtlLeadRow = {
   phone: string | null;
   leadEmail: string | null;
   source: string;
+  portalWebsite: string | null;
   notes: string | null;
   lostNotes: string | null;
   qualificationStatus: string;
@@ -31,10 +41,10 @@ export type AtlLeadRow = {
   createdAt: string;
   teamId: string | null;
   assignedMainTeamLeadId: string | null;
-  createdBy: { name: string };
+  createdBy: { id: string; name: string; image: string | null };
   team: { name: string } | null;
-  assignedMainTeamLead: { name: string } | null;
-  assignedSalesExec: { name: string } | null;
+  assignedMainTeamLead: { id: string; name: string; image: string | null } | null;
+  assignedSalesExec: { id: string; name: string; image: string | null } | null;
   routedToMainTeamAt: string | null;
   assignedToExecutiveAt: string | null;
   directAssignedToExecutiveByAtlAt: string | null;
@@ -53,6 +63,16 @@ export type ExecOption = {
   teamId: string;
 };
 
+export type AtlExportFilters = {
+  from: string | null;
+  to: string | null;
+  status: string | null;
+  analystId: string | null;
+  source: string | null;
+  website?: string | null;
+  q: string | null;
+};
+
 export function AtlAllLeadsTableClient({
   leads,
   initialQ,
@@ -62,9 +82,12 @@ export function AtlAllLeadsTableClient({
   mtlOptions,
   execOptions,
   rangeLabel,
-  exportLeads,
   rangeTotalCount,
   hasServerFilters = false,
+  exportFilters,
+  exportScope,
+  hideClientSearch = false,
+  toolbarPagination,
 }: {
   leads: AtlLeadRow[];
   initialQ: string | null;
@@ -74,27 +97,92 @@ export function AtlAllLeadsTableClient({
   mtlOptions: MtlOption[];
   execOptions: ExecOption[];
   rangeLabel: string;
-  exportLeads: PortalAtlLeadExportRow[];
   rangeTotalCount: number;
   /** True when status / analyst / source filters are applied (server-side). */
   hasServerFilters?: boolean;
+  exportFilters: AtlExportFilters;
+  exportScope: PortalExportScope;
+  /** When true, parent owns debounced `q` (e.g. portal top-panel search). */
+  hideClientSearch?: boolean;
+  toolbarPagination: ReactNode;
 }) {
   const [query, setQuery] = useState(initialQ ?? "");
-  useDebouncedLeadSearchUrl(query);
-  const queryNormalized = query.trim().slice(0, 200);
-  const serverQueryNormalized = (initialQ ?? "").trim().slice(0, 200);
-  const isQuerySynced = queryNormalized === serverQueryNormalized;
+  useDebouncedLeadSearchUrl(query, 400, undefined, !hideClientSearch);
 
-  const exportPayload = useMemo(
-    () =>
-      buildAtlLeadsExportPayload(exportLeads, {
-        rangeLabel,
-        searchQuery: query,
-        rangeTotalCount,
-        exportRowCount: exportLeads.length,
-      }),
-    [exportLeads, rangeLabel, query, rangeTotalCount],
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState<"csv" | "xlsx" | "pdf" | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingKind, setPendingKind] = useState<"csv" | "xlsx" | "pdf" | null>(null);
+
+  const runExport = useCallback(
+    async (kind: "csv" | "xlsx" | "pdf") => {
+      setExportBusy(kind);
+      setExportError(null);
+      setExportOpen(false);
+      try {
+        const result = await fetchAtlLeadsExportAction(exportFilters);
+        if (!result.ok) {
+          setExportError(result.error);
+          return;
+        }
+        const payload = buildAtlLeadsExportPayload(result.rows, {
+          rangeLabel,
+          searchQuery: exportFilters.q ?? "",
+          rangeTotalCount,
+          exportRowCount: result.rows.length,
+        });
+        const base = exportFileBase(payload);
+        if (kind === "csv") {
+          const { buildDashboardCsv } = await import("@/lib/dashboard-export-csv");
+          const csv = `﻿${buildDashboardCsv(payload)}`;
+          const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+          const a = document.createElement("a");
+          a.href = url; a.download = `${base}.csv`; a.rel = "noopener";
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(url);
+        } else {
+          const { buildDashboardPdf, buildDashboardXlsx } = await import("@/lib/dashboard-export-heavy");
+          const blob = kind === "xlsx" ? buildDashboardXlsx(payload) : buildDashboardPdf(payload);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = `${base}.${kind}`; a.rel = "noopener";
+          document.body.appendChild(a); a.click(); a.remove();
+          URL.revokeObjectURL(url);
+        }
+      } catch (e) {
+        setExportError(e instanceof Error ? e.message : "Export failed. Please try again.");
+      } finally {
+        setExportBusy(null);
+      }
+    },
+    [exportFilters, rangeLabel, rangeTotalCount],
   );
+
+  const requestExport = useCallback(
+    (kind: "csv" | "xlsx" | "pdf") => {
+      setExportError(null);
+      setExportOpen(false);
+      if (!exportScope.hasActiveFilters) {
+        setPendingKind(kind);
+        setConfirmOpen(true);
+        return;
+      }
+      void runExport(kind);
+    },
+    [exportScope.hasActiveFilters, runExport],
+  );
+
+  const dismissConfirm = () => {
+    setConfirmOpen(false);
+    setPendingKind(null);
+  };
+
+  const confirmExportAllInScope = () => {
+    const k = pendingKind;
+    dismissConfirm();
+    if (k) void runExport(k);
+  };
 
   const fmtDateTime = (iso: string | null) => {
     if (!iso) return "—";
@@ -117,70 +205,134 @@ export function AtlAllLeadsTableClient({
     return `${minutes}m`;
   };
 
+  const td =
+    "border-b border-lf-divide px-3 py-2.5 align-middle text-center text-[13px] leading-snug text-lf-text-secondary first:pl-4 last:pr-4";
+  const tdLeft =
+    "border-b border-lf-divide px-3 py-2.5 align-middle text-left text-[13px] leading-snug text-lf-text-secondary first:pl-4 last:pr-4";
+  const th =
+    "border-b border-lf-border bg-lf-bg/95 px-3 py-2.5 text-center align-middle text-[10px] font-semibold uppercase tracking-wider text-lf-muted first:pl-4 last:pr-4";
+  const thLeft =
+    "border-b border-lf-border bg-lf-bg/95 px-3 py-2.5 text-left align-middle text-[10px] font-semibold uppercase tracking-wider text-lf-muted first:pl-4 last:pr-4";
+  const routePanel =
+    "rounded-lg border border-lf-border/80 bg-lf-elevated/45 px-2.5 py-2 shadow-sm";
+  const routeLbl =
+    "mb-1 block text-[10px] font-semibold uppercase tracking-wider text-lf-muted";
+  const hintBox =
+    "rounded-md border border-lf-border/70 bg-lf-bg/55 px-2 py-1.5 text-[11px] leading-snug text-lf-text-secondary";
+
+  const exportTrailing = (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setExportOpen((o) => !o)}
+        disabled={exportBusy !== null}
+        className="inline-flex h-9 items-center gap-2 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
+      >
+        {exportBusy ? (
+          <span className="text-lf-muted">Exporting…</span>
+        ) : (
+          <>
+            <ChevronDown className="h-4 w-4 text-lf-muted" aria-hidden />
+            Export
+          </>
+        )}
+      </button>
+      {exportOpen && !exportBusy ? (
+        <>
+          <div
+            className="fixed inset-0 z-40 cursor-default bg-transparent"
+            aria-hidden
+            onClick={() => setExportOpen(false)}
+          />
+          <div
+            role="menu"
+            aria-label="Export formats"
+            className="absolute right-0 top-full z-50 mt-1 min-w-[11rem] rounded-xl border border-lf-border bg-lf-surface py-1 shadow-xl"
+          >
+            {(["pdf", "xlsx", "csv"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="menuitem"
+                className="h-9 block w-full px-3 text-left text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover hover:text-lf-text"
+                onClick={() => requestExport(k)}
+              >
+                {k === "pdf" ? "PDF" : k === "xlsx" ? "Excel (.xlsx)" : "CSV"}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+
   return (
     <>
-      <div className="rounded-2xl border border-lf-border bg-gradient-to-b from-lf-elevated to-lf-bg px-4 py-4 shadow-sm ring-1 ring-black/[0.03] sm:px-5 sm:py-5">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
-          Find a client
-        </p>
-        <PortalLeadSearchLiveField value={query} onChange={setQuery} />
-        {!isQuerySynced ? (
-          <p className="mt-2 text-xs text-lf-muted">Applying search...</p>
-        ) : null}
-      </div>
-
-      <PortalLeadsExportBar payload={exportPayload} />
-
+      <PortalExportConfirmDialog
+        open={confirmOpen}
+        title="Export without filters?"
+        subtitle="Nothing is narrowing this export yet. Add a date range, search, or list filters first to export only what you need, or export everything that matches your team (up to the row cap)."
+        bulletLines={
+          exportScope.bulletLines.length
+            ? exportScope.bulletLines
+            : ["No active filters detected."]
+        }
+        pendingFormatLabel={pendingKind ? formatPortalExportKindLabel(pendingKind) : null}
+        onClose={dismissConfirm}
+        onAddFilters={dismissConfirm}
+        onExportAllAnyway={confirmExportAllInScope}
+      />
       <PortalLeadsTableScrollHint />
-      <div
-        className={`w-full overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm ${portalDataTableScrollClass}`}
-        role="region"
-        aria-label="Team leads table"
-        tabIndex={0}
-      >
-        <table className="w-full min-w-[1320px] border-collapse text-[13px]">
-            <thead>
-              <tr className="border-b border-lf-border bg-lf-bg/80">
-                <th className="min-w-[120px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Name
-                </th>
-                <th className="min-w-[100px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Analyst
-                </th>
-                <th className="min-w-[104px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Phone
-                </th>
-                <th className="min-w-[152px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Email
-                </th>
-                <th className="min-w-[160px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Source
-                </th>
-                <th className="min-w-[11rem] max-w-[28rem] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
+      <div className="w-full min-w-0 overflow-hidden rounded-xl border border-lf-border bg-lf-surface shadow-sm">
+        <PortalLeadsListToolbar
+          pagination={toolbarPagination}
+          search={
+            hideClientSearch ? undefined : (
+              <PortalLeadSearchLiveField variant="inline" value={query} onChange={setQuery} />
+            )
+          }
+          trailing={exportTrailing}
+        />
+        {exportError ? (
+          <div
+            className="border-b border-lf-danger-border bg-lf-danger-bg px-3 py-1.5 text-xs text-lf-danger"
+            role="alert"
+          >
+            {exportError}
+          </div>
+        ) : null}
+        <div
+          className={portalDataTableScrollClass}
+          role="region"
+          aria-label="Analyst team leads table"
+          tabIndex={0}
+        >
+          <table className="w-full min-w-[1400px] border-collapse [&_tbody_tr:last-child_td]:border-b-0">
+            <thead className="sticky top-0 z-[1] shadow-[0_1px_0_0] shadow-lf-border">
+              <tr className="bg-lf-bg">
+                <th className={`${th} min-w-[160px]`}>Source</th>
+                <th className={`${th} min-w-[132px]`}>Portal</th>
+                <th className={`${th} min-w-[120px]`}>Name</th>
+                <th className={`${th} min-w-[100px]`}>Analyst</th>
+                <th className={`${th} min-w-[104px]`}>Phone</th>
+                <th className={`${th} min-w-[152px]`}>Email</th>
+                <th className={`${thLeft} min-w-[11rem] max-w-[28rem]`}>
                   Analyst notes
                 </th>
-                <th className="min-w-0 whitespace-nowrap px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
+                <th className={`${th} min-w-[10rem]`}>
                   Qualification
                 </th>
-                <th className="min-w-[64px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Score
-                </th>
-                <th className="min-w-[112px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Sales status
-                </th>
-                <th className="min-w-[168px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Executive notes
-                </th>
-                <th className="min-w-[104px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
-                  Added
-                </th>
-                <th className="min-w-[152px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
+                <th className={`${th} min-w-[64px]`}>Score</th>
+                <th className={`${th} min-w-[112px]`}>Sales status</th>
+                <th className={`${thLeft} min-w-[168px]`}>Executive notes</th>
+                <th className={`${th} min-w-[104px]`}>Added</th>
+                <th className={`${th} min-w-[11rem] max-w-[13rem]`}>
                   Route TL
                 </th>
-                <th className="min-w-[168px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
+                <th className={`${th} min-w-[12rem] max-w-[15rem]`}>
                   Route SE
                 </th>
-                <th className="min-w-[220px] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-lf-muted">
+                <th className={`${thLeft} min-w-[220px]`}>
                   Pass timeline / gap
                 </th>
               </tr>
@@ -189,8 +341,8 @@ export function AtlAllLeadsTableClient({
               {leads.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={14}
-                    className="px-4 py-16 text-center text-[13px] text-lf-muted"
+                    colSpan={15}
+                    className="px-4 py-16 align-middle text-center text-[13px] text-lf-muted"
                   >
                     {from || to
                       ? "No leads in this date range."
@@ -211,43 +363,45 @@ export function AtlAllLeadsTableClient({
                   const hasMainRoute =
                     Boolean(l.teamId || l.assignedMainTeamLeadId);
                   const teamLabel = l.team?.name ?? null;
-                  const tlName = l.assignedMainTeamLead?.name ?? null;
-                  const routeTlDisplay =
-                    hasMainRoute && (teamLabel || tlName) ? (
-                      <div className="max-w-[220px] space-y-0.5 text-xs text-lf-text-secondary">
-                        {teamLabel ? (
-                          <p>
-                            <span className="text-lf-subtle">Team </span>
-                            <span className="font-medium text-lf-text">
-                              {teamLabel}
-                            </span>
-                          </p>
-                        ) : null}
-                        {tlName ? (
-                          <p>
-                            <span className="text-lf-subtle">TL </span>
-                            <span className="font-medium text-lf-text">
-                              {tlName}
-                            </span>
-                          </p>
-                        ) : null}
-                      </div>
+                  const routeTlTeamOnly =
+                    hasMainRoute && teamLabel ? (
+                      <p className="max-w-[220px] text-xs font-medium text-lf-text">
+                        {teamLabel}
+                      </p>
+                    ) : hasMainRoute && !teamLabel ? (
+                      <span className="text-xs text-lf-subtle">—</span>
                     ) : null;
                   return (
                     <tr
                       key={l.id}
-                      className="group align-top border-b border-lf-divide text-[13px] text-lf-text-secondary transition-colors hover:bg-lf-row-hover last:border-b-0"
+                      className="group align-middle transition-colors hover:bg-lf-row-hover"
                     >
-                      <td className="min-w-[140px] max-w-[min(16rem,40vw)] px-4 py-3 align-top font-semibold text-lf-text break-words [overflow-wrap:anywhere]">
+                      <td className={`${td} min-w-0 max-w-[260px]`}>
+                        <LeadSourcePill source={l.source} />
+                      </td>
+                      <td className={`${td} max-w-[min(14rem,26vw)] text-[12px]`}>
+                        <span className="block truncate" title={l.portalWebsite ?? undefined}>
+                          {l.portalWebsite ?? "—"}
+                        </span>
+                      </td>
+                      <td
+                        className={`${td} min-w-[140px] max-w-[min(16rem,40vw)] font-semibold text-lf-text break-words [overflow-wrap:anywhere]`}
+                      >
                         {l.leadName || "—"}
                       </td>
-                      <td className="min-w-0 px-4 py-3 text-lf-text-secondary">
-                        {l.createdBy.name}
+                      <td className={`${td} min-w-0`}>
+                        <div className="flex justify-center">
+                          <PersonWithMiniAvatar
+                            id={l.createdBy.id.trim() || l.id}
+                            name={l.createdBy.name}
+                            image={l.createdBy.image}
+                          />
+                        </div>
                       </td>
-                      <td className="min-w-0 whitespace-nowrap px-4 py-3 text-lf-text-secondary">
+                      <td className={`${td} min-w-0 whitespace-nowrap`}>
                         {l.phone || "—"}
                       </td>
-                      <td className="min-w-0 max-w-[220px] px-4 py-3 text-lf-text-secondary">
+                      <td className={`${td} min-w-0 max-w-[220px]`}>
                         <span
                           className="block truncate"
                           title={l.leadEmail ?? undefined}
@@ -255,108 +409,149 @@ export function AtlAllLeadsTableClient({
                           {l.leadEmail || "—"}
                         </span>
                       </td>
-                      <td className="min-w-0 max-w-[260px] px-4 py-3 align-top">
-                        <LeadSourcePill source={l.source} />
-                      </td>
-                      <td className="min-w-0 max-w-[28rem] px-4 py-3 align-top">
+                      <td className={`${tdLeft} min-w-0 max-w-[28rem]`}>
                         <AnalystNotesReadonly notes={l.notes} />
                       </td>
-                      <td className="min-w-0 whitespace-nowrap px-4 py-3 text-lf-text-secondary">
-                        <span className="inline-flex items-center whitespace-nowrap rounded-full bg-lf-elevated px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-lf-label ring-1 ring-lf-border">
-                          {String(l.qualificationStatus ?? "").replaceAll("_", " ") || "—"}
-                        </span>
+                      <td className={`${td} min-w-[10rem] max-w-[12rem]`}>
+                        <AtlQualificationSelect
+                          leadId={l.id}
+                          value={l.qualificationStatus}
+                        />
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-lf-text-secondary">
-                        {l.leadScore ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-lf-text-secondary">
-                        {analystFacingSalesLabel(l.salesStage)}
-                      </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className={`${td} tabular-nums`}>{l.leadScore ?? "—"}</td>
+                      <td className={td}>{analystFacingSalesLabel(l.salesStage)}</td>
+                      <td className={`${tdLeft} min-w-0`}>
                         <ExecLostNotesReadonly notes={l.lostNotes} />
                       </td>
-                      <td className="px-4 py-3 text-xs text-lf-text-secondary">
+                      <td className={`${td} text-xs`}>
                         {formatAnalystDate(new Date(l.createdAt))}
                       </td>
-                      <td className="px-4 py-3 align-top">
+                      <td className={`${td} min-w-0 max-w-[13rem]`}>
                         {canAssign ? (
-                          <AssignToMtlForm
-                            leadId={l.id}
-                            mainTeamLeads={mtlOptions}
-                          />
-                        ) : routeTlDisplay ? (
-                          routeTlDisplay
+                          <div className={routePanel}>
+                            <span className={routeLbl}>Assign to main team</span>
+                            <AssignToMtlForm
+                              leadId={l.id}
+                              mainTeamLeads={mtlOptions}
+                              compact
+                            />
+                          </div>
+                        ) : routeTlTeamOnly ? (
+                          <div className={routePanel}>
+                            <span className={routeLbl}>Routed team</span>
+                            {routeTlTeamOnly}
+                          </div>
                         ) : l.qualificationStatus ===
                           QualificationStatus.NOT_QUALIFIED ? (
-                          <span className="text-xs text-lf-warning">
+                          <p className={`${hintBox} text-lf-warning`}>
                             Not qualified — cannot route to main team
-                          </span>
+                          </p>
                         ) : l.qualificationStatus ===
                           QualificationStatus.IRRELEVANT ? (
-                          <span className="text-xs text-lf-subtle">
+                          <p className={`${hintBox} text-lf-subtle`}>
                             Irrelevant — cannot route to main team
-                          </span>
+                          </p>
                         ) : l.qualificationStatus ===
                             QualificationStatus.QUALIFIED &&
                           l.salesStage === SalesStage.PRE_SALES &&
                           mtlOptions.length === 0 ? (
-                          <span className="text-xs text-lf-subtle">
+                          <p className={`${hintBox} text-lf-subtle`}>
                             Add a main team lead under Members
-                          </span>
+                          </p>
                         ) : (
                           <span className="text-xs text-lf-subtle">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 align-top text-xs text-lf-text-secondary">
-                        {canDirectAssign ? (
-                          <AssignDirectToExecForm
-                            leadId={l.id}
-                            mainTeamLeads={mtlOptions}
-                            execOptions={execOptions}
-                          />
-                        ) : l.assignedSalesExec ? (
-                          <span className="font-medium text-lf-text">
-                            {l.assignedSalesExec.name}
-                          </span>
-                        ) : l.qualificationStatus ===
-                            QualificationStatus.QUALIFIED &&
-                          l.salesStage === SalesStage.PRE_SALES &&
-                          mtlOptions.length > 0 &&
-                          execOptions.length === 0 ? (
-                          <span className="text-lf-subtle">
-                            Add sales executives under Team
-                          </span>
-                        ) : (
-                          <span className="text-lf-subtle">—</span>
-                        )}
+                      <td className={`${td} min-w-0 max-w-[15rem] text-xs`}>
+                        <div className={routePanel}>
+                          {l.assignedMainTeamLead ? (
+                            <div>
+                              <span className={routeLbl}>Team lead</span>
+                              <div className="flex justify-center">
+                                <PersonWithMiniAvatar
+                                  id={l.assignedMainTeamLead.id}
+                                  name={l.assignedMainTeamLead.name}
+                                  image={l.assignedMainTeamLead.image}
+                                  size={22}
+                                />
+                              </div>
+                            </div>
+                          ) : null}
+                          <div
+                            className={
+                              l.assignedMainTeamLead
+                                ? "mt-2 border-t border-lf-border/70 pt-2"
+                                : ""
+                            }
+                          >
+                            <span className={routeLbl}>Sales executive</span>
+                            <div className="mt-0.5">
+                              {canDirectAssign ? (
+                                <AssignDirectToExecForm
+                                  leadId={l.id}
+                                  mainTeamLeads={mtlOptions}
+                                  execOptions={execOptions}
+                                  compact
+                                />
+                              ) : l.assignedSalesExec ? (
+                                <div className="flex justify-center">
+                                  <PersonWithMiniAvatar
+                                    id={l.assignedSalesExec.id}
+                                    name={l.assignedSalesExec.name}
+                                    image={l.assignedSalesExec.image}
+                                    size={22}
+                                  />
+                                </div>
+                              ) : l.qualificationStatus ===
+                                  QualificationStatus.QUALIFIED &&
+                                l.salesStage === SalesStage.PRE_SALES &&
+                                mtlOptions.length > 0 &&
+                                execOptions.length === 0 ? (
+                                <span className="text-[11px] leading-snug text-lf-subtle">
+                                  Add sales executives under Team
+                                </span>
+                              ) : (
+                                <span className="text-[11px] text-lf-subtle">—</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 align-top">
-                        <div className="min-w-[220px] space-y-1 text-xs text-lf-text-secondary">
-                          <p>
-                            <span className="text-lf-subtle">Lead analyst: </span>
-                            {fmtDateTime(l.createdAt)}
-                          </p>
-                          <p>
-                            <span className="text-lf-subtle">ATL pass: </span>
-                            {fmtDateTime(
-                              l.directAssignedToExecutiveByAtlAt ??
-                                l.routedToMainTeamAt,
-                            )}
-                          </p>
-                          <p>
-                            <span className="text-lf-subtle">Main TL pass: </span>
-                            {l.directAssignedToExecutiveByAtlAt
-                              ? "— (direct ATL→SE)"
-                              : fmtDateTime(l.assignedToExecutiveAt)}
-                          </p>
-                          <p>
-                            <span className="text-lf-subtle">Sales executive: </span>
-                            {fmtDateTime(
-                              l.assignedToExecutiveAt ??
-                                l.directAssignedToExecutiveByAtlAt,
-                            )}
-                          </p>
-                          <div className="mt-1 border-t border-lf-border pt-1 text-[11px] text-lf-muted">
+                      <td className={`${tdLeft} min-w-[220px]`}>
+                        <div className={`${hintBox} space-y-2`}>
+                          <div className="grid gap-1 text-[11px] leading-snug">
+                            <p>
+                              <span className="font-medium text-lf-muted">Lead analyst </span>
+                              <span>{fmtDateTime(l.createdAt)}</span>
+                            </p>
+                            <p>
+                              <span className="font-medium text-lf-muted">ATL pass </span>
+                              <span>
+                                {fmtDateTime(
+                                  l.directAssignedToExecutiveByAtlAt ??
+                                    l.routedToMainTeamAt,
+                                )}
+                              </span>
+                            </p>
+                            <p>
+                              <span className="font-medium text-lf-muted">Main TL pass </span>
+                              <span>
+                                {l.directAssignedToExecutiveByAtlAt
+                                  ? "— (direct ATL→SE)"
+                                  : fmtDateTime(l.assignedToExecutiveAt)}
+                              </span>
+                            </p>
+                            <p>
+                              <span className="font-medium text-lf-muted">Sales exec </span>
+                              <span>
+                                {fmtDateTime(
+                                  l.assignedToExecutiveAt ??
+                                    l.directAssignedToExecutiveByAtlAt,
+                                )}
+                              </span>
+                            </p>
+                          </div>
+                          <div className="grid gap-0.5 border-t border-lf-border/60 pt-2 text-[11px] text-lf-muted">
                             <p>
                               LA → ATL:{" "}
                               {fmtGap(
@@ -386,6 +581,7 @@ export function AtlAllLeadsTableClient({
               )}
             </tbody>
           </table>
+        </div>
       </div>
     </>
   );

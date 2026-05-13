@@ -22,17 +22,19 @@ export default async function TeamLeadLayout({
   }
   await redirectIfMustResetPassword();
 
-  const [user, notif] = await timedServerBlock("route:/team-lead layout:data", () =>
-    Promise.all([
-      dbQueryOne<{ image: string | null; teamName: string | null }>(
+  const { user, notif } = await timedServerBlock(
+    "route:/team-lead layout:data",
+    async () => {
+      const userRow = await dbQueryOne<{ image: string | null; teamName: string | null }>(
         `SELECT u.image, t.name AS "teamName"
          FROM "User" u
          LEFT JOIN "Team" t ON t.id = u."teamId"
          WHERE u.id = $1`,
         [session.id],
-      ),
-      getPortalNotificationsForUser(session.id),
-    ]),
+      );
+      const notif = await getPortalNotificationsForUser(session.id);
+      return { user: userRow, notif };
+    },
   );
 
   const teamName = user?.teamName?.trim() || "Main team lead";
@@ -43,7 +45,8 @@ export default async function TeamLeadLayout({
   return (
     <MtlAppShell
       session={{ name: session.name, email: session.email }}
-      avatarUrl={user?.image ?? null}
+      userId={session.id}
+      avatarImage={user?.image ?? null}
       teamName={teamName}
       notifications={notif.notifications}
       notificationUnreadCount={notif.unreadCount}

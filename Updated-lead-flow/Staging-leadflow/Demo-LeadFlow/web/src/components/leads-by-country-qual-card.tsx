@@ -15,13 +15,19 @@ export function LeadsByCountryQualCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-lf-border bg-lf-surface p-5 shadow-sm ${className}`}
+      className={`flex h-full flex-col rounded-2xl border border-lf-border/70 bg-lf-surface p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)] dark:bg-lf-surface/90 dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_8px_28px_-14px_rgba(0,0,0,0.45)] ${className}`}
     >
-      <h2 className="mb-1 text-base font-semibold text-lf-text">
-        Leads by country
-      </h2>
-      <p className="mb-3 text-xs text-lf-subtle">{subtitle}</p>
-      <AnalyticsCountryQualList rows={rows} />
+      <div className="mb-4 border-b border-lf-border/60 pb-4">
+        <h2 className="text-base font-semibold tracking-tight text-lf-text">
+          Leads by country
+        </h2>
+        <p className="mt-1.5 text-xs leading-relaxed text-lf-subtle">
+          {subtitle}
+        </p>
+      </div>
+      <div className="min-h-0 flex-1">
+        <AnalyticsCountryQualList rows={rows} />
+      </div>
     </div>
   );
 }

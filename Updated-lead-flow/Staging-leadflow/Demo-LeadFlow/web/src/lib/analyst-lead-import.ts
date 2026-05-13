@@ -1,17 +1,19 @@
 import {
   LEAD_SOURCE_OPTIONS,
+  deriveLeadSourceFromImportExtras,
   type LeadSourceValue,
-  resolveLeadSourceLabel,
 } from "@/lib/lead-sources";
+import { normalizePortalWebsitePreset } from "@/lib/lead-websites";
 import { QualificationStatus } from "@/lib/constants";
 
-/** Canonical Excel / CSV column keys (row 1 headers). */
+/** Canonical internal keys present in templates / parsing (unique). */
 export const ANALYST_IMPORT_HEADER_KEYS = [
+  "portal_website",
+  "lead_source",
   "full_name",
   "phone",
   "email",
   "city",
-  "lead_source",
   "source_other",
   "qualification",
   "lead_score",
@@ -22,13 +24,48 @@ export const ANALYST_IMPORT_HEADER_KEYS = [
 export type AnalystImportHeaderKey =
   (typeof ANALYST_IMPORT_HEADER_KEYS)[number];
 
-/** Human labels matching the Add Lead form order. */
+/**
+ * Recommended row-1 Excel column order and header text. Two columns bind to the
+ * same internal `lead_source`: later occurrence wins when both hold a value.
+ */
+export const ANALYST_IMPORT_TEMPLATE_COLUMNS: {
+  header: string;
+  key: AnalystImportHeaderKey;
+}[] = [
+  { header: "websites_name", key: "portal_website" },
+  { header: "leads_source", key: "lead_source" },
+  { header: "full_name", key: "full_name" },
+  { header: "phone", key: "phone" },
+  { header: "email", key: "email" },
+  { header: "city", key: "city" },
+  { header: "lead_source", key: "lead_source" },
+  { header: "source_other", key: "source_other" },
+  { header: "qualification", key: "qualification" },
+  { header: "lead_score", key: "lead_score" },
+  { header: "date_added", key: "date_added" },
+  { header: "notes", key: "notes" },
+];
+
+/** Human-readable metadata per internal key (for docs UI). */
 export const ANALYST_IMPORT_COLUMN_META: {
   key: AnalystImportHeaderKey;
   label: string;
   required: boolean;
   hint?: string;
 }[] = [
+  {
+    key: "portal_website",
+    label: "Portal website",
+    required: false,
+    hint:
+      "Optional unless your process requires it. Must match preset from Add Lead (same as header websites_name).",
+  },
+  {
+    key: "lead_source",
+    label: "Lead source (preset code)",
+    required: true,
+    hint: `Use header leads_source or lead_source (same row). Values: ${LEAD_SOURCE_OPTIONS.map((o) => o.value).join(", ")}. If both columns have values, the rightmost wins.`,
+  },
   {
     key: "full_name",
     label: "Full Name",
@@ -48,16 +85,11 @@ export const ANALYST_IMPORT_COLUMN_META: {
   },
   { key: "city", label: "City", required: false },
   {
-    key: "lead_source",
-    label: "Lead Source",
-    required: true,
-    hint: `One of: ${LEAD_SOURCE_OPTIONS.map((o) => o.value).join(", ")}`,
-  },
-  {
     key: "source_other",
-    label: "Source other",
+    label: "Source detail",
     required: false,
-    hint: "Optional free-text detail (typically leave blank)",
+    hint:
+      "For Website WhatsApp, Website Download Form, or Google LeadForm: site name (preset list or any text). For Meta: Facebook page/profile. Otherwise blank.",
   },
   {
     key: "qualification",
@@ -83,11 +115,12 @@ export const ANALYST_IMPORT_COLUMN_META: {
 /** Sample row for docs / template (matches form defaults where applicable). */
 export const ANALYST_IMPORT_SAMPLE_ROW: Record<AnalystImportHeaderKey, string> =
   {
+    portal_website: "CDRAustraliaHelp.com",
+    lead_source: "META_WHATSAPP",
     full_name: "Rajesh Sharma",
     phone: "+919876543210",
     email: "rajesh@example.com",
     city: "Mumbai",
-    lead_source: "META_WHATSAPP",
     source_other: "",
     qualification: QualificationStatus.QUALIFIED,
     lead_score: "30",
@@ -100,6 +133,8 @@ const SOURCE_VALUES = new Set(
 );
 
 const HEADER_ALIASES: Record<string, AnalystImportHeaderKey> = {
+  websites_name: "portal_website",
+  website_name: "portal_website",
   full_name: "full_name",
   "full name": "full_name",
   name: "full_name",
@@ -111,10 +146,14 @@ const HEADER_ALIASES: Record<string, AnalystImportHeaderKey> = {
   lead_email: "email",
   city: "city",
   lead_source: "lead_source",
+  leads_source: "lead_source",
   source: "lead_source",
   source_other: "source_other",
   "describe source": "source_other",
   describe_source: "source_other",
+  portal_website: "portal_website",
+  "portal website": "portal_website",
+  website: "portal_website",
   qualification: "qualification",
   qualification_status: "qualification",
   status: "qualification",
@@ -180,6 +219,7 @@ export type ParsedImportRow = {
   city: string | null;
   lead_source: LeadSourceValue;
   source_other: string | null;
+  portal_website: string | null;
   qualification: string;
   lead_score: number | null;
   date_added: Date | undefined;
@@ -204,6 +244,7 @@ export function parseAnalystImportRow(
   const scoreRaw = (raw.lead_score ?? "").trim();
   const dateRaw = (raw.date_added ?? "").trim();
   const notes = (raw.notes ?? "").trim() || null;
+  const portalRaw = (raw.portal_website ?? "").trim();
 
   if (!full_name) {
     return { ok: false, rowNumber, error: "Full name is required." };
@@ -263,6 +304,20 @@ export function parseAnalystImportRow(
     date_added = parsed;
   }
 
+  let portal_website: string | null = null;
+  if (portalRaw) {
+    const canon = normalizePortalWebsitePreset(portalRaw);
+    if (!canon) {
+      return {
+        ok: false,
+        rowNumber,
+        error:
+          "websites_name / portal preset must match the Add Lead list, or leave blank.",
+      };
+    }
+    portal_website = canon;
+  }
+
   return {
     ok: true,
     row: {
@@ -273,6 +328,7 @@ export function parseAnalystImportRow(
       city,
       lead_source,
       source_other,
+      portal_website,
       qualification,
       lead_score,
       date_added,
@@ -285,5 +341,5 @@ export function buildStoredSource(
   lead_source: LeadSourceValue,
   source_other: string | null,
 ): string {
-  return resolveLeadSourceLabel(lead_source, source_other);
+  return deriveLeadSourceFromImportExtras(lead_source, source_other).source;
 }

@@ -45,7 +45,7 @@ export function TableSkeleton({ rows = 8 }: { rows?: number }) {
 
 export function DashboardPageSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="h-10 w-64 animate-shimmer rounded" />
         <div className="h-10 w-44 animate-shimmer rounded" />

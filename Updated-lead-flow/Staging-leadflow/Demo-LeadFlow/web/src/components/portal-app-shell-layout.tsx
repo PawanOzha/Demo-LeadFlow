@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { logoutAction } from "@/app/actions/auth";
 import { LogoMark } from "@/components/logo";
 import {
   PortalShellHeader,
@@ -24,7 +25,8 @@ export type PortalAppShellLayoutProps = {
   homeHref: string;
   navItems: readonly PortalNavItem[];
   session: { name: string; email: string };
-  avatarUrl: string | null;
+  userId: string;
+  avatarImage: string | null;
   teamName: string | null;
   notifications: AtlNotificationItem[];
   notificationUnreadCount: number;
@@ -46,7 +48,8 @@ export function PortalAppShellLayout({
   homeHref,
   navItems,
   session,
-  avatarUrl,
+  userId,
+  avatarImage,
   teamName,
   notifications,
   notificationUnreadCount,
@@ -101,11 +104,13 @@ export function PortalAppShellLayout({
     </>
   );
 
+  const mainColumnMarginClass = sidebarCollapsed ? "md:ml-16" : "md:ml-[240px]";
+
   return (
-    <div className="flex h-dvh min-h-0 max-h-dvh flex-col overflow-hidden bg-lf-bg text-lf-text md:flex-row">
-      {/* Desktop: full-height sidebar — logo + scrollable nav */}
+    <div className="relative flex h-dvh min-h-0 max-h-dvh flex-col overflow-hidden bg-lf-bg text-lf-text">
+      {/* Desktop: fixed full-height sidebar (out of flow — main column uses matching margin) */}
       <aside
-        className={`hidden min-h-0 shrink-0 flex-col border-r border-lf-border bg-lf-surface transition-[width] duration-200 ease-out md:flex ${
+        className={`fixed bottom-0 left-0 top-0 z-40 hidden min-h-0 shrink-0 flex-col border-r border-lf-border bg-lf-surface transition-[width] duration-200 ease-out md:flex ${
           sidebarCollapsed ? "w-16" : "w-[240px]"
         }`}
       >
@@ -151,12 +156,32 @@ export function PortalAppShellLayout({
             </Link>
           ))}
         </nav>
+        <div
+          className={`shrink-0 border-t border-lf-border ${
+            sidebarCollapsed ? "px-1 py-2" : "px-2 py-3"
+          }`}
+        >
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-lf-muted transition-colors hover:bg-lf-row-hover hover:text-lf-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35 ${
+                sidebarCollapsed ? "justify-center px-2" : ""
+              }`}
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+              {!sidebarCollapsed ? <span>Sign out</span> : null}
+            </button>
+          </form>
+        </div>
       </aside>
 
-      {/* Main column: mobile top bar, desktop toolbar, scrollable content */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Mobile: menu + inline brand + user tools */}
-        <div className="flex h-16 min-h-16 shrink-0 items-center gap-2 border-b border-lf-border bg-lf-header/95 px-4 backdrop-blur-sm md:hidden">
+      {/* Main column: fixed top bars + scrollable content */}
+      <div
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200 ease-out ${mainColumnMarginClass}`}
+      >
+        {/* Mobile: pinned top bar */}
+        <div className="fixed left-0 right-0 top-0 z-30 flex h-16 min-h-16 shrink-0 items-center gap-2 border-b border-lf-border bg-lf-header/95 px-4 backdrop-blur-sm md:hidden">
           <button
             type="button"
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-lf-border bg-lf-surface text-lf-text hover:bg-lf-row-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35"
@@ -185,7 +210,8 @@ export function PortalAppShellLayout({
           </h1>
           <PortalShellUserCluster
             session={session}
-            avatarUrl={avatarUrl}
+            userId={userId}
+            avatarImage={avatarImage}
             teamName={teamName}
             notifications={notifications}
             notificationUnreadCount={notificationUnreadCount}
@@ -194,12 +220,17 @@ export function PortalAppShellLayout({
           />
         </div>
 
-        {/* Desktop: full-width toolbar to the right of the sidebar (no duplicate logo) */}
-        <div className="hidden min-w-0 shrink-0 md:block">
+        {/* Desktop: toolbar flush with main column, pinned under the viewport top */}
+        <div
+          className={`fixed right-0 top-0 z-30 hidden min-w-0 md:block ${
+            sidebarCollapsed ? "left-16" : "left-[240px]"
+          } transition-[left] duration-200 ease-out`}
+        >
           <PortalShellHeader
             homeHref={homeHref}
             session={session}
-            avatarUrl={avatarUrl}
+            userId={userId}
+            avatarImage={avatarImage}
             teamName={teamName}
             notifications={notifications}
             notificationUnreadCount={notificationUnreadCount}
@@ -277,6 +308,17 @@ export function PortalAppShellLayout({
               >
                 {navList}
               </nav>
+              <div className="shrink-0 border-t border-lf-border px-3 py-3">
+                <form action={logoutAction}>
+                  <button
+                    type="submit"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-lf-muted transition-colors hover:bg-lf-row-hover hover:text-lf-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand/35"
+                  >
+                    <LogOut className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
+                    Sign out
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         ) : null}

@@ -10,10 +10,16 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { createLeadAnalyst } from "@/app/actions/leads-analyst";
 import { QualificationStatus } from "@/lib/constants";
 import { AnalystPhoneField } from "@/components/analyst/analyst-phone-field";
-import { LEAD_SOURCE_OPTIONS } from "@/lib/lead-sources";
+import {
+  LEAD_SOURCE_OPTIONS,
+  LEAD_WEBSITE_PRESETS,
+  leadSourceUsesMetaDetail,
+  leadSourceUsesWebsiteDetail,
+} from "@/lib/lead-sources";
 import { countryNameFromPhone } from "@/lib/phone-location";
 import { QUALIFICATION_REASON_BY_STATUS } from "@/lib/qualification-reasons";
 import { DEAL_CURRENCY_OPTIONS } from "@/lib/deal-money";
@@ -46,12 +52,45 @@ function FieldLabel({
   required?: boolean;
 }) {
   return (
-    <span className="mb-1 flex items-center gap-1 text-[12px] font-medium uppercase tracking-wide text-lf-muted">
+    <span className="mb-1.5 flex items-center gap-1 text-[13px] font-medium text-lf-text-secondary">
       {children}
-      {req ? <span className="text-lf-danger">*</span> : null}
+      {req ? (
+        <span className="text-lf-danger" aria-hidden>
+          *
+        </span>
+      ) : null}
     </span>
   );
 }
+
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-xl border border-lf-border bg-lf-bg/40 p-5 shadow-sm shadow-black/[0.04]">
+      <div className="mb-4 border-b border-lf-border/70 pb-3">
+        <h3 className="text-sm font-semibold tracking-tight text-lf-text">
+          {title}
+        </h3>
+        {description ? (
+          <p className="mt-1.5 text-xs leading-relaxed text-lf-muted">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const inputClass =
+  "h-10 w-full rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-lf-brand/25";
 
 function AddLeadModalInner({
   onSuccess,
@@ -67,6 +106,12 @@ function AddLeadModalInner({
   );
   const [phone, setPhone] = useState<string | undefined>();
   const [qualificationReason, setQualificationReason] = useState("");
+  /** Preset slug, "__other__", or "" before choose. */
+  const [portalWebsite, setPortalWebsite] = useState("");
+  const [portalWebsiteOther, setPortalWebsiteOther] = useState("");
+
+  const needsWebsite = leadSourceUsesWebsiteDetail(leadSource);
+  const needsMeta = leadSourceUsesMetaDetail(leadSource);
 
   const countryLabel = useMemo(
     () => countryNameFromPhone(phone) ?? null,
@@ -95,23 +140,25 @@ function AddLeadModalInner({
         aria-label="Close overlay"
         onClick={onClose}
       />
-      <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-lf-border bg-lf-surface shadow-lg">
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-lf-border bg-lf-surface/95 px-6 py-4 backdrop-blur-md">
-          <div>
+      <div className="relative z-10 flex max-h-[90vh] min-h-0 w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-lf-border bg-lf-surface shadow-xl shadow-black/20">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-lf-border bg-lf-surface px-6 py-5 sm:px-8 sm:py-5">
+          <div className="min-w-0 flex-1 pr-2">
             <h2
               id="add-lead-title"
-              className="text-[15px] font-semibold text-lf-text"
+              className="text-lg font-semibold tracking-tight text-lf-text"
             >
               Add new lead
             </h2>
-            <p className="mt-1 text-[11px] text-lf-muted">
-              Required fields are marked. You can refine qualification later.
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-lf-muted">
+              Required fields show an asterisk
+              <span className="text-lf-danger">*</span>. You can update
+              qualification and other details later from the lead list.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-lg px-3 text-[13px] font-medium text-lf-label transition-colors hover:bg-lf-row-hover hover:text-lf-text"
+            className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lf-muted transition-colors hover:bg-lf-row-hover hover:text-lf-text"
             aria-label="Close"
           >
             <svg
@@ -129,124 +176,171 @@ function AddLeadModalInner({
               />
             </svg>
           </button>
-        </div>
+        </header>
 
-        <form action={action} className="space-y-8 px-6 py-6">
+        <form action={action} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <input type="hidden" name="qualificationStatus" value={qual} />
+          <input type="hidden" name="sourceOther" value="" />
 
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
-              Contact
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col">
-                <FieldLabel required>Full Name</FieldLabel>
-                <input
-                  name="leadName"
-                  required
-                  placeholder="e.g. Rajesh Sharma"
-                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-                />
-              </label>
-              <label className="flex flex-col sm:col-span-2">
-                <FieldLabel required>Phone</FieldLabel>
-                <AnalystPhoneField value={phone} onChange={setPhone} />
-              </label>
-              <div className="flex flex-col sm:col-span-2">
-                <FieldLabel>Country</FieldLabel>
-                <div
-                  className="min-h-11 rounded-lg border border-lf-border bg-lf-bg/90 px-3 py-2.5 text-sm text-lf-text-secondary"
-                  aria-live="polite"
-                >
-                  {countryLabel ?? "—"}
-                </div>
-                <span className="mt-1 text-[11px] text-lf-subtle">
-                  Set from the phone number (country code). Saved on the lead for
-                  reports.
-                </span>
-              </div>
-              <label className="flex flex-col sm:col-span-2">
-                <FieldLabel>City (optional)</FieldLabel>
-                <input
-                  name="city"
-                  placeholder="e.g. Mumbai"
-                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-                />
-                <span className="mt-1 text-[11px] text-lf-subtle">
-                  Shown in analytics and exports only — not on the lead list.
-                </span>
-              </label>
-              <label className="flex flex-col">
-                <FieldLabel>Email</FieldLabel>
-                <input
-                  name="leadEmail"
-                  type="email"
-                  placeholder="email@company.com"
-                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-                />
-              </label>
-              <label className="flex flex-col">
-                <FieldLabel required>Lead Source</FieldLabel>
-                <select
-                  name="leadSource"
-                  required
-                  value={leadSource}
-                  onChange={(e) => setLeadSource(e.target.value)}
-                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-                >
-                  {LEAD_SOURCE_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-y-contain px-6 py-6 sm:px-8 sm:py-8">
+            <FormSection
+              title="Portal website"
+              description="Choose your site from the list, or Other if it is not listed. Custom names are optional and only apply when you pick Other."
+            >
+              <div className="flex max-w-xl flex-col gap-4">
+                <label className="flex flex-col">
+                  <FieldLabel required>Website</FieldLabel>
+                  <select
+                    name="portalWebsite"
+                    required
+                    value={portalWebsite}
+                    onChange={(e) => {
+                      setPortalWebsite(e.target.value);
+                      if (e.target.value !== "__other__") setPortalWebsiteOther("");
+                    }}
+                    className={`${inputClass} cursor-pointer appearance-none`}
+                  >
+                    <option value="" disabled>
+                      Choose a website…
                     </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+                    {LEAD_WEBSITE_PRESETS.map((w) => (
+                      <option key={w} value={w}>
+                        {w}
+                      </option>
+                    ))}
+                    <option value="__other__">Other — not in list</option>
+                  </select>
+                </label>
+                {portalWebsite === "__other__" ? (
+                  <label className="flex flex-col">
+                    <FieldLabel>Other site or brand name</FieldLabel>
+                    <input
+                      name="portalWebsiteOther"
+                      value={portalWebsiteOther}
+                      onChange={(e) => setPortalWebsiteOther(e.target.value)}
+                      autoComplete="off"
+                      placeholder="Only if the lead is for a site outside the list above"
+                      className={inputClass}
+                    />
+                    <span className="mt-1.5 text-[11px] leading-snug text-lf-subtle">
+                      Optional. Leave blank if you only needed to mark &quot;Other&quot;
+                      without a specific name.
+                    </span>
+                  </label>
+                ) : (
+                  <input type="hidden" name="portalWebsiteOther" value="" />
+                )}
+              </div>
+            </FormSection>
 
-            {leadSource === "WEBSITE_WHATSAPP" ||
-            leadSource === "WEBSITE_LEAD_FORMS" ? (
-              <label className="mt-4 flex flex-col">
-                <FieldLabel>Website name</FieldLabel>
-                <input
-                  name="sourceWebsiteName"
-                  autoComplete="off"
-                  placeholder="e.g. company.com or landing page"
-                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-                />
-                <span className="mt-1 text-[11px] text-lf-subtle">
-                  Optional. Shown on reports and lead lists for website sources.
-                </span>
-              </label>
-            ) : (
-              <input type="hidden" name="sourceWebsiteName" value="" />
-            )}
+            <FormSection
+              title="Source"
+              description="How this lead reached you. For website-type sources, channel detail uses your Portal website choice above. Meta sources can add a profile below."
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="flex flex-col sm:col-span-2">
+                  <FieldLabel required>Lead source</FieldLabel>
+                  <select
+                    name="leadSource"
+                    required
+                    value={leadSource}
+                    onChange={(e) => {
+                      setLeadSource(e.target.value);
+                    }}
+                    className={`${inputClass} cursor-pointer appearance-none`}
+                  >
+                    {LEAD_SOURCE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            {leadSource === "META_WHATSAPP" ||
-            leadSource === "META_MESSENGER" ||
-            leadSource === "META_LEAD_FORMS" ? (
-              <label className="mt-4 flex flex-col">
-                <FieldLabel>Facebook profile name</FieldLabel>
-                <input
-                  name="sourceMetaProfileName"
-                  autoComplete="off"
-                  placeholder="e.g. Page name or profile /username"
-                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-                />
-                <span className="mt-1 text-[11px] text-lf-subtle">
-                  Optional. Which Meta / Facebook profile or page generated this
-                  lead.
-                </span>
-              </label>
-            ) : (
-              <input type="hidden" name="sourceMetaProfileName" value="" />
-            )}
-            <input type="hidden" name="sourceOther" value="" />
-          </div>
+                {needsWebsite ? (
+                  <p className="sm:col-span-2 text-[12px] leading-relaxed text-lf-muted">
+                    Website / brand for this lead is taken from{" "}
+                    <strong className="text-lf-text-secondary">Portal website</strong>{" "}
+                    (preset or &quot;Other&quot; name). Use{" "}
+                    <strong className="text-lf-text-secondary">source detail</strong>{" "}
+                    in Excel as <span className="font-mono text-lf-text">source_other</span>{" "}
+                    when you need extra text for the source line.
+                  </p>
+                ) : null}
 
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
-              Qualification
-            </p>
+                {needsMeta ? (
+                  <label className="flex flex-col sm:col-span-2">
+                    <FieldLabel>Facebook profile / page</FieldLabel>
+                    <input
+                      name="sourceMetaProfileName"
+                      autoComplete="off"
+                      placeholder="e.g. Page name or profile / username"
+                      className={inputClass}
+                    />
+                    <span className="mt-1.5 text-[11px] text-lf-subtle">
+                      Optional — which Meta profile or page generated this lead.
+                    </span>
+                  </label>
+                ) : (
+                  <input type="hidden" name="sourceMetaProfileName" value="" />
+                )}
+              </div>
+            </FormSection>
+
+            <FormSection
+              title="Contact"
+              description="Name and phone are required. Country is inferred from the phone number."
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="flex flex-col">
+                  <FieldLabel required>Full name</FieldLabel>
+                  <input
+                    name="leadName"
+                    required
+                    placeholder="e.g. Rajesh Sharma"
+                    className={inputClass}
+                  />
+                </label>
+                <label className="flex flex-col">
+                  <FieldLabel>Email</FieldLabel>
+                  <input
+                    name="leadEmail"
+                    type="email"
+                    placeholder="email@company.com"
+                    className={inputClass}
+                  />
+                </label>
+                <label className="flex flex-col sm:col-span-2">
+                  <FieldLabel required>Phone</FieldLabel>
+                  <AnalystPhoneField value={phone} onChange={setPhone} />
+                </label>
+                <div className="flex flex-col sm:col-span-2">
+                  <FieldLabel>Country</FieldLabel>
+                  <div
+                    className="flex min-h-10 items-center rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary"
+                    aria-live="polite"
+                  >
+                    {countryLabel ?? "—"}
+                  </div>
+                  <span className="mt-1.5 text-[11px] text-lf-subtle">
+                    From the number’s country code. Used in reports.
+                  </span>
+                </div>
+                <label className="flex flex-col sm:col-span-2">
+                  <FieldLabel>City</FieldLabel>
+                  <input
+                    name="city"
+                    placeholder="e.g. Mumbai"
+                    className={inputClass}
+                  />
+                  <span className="mt-1.5 text-[11px] text-lf-subtle">
+                    Optional. Shown in analytics and exports only.
+                  </span>
+                </label>
+              </div>
+            </FormSection>
+
+          <FormSection title="Qualification">
             <FieldLabel required>Status</FieldLabel>
             <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {(
@@ -274,7 +368,7 @@ function AddLeadModalInner({
                       setQual(v);
                       setQualificationReason("");
                     }}
-                    className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand focus-visible:ring-offset-2 ${
+                    className={`flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lf-brand focus-visible:ring-offset-2 ${
                       active
                         ? "border-lf-brand/30 bg-lf-brand/15 text-lf-brand"
                         : "border-lf-border bg-lf-surface text-lf-label hover:bg-lf-row-hover hover:text-lf-text"
@@ -294,7 +388,7 @@ function AddLeadModalInner({
                   required
                   value={qualificationReason}
                   onChange={(e) => setQualificationReason(e.target.value)}
-                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
+                  className={`${inputClass} cursor-pointer appearance-none`}
                 >
                   <option value="">Select reason</option>
                   {QUALIFICATION_REASON_BY_STATUS[qual].map((reason) => (
@@ -307,12 +401,17 @@ function AddLeadModalInner({
             ) : (
               <input type="hidden" name="qualificationReason" value="" />
             )}
-          </div>
+          </FormSection>
 
-          <div className="mt-6">
+          <FormSection
+            title="Lead score"
+            description="Optional signal for routing and reporting (0–100)."
+          >
             <div className="flex items-center justify-between gap-4">
-              <FieldLabel>Lead Score (0–100)</FieldLabel>
-              <span className="text-sm font-semibold tabular-nums text-lf-text">
+              <span className="text-[13px] font-medium text-lf-text-secondary">
+                Score
+              </span>
+              <span className="text-base font-semibold tabular-nums text-lf-text">
                 {score}
               </span>
             </div>
@@ -323,26 +422,22 @@ function AddLeadModalInner({
               max={100}
               value={score}
               onChange={(e) => setScore(Number(e.target.value))}
-              className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full bg-lf-bg accent-lf-accent"
+              className="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-lf-bg accent-lf-accent"
             />
-          </div>
+          </FormSection>
 
-          <div className="mt-6 rounded-xl border border-lf-divide bg-lf-bg/80/80 px-4 py-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-lf-subtle">
-              Deal value (optional)
-            </p>
-            <p className="mb-3 text-[11px] leading-relaxed text-lf-muted">
-              Pipeline estimate for reporting. Final revenue is entered when the
-              deal is marked won.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
+          <FormSection
+            title="Deal value"
+            description="Optional pipeline estimate. Final revenue is set when the deal is won."
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
               <label className="flex flex-col">
                 <FieldLabel>Estimated amount</FieldLabel>
                 <input
                   name="estimatedDealValue"
                   inputMode="decimal"
                   placeholder="e.g. 15000"
-                  className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
+                  className={inputClass}
                 />
               </label>
               <label className="flex flex-col">
@@ -350,7 +445,7 @@ function AddLeadModalInner({
                 <select
                   name="dealCurrency"
                   defaultValue="USD"
-                  className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
+                  className={`${inputClass} cursor-pointer appearance-none`}
                 >
                   {DEAL_CURRENCY_OPTIONS.map((o) => (
                     <option key={o.code} value={o.code}>
@@ -360,53 +455,59 @@ function AddLeadModalInner({
                 </select>
               </label>
             </div>
-          </div>
+          </FormSection>
 
-          <label className="mt-6 flex flex-col">
-            <FieldLabel>Date added (optional)</FieldLabel>
-            <input
-              type="text"
-              name="leadAddedDate"
-              inputMode="numeric"
-              placeholder="YYYY/MM/DD"
-              className="h-9 rounded-lg border border-lf-border bg-lf-surface px-3 text-[13px] text-lf-text-secondary outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand [color-scheme:light]"
-            />
-            <span className="mt-1 text-[11px] text-lf-subtle">
-              Use Year/Month/Day format, e.g. 2026/04/06.
-            </span>
-          </label>
-
-          <label className="mt-6 flex flex-col">
-            <FieldLabel>Notes</FieldLabel>
-            <textarea
-              name="notes"
-              rows={4}
-              placeholder="Context, source details, follow-ups…"
-              className="mt-1 rounded-lg border border-lf-border bg-lf-surface px-3 py-2 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none focus:border-transparent focus:ring-2 focus:ring-lf-brand"
-            />
-          </label>
+          <FormSection title="Notes and date">
+            <div className="grid gap-5">
+              <label className="flex flex-col">
+                <FieldLabel>Date added</FieldLabel>
+                <input
+                  type="text"
+                  name="leadAddedDate"
+                  inputMode="numeric"
+                  placeholder="YYYY/MM/DD"
+                  className={`${inputClass} [color-scheme:light]`}
+                />
+                <span className="mt-1.5 text-[11px] text-lf-subtle">
+                  Optional backfill. Use Year/Month/Day, e.g. 2026/04/06.
+                </span>
+              </label>
+              <label className="flex flex-col">
+                <FieldLabel>Notes</FieldLabel>
+                <textarea
+                  name="notes"
+                  rows={4}
+                  placeholder="Context, follow-ups, internal detail…"
+                  className="mt-0 rounded-lg border border-lf-border bg-lf-surface px-3 py-2.5 text-[13px] text-lf-text-secondary placeholder:text-lf-muted outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-lf-brand/25"
+                />
+              </label>
+            </div>
+          </FormSection>
 
           {state?.error ? (
-            <p className="mt-4 text-sm text-lf-danger" role="alert">
+            <p className="text-sm text-lf-danger" role="alert">
               {state.error}
             </p>
           ) : null}
+          </div>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-lf-border pt-6 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-9 rounded-lg border border-lf-border bg-lf-surface px-4 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover active:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={pending}
-              className="h-9 rounded-lg bg-lf-accent px-4 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand focus:ring-offset-2 disabled:opacity-40"
-            >
-              {pending ? "Saving…" : "Save lead"}
-            </button>
+          <div className="shrink-0 border-t border-lf-border bg-lf-surface/95 px-6 py-4 backdrop-blur-sm sm:px-8">
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="h-10 rounded-lg border border-lf-border bg-lf-surface px-5 text-[13px] font-medium text-lf-text-secondary transition-colors hover:bg-lf-row-hover focus:outline-none focus:ring-2 focus:ring-lf-brand/25 focus:ring-offset-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="h-10 rounded-lg bg-lf-accent px-5 text-[13px] font-medium text-white transition-colors hover:bg-lf-accent-hover active:bg-lf-accent-deep focus:outline-none focus:ring-2 focus:ring-lf-brand/25 focus:ring-offset-2 disabled:opacity-40"
+              >
+                {pending ? "Saving…" : "Save lead"}
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -419,6 +520,7 @@ export function AnalystAddLeadProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
 
@@ -433,7 +535,8 @@ export function AnalystAddLeadProvider({
   const handleSuccess = useCallback(() => {
     setOpen(false);
     setModalKey((k) => k + 1);
-  }, []);
+    router.refresh();
+  }, [router]);
 
   const modal =
     open && typeof document !== "undefined" ? (

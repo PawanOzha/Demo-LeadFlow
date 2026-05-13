@@ -10,6 +10,6 @@ export type MtlLeadRow = {
   salesStage: string;
   execDeadlineAt: string | null;
   assignedSalesExecId: string | null;
-  createdBy: { name: string };
-  assignedSalesExec: { name: string; id: string } | null;
+  createdBy: { id: string; name: string; image: string | null };
+  assignedSalesExec: { id: string; name: string; image: string | null } | null;
 };

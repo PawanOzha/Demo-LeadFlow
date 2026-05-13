@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { completeMandatoryPasswordResetAction } from "@/app/actions/auth";
+import { PasswordInputWithToggle } from "@/components/ui/password-input-with-toggle";
 
 export function ResetPasswordForm() {
   const router = useRouter();
@@ -43,24 +44,24 @@ export function ResetPasswordForm() {
     <form onSubmit={onSubmit} className="mt-6 space-y-5">
       <label className="block text-sm font-medium text-lf-text-secondary">
         New password
-        <input
+        <PasswordInputWithToggle
           name="password"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className="mt-2 min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
+          wrapperClassName="mt-2"
+          className="min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
         />
       </label>
       <label className="block text-sm font-medium text-lf-text-secondary">
         Confirm password
-        <input
+        <PasswordInputWithToggle
           name="confirm"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className="mt-2 min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
+          wrapperClassName="mt-2"
+          className="min-h-10 w-full rounded-md border border-lf-border bg-lf-surface px-3 py-2 text-sm text-lf-text outline-none focus:border-lf-brand focus:ring-2 focus:ring-lf-brand/20 focus:ring-offset-2 focus:ring-offset-lf-surface"
         />
       </label>
       {error ? (

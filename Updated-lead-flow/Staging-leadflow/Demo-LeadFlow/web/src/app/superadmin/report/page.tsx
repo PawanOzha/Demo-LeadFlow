@@ -7,6 +7,10 @@ import { UnifiedPortalReportSections } from "@/components/reports/unified-portal
 import { RechartsAnalyticsPanels } from "@/components/reports/recharts-analytics-panels";
 import { PortalSectionJumpTabs } from "@/components/portal-section-jump-tabs";
 import {
+  PortalDashboardTopPanel,
+  PortalDashboardTopPanelDateRow,
+} from "@/components/portal-dashboard-top-panel";
+import {
   analystRangeParams,
   analystRangeSummaryLabel,
   hrefWithDateRange,
@@ -14,6 +18,7 @@ import {
 } from "@/lib/analyst-date-range";
 import { getSuperadminReportAggregates } from "@/lib/superadmin-stats";
 import { buildUnifiedDashboardViewModel } from "@/lib/unified-dashboard-report";
+import { reportDateExportScope } from "@/lib/portal-export-scope";
 import { QualificationStatus, SalesStage } from "@/lib/constants";
 
 function first(sp: string | string[] | undefined): string | undefined {
@@ -86,6 +91,7 @@ export default async function SuperadminReportPage({
     id: l.id,
     leadName: l.leadName,
     source: l.source,
+    portalWebsite: l.portalWebsite ?? null,
     sourceWebsiteName: l.sourceWebsiteName,
     sourceMetaProfileName: l.sourceMetaProfileName,
     qualificationStatus: l.qualificationStatus,
@@ -100,8 +106,10 @@ export default async function SuperadminReportPage({
     createdById: l.createdBy.id,
     createdByEmail: l.createdBy.email,
     createdByName: l.createdBy.name,
+    createdByImage: l.createdBy.image ?? null,
     assignedSalesExecId: l.assignedSalesExec?.id ?? null,
     assignedRepName: l.assignedSalesExec?.name ?? null,
+    assignedRepImage: l.assignedSalesExec?.image ?? null,
   }));
 
   const vm = buildUnifiedDashboardViewModel(unifiedRows, {
@@ -159,18 +167,14 @@ export default async function SuperadminReportPage({
   ];
 
   return (
-    <div className="space-y-10">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-semibold text-lf-text">Reports</h1>
-          <p className="mt-1 text-sm text-lf-muted">
-            Organization-wide analytics and performance overview.
-          </p>
-        </div>
+    <div className="w-full min-w-0 space-y-8">
+      <div className="flex flex-wrap items-center gap-2">
         <PortalSectionJumpTabs tabs={reportTabs} activeId={section} />
-        <div className="flex w-full max-w-[40rem] flex-wrap items-start justify-end gap-2 rounded-xl border border-lf-border bg-lf-surface/70 p-2 shadow-sm">
-          <SuperadminReportExport payload={vm.exportPayload} />
-          <div className="w-full max-w-[28rem]">
+      </div>
+
+      <PortalDashboardTopPanel>
+        <PortalDashboardTopPanelDateRow
+          start={
             <AnalystDateRangeBar
               key={`${from ?? ""}|${to ?? ""}`}
               pathname="/superadmin/report"
@@ -178,11 +182,17 @@ export default async function SuperadminReportPage({
               defaultTo={to ?? ""}
               preservedEntries={preservedEntries}
               rangeSummary={rangeLabel}
-              compact
+              embedded
             />
-          </div>
-        </div>
-      </div>
+          }
+          end={
+            <SuperadminReportExport
+              payload={vm.exportPayload}
+              exportScope={reportDateExportScope(from ?? null, to ?? null)}
+            />
+          }
+        />
+      </PortalDashboardTopPanel>
 
       {section === "overview" ? (
       <section id="overview" className="space-y-10 scroll-mt-20">
@@ -325,6 +335,10 @@ export default async function SuperadminReportPage({
             activeSectionRaw={
               Array.isArray(sp.reportSection) ? sp.reportSection[0] : sp.reportSection
             }
+            omitSectionIds={["qualified-pipeline"]}
+            sectionsLayout="continuous"
+            hideSectionJumpNav
+            hideOverviewSectionIntro
           />
         </div>
       </div>

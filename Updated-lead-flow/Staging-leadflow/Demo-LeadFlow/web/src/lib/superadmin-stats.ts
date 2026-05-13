@@ -1,6 +1,9 @@
+import { z } from "zod";
 import { parseDbDate } from "@/lib/analyst-ui";
-import { dbQuery } from "@/lib/db/pool";
+import { AppError } from "@/lib/app-error";
+import { dbQuery, rpcJsonParamTextArrayUnpack } from "@/lib/db/pool";
 import { QualificationStatus, SalesStage, UserRole } from "@/lib/constants";
+import { logger } from "@/lib/server/log";
 import { leadCreatedAtRange } from "@/lib/analyst-date-range";
 import { resolveLeadCity, resolveLeadCountry } from "@/lib/phone-location";
 import type { SuperadminLeadsWhereSql } from "@/lib/superadmin-leads-filters";
@@ -13,7 +16,35 @@ const ACTIVE_ROLES = [
   UserRole.SALES_EXECUTIVE,
 ] as const;
 
-export async function getSuperadminDashboardMetrics() {
+const superadminDashboardMetricsTeamRowSchema = z.object({
+  teamId: z.string(),
+  teamName: z.string(),
+  count: z.number().finite(),
+});
+
+const superadminDashboardMetricsExecRowSchema = z.object({
+  salesExecId: z.string(),
+  label: z.string(),
+  count: z.number().finite(),
+});
+
+const superadminDashboardMetricsSchema = z.object({
+  activeUsers: z.number().finite(),
+  totalLeads: z.number().finite(),
+  qualified: z.number().finite(),
+  notQualified: z.number().finite(),
+  irrelevant: z.number().finite(),
+  leadsByTeam: z.array(superadminDashboardMetricsTeamRowSchema),
+  leadsBySalesExec: z.array(superadminDashboardMetricsExecRowSchema),
+  totalClosedRevenue: z.number().finite(),
+  totalPipelineEstimate: z.number().finite(),
+});
+
+export type SuperadminDashboardMetrics = z.infer<
+  typeof superadminDashboardMetricsSchema
+>;
+
+export async function getSuperadminDashboardMetrics(): Promise<SuperadminDashboardMetrics> {
   const [
     activeUsersRow,
     totalLeadsRow,
@@ -26,7 +57,7 @@ export async function getSuperadminDashboardMetrics() {
     pipelineEstimateSumRow,
   ] = await Promise.all([
     dbQuery<{ c: string }>(
-      `SELECT COUNT(*)::text as c FROM "User" WHERE role = ANY($1::text[])`,
+      `SELECT COUNT(*)::text as c FROM "User" WHERE role = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
       [ACTIVE_ROLES],
     ),
     dbQuery<{ c: string }>(`SELECT COUNT(*)::text as c FROM "Lead"`),
@@ -69,7 +100,7 @@ export async function getSuperadminDashboardMetrics() {
   const teams =
     teamIds.length > 0
       ? await dbQuery<{ id: string; name: string }>(
-          `SELECT id, name FROM "Team" WHERE id = ANY($1::text[])`,
+          `SELECT id, name FROM "Team" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
           [teamIds],
         )
       : [];
@@ -78,7 +109,7 @@ export async function getSuperadminDashboardMetrics() {
   const leadsByTeam = teamGroups.map((g) => ({
     teamId: g.teamId as string,
     teamName: g.teamId ? teamName.get(g.teamId) ?? "Unknown team" : "—",
-    count: Number(g.c),
+    count: Number(g?.c ?? 0),
   }));
 
   const execIds = execGroups
@@ -87,7 +118,7 @@ export async function getSuperadminDashboardMetrics() {
   const execs =
     execIds.length > 0
       ? await dbQuery<{ id: string; name: string; email: string }>(
-          `SELECT id, name, email FROM "User" WHERE id = ANY($1::text[])`,
+          `SELECT id, name, email FROM "User" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
           [execIds],
         )
       : [];
@@ -99,13 +130,13 @@ export async function getSuperadminDashboardMetrics() {
     salesExecId: g.assignedSalesExecId as string,
     label:
       execLabel.get(g.assignedSalesExecId as string) ?? "Unknown executive",
-    count: Number(g.c),
+    count: Number(g?.c ?? 0),
   }));
 
   const totalClosedRevenue = Number(closedRevenueSumRow[0]?.s ?? 0);
   const totalPipelineEstimate = Number(pipelineEstimateSumRow[0]?.s ?? 0);
 
-  return {
+  const candidate = {
     activeUsers,
     totalLeads,
     qualified,
@@ -116,6 +147,19 @@ export async function getSuperadminDashboardMetrics() {
     totalClosedRevenue,
     totalPipelineEstimate,
   };
+
+  const validated = superadminDashboardMetricsSchema.safeParse(candidate);
+  if (!validated.success) {
+    logger.error("[getSuperadminDashboardMetrics] metrics validation failed", {
+      issues: validated.error.flatten(),
+    });
+    throw new AppError(
+      "Superadmin dashboard metrics failed validation",
+      validated.error.flatten(),
+    );
+  }
+
+  return validated.data;
 }
 
 function monthKeyYmd(d: unknown): string {
@@ -150,6 +194,7 @@ type LeadReportRow = {
   country: string | null;
   city: string | null;
   source: string;
+  portalWebsite: string | null;
   sourceWebsiteName: string | null;
   sourceMetaProfileName: string | null;
   notes: string | null;
@@ -165,7 +210,9 @@ type LeadReportRow = {
   dealCurrency: string;
   cb_name: string | null;
   cb_email: string | null;
+  cb_image: string | null;
   se_name: string | null;
+  se_image: string | null;
 };
 
 const REPORT_LEAD_ID_PAGE = 2500;
@@ -179,6 +226,7 @@ const LEAD_REPORT_WIDE_COLUMNS = `
        l.country,
        l.city,
        l.source,
+       l."portalWebsite",
        l."sourceWebsiteName",
        l."sourceMetaProfileName",
        l.notes,
@@ -194,7 +242,9 @@ const LEAD_REPORT_WIDE_COLUMNS = `
        l."dealCurrency",
        cb.name as cb_name,
        cb.email as cb_email,
-       se.name as se_name`;
+       cb.image as cb_image,
+       se.name as se_name,
+       se.image as se_image`;
 
 export async function getSuperadminReportAggregates(opts?: {
   from?: string | null;
@@ -307,7 +357,7 @@ export async function getSuperadminReportAggregates(opts?: {
            FROM "Lead" l
            LEFT JOIN "User" cb ON cb.id = l."createdById"
            LEFT JOIN "User" se ON se.id = l."assignedSalesExecId"
-           WHERE l.id = ANY($1::text[])`,
+           WHERE l.id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
           [slice],
         );
         const orderMap = new Map(slice.map((id, idx) => [id, idx]));
@@ -330,6 +380,7 @@ export async function getSuperadminReportAggregates(opts?: {
     country: l.country,
     city: l.city,
     source: l.source,
+    portalWebsite: l.portalWebsite,
     sourceWebsiteName: l.sourceWebsiteName,
     sourceMetaProfileName: l.sourceMetaProfileName,
     notes: l.notes,
@@ -342,9 +393,14 @@ export async function getSuperadminReportAggregates(opts?: {
       id: l.createdById,
       name: l.cb_name ?? "Unknown analyst",
       email: l.cb_email ?? "",
+      image: l.cb_image ?? null,
     },
     assignedSalesExec: l.assignedSalesExecId
-      ? { id: l.assignedSalesExecId, name: l.se_name ?? "" }
+      ? {
+          id: l.assignedSalesExecId,
+          name: l.se_name ?? "",
+          image: l.se_image ?? null,
+        }
       : null,
     estimatedDealValue: coerceMoney(l.estimatedDealValue),
     closedRevenue: coerceMoney(l.closedRevenue),
@@ -485,6 +541,27 @@ const LEAD_JOURNEY_COLUMNS = `
            "createdAt",
            "updatedAt"`;
 
+/** Regroup a slice of journey leads by analyst (same ordering rules as {@link getSuperadminLeadsWithJourney}). */
+export function regroupSuperadminJourneyByAnalyst(
+  enriched: JourneyLead[],
+): {
+  analyst: { id: string; name: string; email: string };
+  leads: JourneyLead[];
+}[] {
+  const byAnalyst = new Map<string, JourneyLead[]>();
+  for (const l of enriched) {
+    const id = l.createdById;
+    if (!byAnalyst.has(id)) byAnalyst.set(id, []);
+    byAnalyst.get(id)!.push(l);
+  }
+  return [...byAnalyst.values()]
+    .map((list) => ({
+      analyst: list[0]!.createdBy,
+      leads: list,
+    }))
+    .sort((a, b) => a.analyst.name.localeCompare(b.analyst.name));
+}
+
 /** Narrow query + fetch-by-id: hosted exec_sql often returns [] for wide SELECT … LIMIT … OFFSET while COUNT(*) works. */
 const FETCH_BY_ID_CHUNK = 800;
 
@@ -517,7 +594,7 @@ export async function getSuperadminLeadsWithJourney(
         const batch = await dbQuery<LeadDbRow>(
           `SELECT ${LEAD_JOURNEY_COLUMNS}
            FROM "Lead"
-           WHERE id = ANY($1::text[])`,
+           WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
           [slice],
         );
         chunks.push(...batch);
@@ -543,6 +620,7 @@ export async function getSuperadminLeadsWithJourney(
     return {
       qualTotals: { qualified: 0, notQualified: 0, irrelevant: 0 },
       analystGroups: [] as { analyst: { id: string; name: string; email: string }; leads: JourneyLead[] }[],
+      flatLeads: [] as JourneyLead[],
     };
   }
 
@@ -561,7 +639,7 @@ export async function getSuperadminLeadsWithJourney(
     email: string;
     role: string;
   }>(
-    `SELECT id, name, email, role FROM "User" WHERE id = ANY($1::text[])`,
+    `SELECT id, name, email, role FROM "User" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
     [Array.from(userIds)],
   );
   const userMap = new Map(users.map((u) => [u.id, u]));
@@ -569,7 +647,7 @@ export async function getSuperadminLeadsWithJourney(
   const teams =
     teamIds.size > 0
       ? await dbQuery<{ id: string; name: string }>(
-          `SELECT id, name FROM "Team" WHERE id = ANY($1::text[])`,
+          `SELECT id, name FROM "Team" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
           [Array.from(teamIds)],
         )
       : [];
@@ -585,7 +663,7 @@ export async function getSuperadminLeadsWithJourney(
     actorId: string | null;
   }>(
     `SELECT id, "leadId", "createdAt", action, detail, "actorId" FROM "LeadHandoffLog"
-     WHERE "leadId" = ANY($1::text[]) ORDER BY "createdAt" ASC`,
+     WHERE "leadId" = ANY(${rpcJsonParamTextArrayUnpack(1)}) ORDER BY "createdAt" ASC`,
     [leadIds],
   );
 
@@ -602,7 +680,7 @@ export async function getSuperadminLeadsWithJourney(
       email: string;
       role: string;
     }>(
-      `SELECT id, name, email, role FROM "User" WHERE id = ANY($1::text[])`,
+      `SELECT id, name, email, role FROM "User" WHERE id = ANY(${rpcJsonParamTextArrayUnpack(1)})`,
       [missingActorIds],
     );
     for (const u of more) userMap.set(u.id, u);
@@ -671,19 +749,7 @@ export async function getSuperadminLeadsWithJourney(
     ).length,
   };
 
-  const byAnalyst = new Map<string, JourneyLead[]>();
-  for (const l of enriched) {
-    const id = l.createdById;
-    if (!byAnalyst.has(id)) byAnalyst.set(id, []);
-    byAnalyst.get(id)!.push(l);
-  }
+  const analystGroups = regroupSuperadminJourneyByAnalyst(enriched);
 
-  const analystGroups = [...byAnalyst.values()]
-    .map((list) => ({
-      analyst: list[0]!.createdBy,
-      leads: list,
-    }))
-    .sort((a, b) => a.analyst.name.localeCompare(b.analyst.name));
-
-  return { qualTotals, analystGroups };
+  return { qualTotals, analystGroups, flatLeads: enriched };
 }

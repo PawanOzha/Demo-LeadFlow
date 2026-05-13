@@ -22,16 +22,16 @@ export default async function SuperadminLayout({
   }
   await redirectIfMustResetPassword();
 
-  const [user, notif] = await timedServerBlock(
+  const { user, notif } = await timedServerBlock(
     "route:/superadmin layout:data",
-    () =>
-      Promise.all([
-        dbQueryOne<{ image: string | null }>(
-          `SELECT image FROM "User" WHERE id = $1`,
-          [session.id],
-        ),
-        getPortalNotificationsForUser(session.id),
-      ]),
+    async () => {
+      const userRow = await dbQueryOne<{ image: string | null }>(
+        `SELECT image FROM "User" WHERE id = $1`,
+        [session.id],
+      );
+      const notif = await getPortalNotificationsForUser(session.id);
+      return { user: userRow, notif };
+    },
   );
   const cookieStore = await cookies();
   const initialSidebarCollapsed =
@@ -40,7 +40,8 @@ export default async function SuperadminLayout({
   return (
     <SuperadminAppShell
       session={{ name: session.name, email: session.email }}
-      avatarUrl={user?.image ?? null}
+      userId={session.id}
+      avatarImage={user?.image ?? null}
       teamName="Superadmin"
       notifications={notif.notifications}
       notificationUnreadCount={notif.unreadCount}

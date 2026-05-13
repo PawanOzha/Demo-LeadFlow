@@ -14,7 +14,8 @@ const NAV = [
 
 export function AnalystAppShell({
   session,
-  avatarUrl,
+  userId,
+  avatarImage,
   teamName,
   notifications,
   notificationUnreadCount,
@@ -22,7 +23,8 @@ export function AnalystAppShell({
   children,
 }: {
   session: { name: string; email: string };
-  avatarUrl: string | null;
+  userId: string;
+  avatarImage: string | null;
   teamName: string | null;
   notifications: AtlNotificationItem[];
   notificationUnreadCount: number;
@@ -35,7 +37,8 @@ export function AnalystAppShell({
         homeHref="/analyst"
         navItems={NAV}
         session={session}
-        avatarUrl={avatarUrl}
+        userId={userId}
+        avatarImage={avatarImage}
         teamName={teamName}
         notifications={notifications}
         notificationUnreadCount={notificationUnreadCount}

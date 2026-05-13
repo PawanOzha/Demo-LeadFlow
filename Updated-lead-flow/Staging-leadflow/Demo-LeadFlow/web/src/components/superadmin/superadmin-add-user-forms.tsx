@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { superadminCreateUserFormAction } from "@/app/actions/superadmin";
+import { PasswordInputWithToggle } from "@/components/ui/password-input-with-toggle";
 import { UserRole } from "@/lib/constants";
 
 const inputClass =
@@ -111,7 +112,6 @@ function AddLeadAnalystForm({
   };
 
   /* Reset after successful server action — useActionState exposes no onSuccess callback. */
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (
       wasLaPending.current &&
@@ -124,7 +124,6 @@ function AddLeadAnalystForm({
     }
     wasLaPending.current = laPending;
   }, [laPending, laState]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <form action={laAction} className="space-y-4" autoComplete="off">
@@ -159,13 +158,13 @@ function AddLeadAnalystForm({
       </label>
       <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
         Password
-        <input
+        <PasswordInputWithToggle
           name="password"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className={`mt-1 ${inputClass}`}
+          wrapperClassName="mt-1 w-full"
+          className={inputClass}
         />
       </label>
       <label className="block text-[12px] font-medium uppercase tracking-wide text-lf-muted">
@@ -267,13 +266,13 @@ function AddAnalystTeamLeadForm({
       </label>
       <label className="block text-xs font-medium text-lf-subtle">
         Password
-        <input
+        <PasswordInputWithToggle
           name="password"
-          type="password"
           required
           minLength={8}
           autoComplete="new-password"
-          className={`mt-1 ${inputClass}`}
+          wrapperClassName="mt-1 w-full"
+          className={inputClass}
         />
       </label>
       <button
